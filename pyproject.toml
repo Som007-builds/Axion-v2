@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "axion-v2"
+version = "0.1.0"
+description = "Claim-level trust propagation for the scientific literature, measured at cost."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+authors = [{ name = "Axion V2 contributors" }]
+dependencies = [
+  "pydantic==2.10.4",
+  "pydantic-settings==2.7.0",
+  "PyYAML==6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit==4.0.1",
+  "mypy==1.14.0",
+  "pytest==8.3.4",
+  "ruff==0.8.4",
+  "types-PyYAML==6.0.12.20240917",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/axion"]
+strict = true
+warn_unreachable = true
+show_error_codes = true
+pretty = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "network: requires network access; opt-in only",
+  "llm: requires a live LLM provider; opt-in only",
+]
