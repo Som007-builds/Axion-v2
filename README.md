@@ -32,6 +32,21 @@ When a paper is retracted or flagged, which claims in *other* papers actually de
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | Live status and session log |
 | [`docs/eval/AUDIT_RUBRIC.md`](docs/eval/AUDIT_RUBRIC.md) | Human labeling rubric |
 
+## Development
+
+Requires Python 3.11. Dev tools are pinned in `pyproject.toml`.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python -m pip install -e ".[dev]"
+pre-commit install
+make lint typecheck test
+```
+
+`make report` is a placeholder until the first regenerable report exists (P1-12).
+All tests are offline by default; network and LLM tests must be marked and opt-in.
+
 ## Lineage
 
 Successor to [Axion V1](https://github.com/Som007-builds/Axion) (MIT). V2 is a clean-room restart: selected components are ported with attribution (see `docs/PROVENANCE.md` once created), history is not carried over.

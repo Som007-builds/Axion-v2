@@ -13,13 +13,16 @@
 
 ## Tasks
 
-### [ ] P1-01 — Repo bootstrap
+### [x] P1-01 — Repo bootstrap
 - depends: Day-0 checklist
 - what: pyproject.toml, src/axion skeleton, ruff, mypy, pytest, pre-commit (incl. secret scan), CI, .env.example, Makefile (lint/typecheck/test/report).
 - acceptance: `make lint typecheck test` passes in CI on an empty skeleton.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:20 | branch: p1/P1-01-bootstrap
   - notes:
-  - done: — | evidence: —
+    - 2026-11-09 11:20 claimed; creating packaging, package skeleton, lint/types/tests, pre-commit, CI, Makefile.
+    - Soft dependency: Day-0 owner items are still open (see `docs/PROGRESS.md` Day-0 status); P1-01 is offline and does not need them.
+    - 2026-11-09 11:40 implementation complete; local checks green. Host has no GNU `make`, so the exact underlying commands were run (CI runs the Makefile targets on Ubuntu).
+  - done: 2026-11-09 | evidence: commits f5bd0c7 (claim), 8e89feb (implementation); `pyproject.toml`, `.gitattributes`, `.pre-commit-config.yaml`, `Makefile`, `.github/workflows/ci.yml`, `src/axion/**` (10 packages), `tests/test_smoke.py`, `scripts/check_secrets.py`, `README.md`; local run: `ruff check .` + `ruff format --check .` → all checks passed; `mypy` → success, 10 files; `pytest` → 2 passed; `scripts/check_secrets.py` → passed; `pre-commit validate-config` → exit 0.
 
 ### [ ] P1-02 — Settings and config
 - depends: P1-01
