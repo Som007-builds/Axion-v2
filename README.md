@@ -4,7 +4,7 @@
 
 When a paper is retracted or flagged, which claims in *other* papers actually depended on it? Citation-level alerts say "everything that cites it." Axion V2 aims to answer at the **claim level**, and to do so cheaply enough to run at scale by expanding the graph outward from retracted papers only, rather than processing an entire corpus.
 
-> **Status:** Pre-Phase 1 (Day-0 setup). Nothing here is production-ready. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for live status.
+> **Status:** Early development — Phase 1 (foundation). Repo bootstrap, settings, pricing template, and stage schema are in place; P1-03 is next. Nothing here is production-ready. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for live status.
 
 ## Why this exists
 

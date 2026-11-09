@@ -3,9 +3,9 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** Day 0 (prerequisites)
-- **Next action:** complete `docs/DAY0_PREREQUISITES.md` checklist (owner decisions B1–B6, V1 snapshot, accounts), then start `P1-01` in `docs/phases/P1-foundation/TODO.md`
-- **Last updated:** 2026-11-09 by scaffold generator
+- **Phase:** P1 (foundation)
+- **Next action:** P1-03 — LLMClient + cost ledger (`docs/phases/P1-foundation/TODO.md`)
+- **Last updated:** 2026-11-09 by DeepSeek V4.1 Flash Free
 
 ## Day-0 status (as of 2026-11-09)
 
@@ -41,8 +41,8 @@ P1-01 and P1-02 are **not** blocked by the above: both are offline and need no k
 ## Phase status
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
-| Day 0 | Not started | — | |
-| P1 Foundation | Not started | — | |
+| Day 0 | Partially blocked | — | Owner items open; see Day-0 status above |
+| P1 Foundation | In progress | — | P1-01 and P1-02 done; P1-03 next |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -58,12 +58,21 @@ P1-01 and P1-02 are **not** blocked by the above: both are offline and need no k
 | $/retraction analyzed | — | |
 
 ## Open questions for owner
-- (none)
+- Day-0 wording conflict: `docs/DAY0_PREREQUISITES.md` §F.6 says the first commit should wait until the Day-0 checklist passes, but this session's owner instruction was to commit the scaffold and start P1-01/P1-02 now. Confirm that `dde455c` stands as the scaffold commit (no Day-0 doc change made).
+- Repository visibility, and whether to push `main` and task branches to `origin`. No push was attempted because this session forbade network use.
+- Provider→tier mapping, model IDs, and `pricing.yaml` prices are needed before any live LLM call. Offline fake-provider work on P1-03 can proceed without them.
+- This Windows host has no GNU `make`. Is running the exact underlying commands locally acceptable evidence, with CI running `make lint typecheck test`? That is what was done this session.
 
 ## Blocked tasks
-- (none)
+- Day-0 owner (👤) items only: B1–B6, fresh keys/V1 key rotation, V1 snapshot, retraction-data license, repo visibility. None of these block P1-03.
 
 ## Session log (newest first)
+### 2026-11-09 — DeepSeek V4.1 Flash Free — P1
+- Did: scaffold sanity check; `git init` + initial scaffold commit; Day-0 status recorded; P1-01 (repo bootstrap) and P1-02 (settings/config) complete.
+- State: `main` contains the scaffold and both tasks; local checks green (ruff, mypy strict, 22 offline tests, secret scan).
+- Next: P1-03 — LLMClient + cost ledger.
+- Blockers/questions: Day-0 owner items remain open but do not block P1-03; see Open questions above.
+
 ### 2026-11-09 — scaffold generator — Day 0
 - Did: created repo scaffold (CONTEXT, PRD, Day-0, protocol, phase TODOs, private folder templates)
 - State: nothing committed yet; repo not initialized

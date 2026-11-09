@@ -22,7 +22,7 @@
     - 2026-11-09 11:20 claimed; creating packaging, package skeleton, lint/types/tests, pre-commit, CI, Makefile.
     - Soft dependency: Day-0 owner items are still open (see `docs/PROGRESS.md` Day-0 status); P1-01 is offline and does not need them.
     - 2026-11-09 11:40 implementation complete; local checks green. Host has no GNU `make`, so the exact underlying commands were run (CI runs the Makefile targets on Ubuntu).
-  - done: 2026-11-09 | evidence: commits f5bd0c7 (claim), 8e89feb (implementation); `pyproject.toml`, `.gitattributes`, `.pre-commit-config.yaml`, `Makefile`, `.github/workflows/ci.yml`, `src/axion/**` (10 packages), `tests/test_smoke.py`, `scripts/check_secrets.py`, `README.md`; local run: `ruff check .` + `ruff format --check .` → all checks passed; `mypy` → success, 10 files; `pytest` → 2 passed; `scripts/check_secrets.py` → passed; `pre-commit validate-config` → exit 0.
+  - done: 2026-11-09 | evidence: commits f5bd0c7 (claim), 8e89feb (implementation); `pyproject.toml`, `.gitattributes`, `.pre-commit-config.yaml`, `Makefile`, `.github/workflows/ci.yml`, `src/axion/**` (10 packages), `tests/test_smoke.py`, `scripts/check_secrets.py`, `README.md`; local run: `ruff check .` + `ruff format --check .` → all checks passed; `mypy` → success, 10 files; `pytest` → 2 passed; `scripts/check_secrets.py` → passed; `pre-commit validate-config` → exit 0. CI workflow added but not executed this session (no push/network).
 
 ### [x] P1-02 — Settings and config
 - depends: P1-01
@@ -32,7 +32,7 @@
   - notes:
     - 2026-11-09 11:45 claimed; implementing settings, pricing loader/template, stage schema, tests, and `.env.example` sync.
     - 2026-11-09 12:05 done; 22 offline tests pass. Pricing stays blank in the template by design (owner fills).
-  - done: 2026-11-09 | evidence: commits bb09f8f (claim), 80865d8 (implementation); `src/axion/config/settings.py`, `pricing.py`, `stages.py`, `pricing.yaml`, `__init__.py`; `tests/test_settings.py`, `tests/test_pricing.py`, `tests/test_stages.py`; `.env.example`, `pyproject.toml`; local run: `ruff check .` + `ruff format --check .` → passed; `mypy` → success, 13 files; `pytest` → 22 passed; secret scan → passed. Missing/incomplete price raises `MissingPriceError` under `dry_run=True` and warns loudly otherwise.
+  - done: 2026-11-09 | evidence: commits bb09f8f (claim), 80865d8 (implementation); `src/axion/config/settings.py`, `pricing.py`, `stages.py`, `pricing.yaml`, `__init__.py`; `tests/test_settings.py`, `tests/test_pricing.py`, `tests/test_stages.py`; `.env.example`, `pyproject.toml`; local run: `ruff check .` + `ruff format --check .` → passed; `mypy` → success, 13 files; `pytest` → 22 passed; secret scan → passed. Missing/incomplete price raises `MissingPriceError` under `dry_run=True` and warns loudly otherwise. CI not executed this session (no push/network).
 
 ### [ ] P1-03 — LLMClient + cost ledger
 - depends: P1-02
@@ -116,7 +116,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
-- (empty)
+- 2026-11-09 — DeepSeek V4.1 Flash Free — P1-01 and P1-02 complete and merged — next: P1-03
 
 ## Phase exit checklist
 - [ ] All tasks `[x]` or `[-]` with ADR
