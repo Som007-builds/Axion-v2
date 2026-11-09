@@ -24,12 +24,13 @@
     - 2026-11-09 11:40 implementation complete; local checks green. Host has no GNU `make`, so the exact underlying commands were run (CI runs the Makefile targets on Ubuntu).
   - done: 2026-11-09 | evidence: commits f5bd0c7 (claim), 8e89feb (implementation); `pyproject.toml`, `.gitattributes`, `.pre-commit-config.yaml`, `Makefile`, `.github/workflows/ci.yml`, `src/axion/**` (10 packages), `tests/test_smoke.py`, `scripts/check_secrets.py`, `README.md`; local run: `ruff check .` + `ruff format --check .` → all checks passed; `mypy` → success, 10 files; `pytest` → 2 passed; `scripts/check_secrets.py` → passed; `pre-commit validate-config` → exit 0.
 
-### [ ] P1-02 — Settings and config
+### [~] P1-02 — Settings and config
 - depends: P1-01
 - what: Pydantic settings, config package, `pricing.yaml` template (owner fills prices), stage config schema.
 - acceptance: Settings load from env; missing price fails closed in dry-run; unit tests.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:45 | branch: p1/P1-02-settings
   - notes:
+    - 2026-11-09 11:45 claimed; implementing settings, pricing loader/template, stage schema, tests, and `.env.example` sync.
   - done: — | evidence: —
 
 ### [ ] P1-03 — LLMClient + cost ledger
