@@ -13,12 +13,14 @@
 
 ## Tasks
 
-### [ ] P1-01 — Repo bootstrap
+### [~] P1-01 — Repo bootstrap
 - depends: Day-0 checklist
 - what: pyproject.toml, src/axion skeleton, ruff, mypy, pytest, pre-commit (incl. secret scan), CI, .env.example, Makefile (lint/typecheck/test/report).
 - acceptance: `make lint typecheck test` passes in CI on an empty skeleton.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:20 | branch: p1/P1-01-bootstrap
   - notes:
+    - 2026-11-09 11:20 claimed; creating packaging, package skeleton, lint/types/tests, pre-commit, CI, Makefile.
+    - Soft dependency: Day-0 owner items are still open (see `docs/PROGRESS.md` Day-0 status); P1-01 is offline and does not need them.
   - done: — | evidence: —
 
 ### [ ] P1-02 — Settings and config
