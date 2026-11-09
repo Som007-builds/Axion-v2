@@ -1,0 +1,18 @@
+# Pricing template.
+#
+# OWNER ACTION: fill in verified prices, then remove the "#" before each entry.
+# Prices are USD per 1,000,000 tokens. Do not guess: a blank price is treated as
+# missing. A missing price fails closed in dry-run, and warns loudly otherwise.
+#
+# Example shape (replace the placeholder key):
+#
+# models:
+#   "<provider>/<model>":
+#     provider: "<provider>"
+#     input_usd_per_mtok:
+#     output_usd_per_mtok:
+#     cached_input_usd_per_mtok:
+
+version: 1
+currency: USD
+models: {}
