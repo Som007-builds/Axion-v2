@@ -55,7 +55,7 @@ P1-01, P1-02, and P1-03 are **not** blocked by the above: all are offline and ne
 ## Doc maintenance
 | ID | Status | Scope | Evidence |
 | :-- | :-- | :-- | :-- |
-| DOC-01 | [x] | Scale approach docs: ADR-0008, CONTEXT §2.2/§3/§5–§10/§12/§14–§15/changelog, PRD P1–P5, phase TODOs, audit rubric, architecture, agent protocol | ADR-0008; `CONTEXT.md`; `docs/PRD.md`; `docs/phases/*/TODO.md`; `docs/eval/AUDIT_RUBRIC.md`; `docs/ARCHITECTURE.md`; `docs/AGENT_PROTOCOL.md`; verification below |
+| DOC-01 | [x] | Scale approach docs: ADR-0008, CONTEXT §2.2/§3/§5–§10/§12/§14–§15/changelog, PRD P1–P5, phase TODOs, audit rubric, architecture, agent protocol | commit `96fe8f8`; ADR-0008; `CONTEXT.md`; `docs/PRD.md`; `docs/phases/*/TODO.md`; `docs/eval/AUDIT_RUBRIC.md`; `docs/ARCHITECTURE.md`; `docs/AGENT_PROTOCOL.md`; verification below |
 
 DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); superseded P2-03/P2.3 reference ADR-0008; no source/tests/CI/config changed by the docs commit; `git status` shows only docs changes. Doc-only branch: `docs/scale-approach`.
 
@@ -85,7 +85,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 ## Session log (newest first)
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — DOC-01
 - Did: checkpointed P1-03 locally (`0c79b02` code/tests/config, `16a37fc` docs); created `docs/scale-approach`; recorded ADR-0008 (four layers, `s + e`, alternatives, evidence, risks); updated CONTEXT §2.2/§3/§5–§10/§12/§14–§15/changelog; updated PRD P1–P5 with new/superseded steps; added/altered phase TODO tasks; added silver-vs-gold rules to the audit rubric; updated architecture and agent protocol.
-- State: DOC-01 is doc-only and committed on `docs/scale-approach`; P1-03 continuation remains the active task. No source/tests/CI/config changes in the DOC-01 commit.
+- State: DOC-01 is doc-only, committed on `docs/scale-approach` as `96fe8f8`, and fast-forwarded into `p1/P1-03-llmclient`; P1-03 continuation remains the active task. No source/tests/CI/config changes in the DOC-01 commit.
 - Next: return to P1-03; owner Day-0 actions still block any push.
 - Blockers/questions: ADR-0008 number was already used by the uncommitted Day-0 ADR; renumbered that one to ADR-0009. External metadata verified 2026-11-14; findings are as reported, not independently replicated. P2-03/P2.3 are superseded by ADR-0008.
 
