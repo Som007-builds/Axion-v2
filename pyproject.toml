@@ -24,6 +24,9 @@ dev = [
   "types-PyYAML==6.0.12.20240917",
 ]
 
+[project.scripts]
+axion-cost-report = "axion.llm.cli:main"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 
