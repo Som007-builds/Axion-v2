@@ -47,6 +47,14 @@
     - 2026-11-14: owner requested the DOC-01 scale-approach docs-only task. Code/tests/config checkpointed locally as commit `0c79b02` before branching; no push while the repo is public / Day-0 is open.
   - done: 2026-11-09 | evidence: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`; settings additions in `src/axion/config/settings.py`; `.env.example`; `pyproject.toml` script entry; tests in `tests/test_llm_{client,cache,ledger,structured,errors}.py` + updated `tests/test_settings.py`; local run: `ruff check .` → passed; `ruff format --check .` → 32 files formatted; `mypy` → success, 22 source files; `pytest` → **69 passed**; secret scan → passed; `python -m axion.llm.cli --help` → works. Console-script executable not generated locally because the venv lacks `wheel`; entry point is declared in `pyproject.toml` for normal installs. Local checkpoint commit `0c79b02`; push pending Day-0.
 
+### [ ] P1-03b — Ledger schema extension + training runs
+- depends: P1-03
+- what: Add model tier and `parent_call_id` (escalation link) to `llm_calls`; add `training_runs` (`run_id, model, data_hash, hardware, duration_s, estimated_usd`); ensure `teacher_label` stage and escalation provenance are reportable.
+- acceptance: Idempotent schema migration; every escalated call links to its parent; training runs are recorded with local cost `0` unless a real external cost exists; ledger/cost-report tests updated.
+  - agent: — | started: — | branch: —
+  - notes:
+  - done: — | evidence: —
+
 ### [ ] P1-04 — Europe PMC client
 - depends: P1-01
 - what: Search + fetch JATS by PMCID; polite rate limiting; raw cache with deterministic file names.
@@ -97,8 +105,8 @@
 
 ### [ ] P1-10 — Baseline claim extractor
 - depends: P1-03, P1-09
-- what: Structured extraction with provenance: one large model, all target sections, via LLMClient. Evidence span must be verbatim in source. Parse failures recorded. Run `--dry-run` first; respect budget caps.
-- acceptance: Run completes within budget; ledger totals match report; failures logged not dropped.
+- what: Structured extraction with provenance: one large model, all target sections, via LLMClient. Evidence span must be verbatim in source. Parse failures recorded. Run `--dry-run` first; respect budget caps. Persist outputs as candidate **silver** labels with provenance (teacher model/version, prompt version, run_id); they are not gold.
+- acceptance: Run completes within budget; ledger totals match report; failures logged not dropped; silver-label manifest with provenance is committed/reproducible and is never used to evaluate students.
   - agent: — | started: — | branch: —
   - notes:
   - done: — | evidence: —

@@ -39,8 +39,8 @@
 
 ### [ ] P5-04 — Write-up draft
 - depends: P5-02
-- what: Problem, method, cost-quality frontier, blast-radius results, limitations, negative results; numbers pulled from generated reports only.
-- acceptance: Every claim maps to an artifact.
+- what: Problem, method, cost-quality frontier, blast-radius results, limitations, negative results, and a section **"What we do and do not claim about scale"**; numbers pulled from generated reports only.
+- acceptance: Every claim maps to an artifact; scale section distinguishes measured (~5k papers) from projected values and acknowledges prior art in citation-statement classification.
   - agent: — | started: — | branch: —
   - notes:
   - done: — | evidence: —

@@ -62,4 +62,4 @@ Successor to [Axion V1](https://github.com/Som007-builds/Axion) (MIT). V2 is a c
 
 ## License
 
-MIT for now (owner decision recorded 2026-11-09; revisit before P5). See `LICENSE` and `docs/DECISIONS.md` ADR-0008.
+MIT for now (owner decision recorded 2026-11-09; revisit before P5). See `LICENSE` and `docs/DECISIONS.md` ADR-0009.

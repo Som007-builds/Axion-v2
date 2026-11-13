@@ -36,9 +36,22 @@ Edge case: a claim that is correct but with an imprecise span → `UNSUPPORTED_S
 - State the limitations: single labeler, domain/sub-topic coverage, sample size.
 - Label provenance: **gold** (human-audited). Anything not human-audited is **silver** and must be marked so.
 
-## 6. File format
+## 6. Silver vs. gold
+- **Gold** labels are human-audited and are used for **evaluation**: gold DEV for tuning thresholds, frozen gold TEST for the only reported student/classifier quality.
+- **Silver** labels are teacher/student/heuristic outputs and are used for **training only**.
+- **Never evaluate a student on teacher-labeled data.** A teacher-score is not a student metric.
+- Splits are by **paper**, not by claim or citation context. Student training must exclude every paper that appears in the gold DEV or TEST sets.
+- The gold TEST set is frozen before tuning and never used for threshold selection or retraining.
+- Record the student version/hash with every result. Do not commit large model artifacts; commit metadata and hashes.
+
+**File locations:**
+- Gold: `eval/audit/` (committed; see §7).
+- Silver: `eval/silver/` for manifests, label schemas, and hashes. Large silver label files are **not** committed if they exceed repo limits; commit a manifest with row counts, provenance, and SHA-256 hashes, and document the regeneration command.
+
+## 7. File format
 `eval/audit/claims_audit_v1.csv` columns:
 `claim_id, paper_id, section, claim_text, evidence_span, label, note, labeler, date, rubric_version, split, relabel_label`
 
 ## Changelog
 - v1 (2026-11-09): initial rubric.
+- v2 (2026-11-14): added silver-vs-gold rules, paper-level splits, and silver file locations (ADR-0008).

@@ -31,8 +31,8 @@
 
 ### [ ] P3-03 — Gold labeling set
 - depends: P3-02
-- what: Stratified sample (>=100-150 contexts) by section and retracted paper; label; double-label >=20%; agreement stats; freeze dev/test.
-- acceptance: eval/audit/dependency_audit_v1.csv committed; agreement reported. (Owner labels.)
+- what: Stratified sample (>=100-150 contexts) by section and retracted paper; label; double-label >=20%; agreement stats; freeze paper-level dev/test. Gold is for evaluation only; exclude every gold dev/test paper from student training.
+- acceptance: eval/audit/dependency_audit_v1.csv committed; agreement reported; split is by paper. (Owner labels.)
   - agent: — | started: — | branch: —
   - notes:
   - done: — | evidence: —
@@ -46,9 +46,17 @@
   - done: — | evidence: —
 
 ### [ ] P3-05 — Staged detector
-- depends: P3-04
-- what: Heuristic features -> small classifier -> LLM only for ambiguous; tune on dev; evaluate on test; report per-stage cost.
-- acceptance: Test-split metrics with CIs; per-stage cost share.
+- depends: P3-04, P2-03b
+- what: Heuristic features -> teacher-distilled student (silver labels from teacher on candidate contexts, paper-level split, gold dev/test) -> calibrated LLM escalation; tune on gold dev; evaluate on frozen gold test; report per-stage cost, `e`, and `s`.
+- acceptance: Gold-test metrics with CIs; per-stage cost share; `e` and `s` reported; no student evaluation on teacher-labeled data; no paper overlap between train and gold dev/test.
+  - agent: — | started: — | branch: —
+  - notes:
+  - done: — | evidence: —
+
+### [ ] P3-05b — Priority / lazy scheduling
+- depends: P3-05
+- what: Implement a risk-ordered queue (contexts citing flagged papers first), idempotent hash-keyed incremental runs, and explicit hot/cold corpus states. Cold items remain unprocessed until needed.
+- acceptance: Re-running produces identical counts/decisions; queue order documented; cold corpus items demonstrably untouched; no duplicate processing.
   - agent: — | started: — | branch: —
   - notes:
   - done: — | evidence: —
@@ -71,8 +79,8 @@
 
 ### [ ] P3-08 — Cost accounting
 - depends: P3-05
-- what: Compute $/retraction analyzed and per-stage breakdown from the ledger; compare against baselines.
-- acceptance: Script outputs table; numbers match ledger.
+- what: Compute $/retraction analyzed, per-stage breakdown, escalation rate `e`, and student cost ratio `s` from the ledger; compare against baselines.
+- acceptance: Script outputs table; numbers match ledger; `e` and `s` reported.
   - agent: — | started: — | branch: —
   - notes:
   - done: — | evidence: —
