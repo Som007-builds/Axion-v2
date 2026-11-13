@@ -34,13 +34,18 @@
     - 2026-11-09 12:05 done; 22 offline tests pass. Pricing stays blank in the template by design (owner fills).
   - done: 2026-11-09 | evidence: commits bb09f8f (claim), 80865d8 (implementation); `src/axion/config/settings.py`, `pricing.py`, `stages.py`, `pricing.yaml`, `__init__.py`; `tests/test_settings.py`, `tests/test_pricing.py`, `tests/test_stages.py`; `.env.example`, `pyproject.toml`; local run: `ruff check .` + `ruff format --check .` → passed; `mypy` → success, 13 files; `pytest` → 22 passed; secret scan → passed. Missing/incomplete price raises `MissingPriceError` under `dry_run=True` and warns loudly otherwise. CI not executed this session (no push/network).
 
-### [ ] P1-03 — LLMClient + cost ledger
+### [x] P1-03 — LLMClient + cost ledger
 - depends: P1-02
 - what: Port ideas from V1 llm.py: fallback chain, retry, cooldown, content-hash cache. Add tiers small/large, structured-output validation, SQLite `llm_calls` ledger, `cost_report` CLI. Fake provider for offline tests.
 - acceptance: Every call logged (incl. cache hits at $0); report CLI prints cost by stage/model; tests cover retry, cooldown, cache, ledger.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 | branch: p1/P1-03-llmclient
   - notes:
-  - done: — | evidence: —
+    - 2026-11-09 claimed; V1 reference read from `D:\AI-Projects\schimesh` at commit `b4b6a25338057bd05bc6b74bc75b26198fe546e8` (`llm.py`, router tests, cache, parser). No V1 secrets, `.env`, data, or caches read.
+    - Implemented a clean-room typed client, not a V1 file copy: `Provider` protocol + registry, injected clock/sleep for deterministic tests, per-provider retry/cooldown, persistent content-hash cache, SQLite ledger, Pydantic structured output, tier model resolution, and `axion-cost-report`.
+    - Real provider SDK adapters are intentionally deferred until the provider packages/deps are approved and installed; the client is provider-agnostic and offline tests use `ScriptedProvider`.
+    - Implementation and checks were **uncommitted WIP** on `p1/P1-03-llmclient`, per owner instruction to hold commits/push until Day-0 passes.
+    - 2026-11-14: owner requested the DOC-01 scale-approach docs-only task. Code/tests/config checkpointed locally as commit `0c79b02` before branching; no push while the repo is public / Day-0 is open.
+  - done: 2026-11-09 | evidence: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`; settings additions in `src/axion/config/settings.py`; `.env.example`; `pyproject.toml` script entry; tests in `tests/test_llm_{client,cache,ledger,structured,errors}.py` + updated `tests/test_settings.py`; local run: `ruff check .` → passed; `ruff format --check .` → 32 files formatted; `mypy` → success, 22 source files; `pytest` → **69 passed**; secret scan → passed; `python -m axion.llm.cli --help` → works. Console-script executable not generated locally because the venv lacks `wheel`; entry point is declared in `pyproject.toml` for normal installs. Local checkpoint commit `0c79b02`; push pending Day-0.
 
 ### [ ] P1-04 — Europe PMC client
 - depends: P1-01
@@ -116,6 +121,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-09 — DeepSeek V4.1 Flash Free — P1-03 code + tests complete as uncommitted WIP on `p1/P1-03-llmclient` — next: owner Day-0 pass, then commit/push P1-03; do not start P1-04 without owner confirmation
 - 2026-11-09 — DeepSeek V4.1 Flash Free — P1-01 and P1-02 complete and merged — next: P1-03
 
 ## Phase exit checklist

@@ -31,6 +31,19 @@ Status values: `Proposed` · `Accepted` · `Superseded` · `Rejected`. Agents ma
 **Date:** 2026-11-09 · **Status:** Accepted
 **Decision:** use deterministic extraction wherever possible; LLMs only where a cheaper stage cannot decide.
 
+## ADR-0008 — Day-0 owner decisions (license, visibility, providers, budget)
+**Date:** 2026-11-09 · **Status:** Accepted (owner-provided; revisit before P5)
+**Context:** Day-0 required owner choices B1–B6 plus the provider/pricing policy for P1.
+**Decision:**
+- **License:** MIT for now; revisit before P5. `LICENSE` added.
+- **Visibility:** private until P5. The GitHub repo is currently public; it must be switched to private before any push.
+- **Providers/tiers:** both `small` and `large` tiers remain configurable; only one Groq provider/key is used for now. The fallback chain is `groq` until more providers are added. Model IDs live in `.env`, never in code.
+- **Pricing:** `pricing.yaml` stays an empty template. P1 remains dry-run only and fails closed on missing prices. The owner will add verified prices before the first paid run (P1-10); agents must not guess or copy prices from memory.
+- **Budget:** default **$0 paid usage**. Any paid batch needs explicit owner approval; the untracked `_private/budget.md` is set to zero.
+- **Weekly hours:** not supplied; the Day-0 default (~10 hrs/week) applies until the owner states otherwise.
+- **`_private/` backup:** the owner accepts **no backup** for now. This is an explicit exception to ADR-0006; losing that folder loses untracked notes/budget context.
+**Consequences:** Day-0 can progress with offline/dry-run work; live provider calls remain blocked until keys, model IDs, and verified prices are supplied.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title
