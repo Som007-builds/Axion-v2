@@ -4,7 +4,7 @@
 
 When a paper is retracted or flagged, which claims in *other* papers actually depended on it? Citation-level alerts say "everything that cites it." Axion V2 aims to answer at the **claim level**, and to do so cheaply enough to run at scale by expanding the graph outward from retracted papers only, rather than processing an entire corpus.
 
-> **Status:** Early development — Phase 1 (foundation). Repo bootstrap, settings, pricing template, and stage schema are in place; P1-03 is next. Nothing here is production-ready. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for live status.
+> **Status:** Early development — Phase 1 (foundation). Repo bootstrap, settings, pricing template, stage schema, and the offline LLM client + cost ledger are in place; P1-04 is next after Day-0/commit clearance. Nothing here is production-ready. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for live status.
 
 ## Why this exists
 
@@ -47,10 +47,19 @@ make lint typecheck test
 `make report` is a placeholder until the first regenerable report exists (P1-12).
 All tests are offline by default; network and LLM tests must be marked and opt-in.
 
+Every LLM call is recorded in the SQLite ledger configured by `AXION_LEDGER_PATH` (or `AXION_DATA_DIR`). Inspect cost by stage, model, or provider:
+
+```bash
+axion-cost-report --db data/ledger.sqlite3 --group-by stage
+axion-cost-report --db data/ledger.sqlite3 --group-by model --json
+```
+
+The client is provider-agnostic: live provider SDK adapters are added only after their pinned packages are approved. Offline tests use the scripted provider in `axion.llm.providers`.
+
 ## Lineage
 
-Successor to [Axion V1](https://github.com/Som007-builds/Axion) (MIT). V2 is a clean-room restart: selected components are ported with attribution (see `docs/PROVENANCE.md` once created), history is not carried over.
+Successor to [Axion V1](https://github.com/Som007-builds/Axion) (MIT). V2 is a clean-room restart: selected components are ported with attribution (see [`docs/PROVENANCE.md`](docs/PROVENANCE.md)), history is not carried over.
 
 ## License
 
-MIT (to be confirmed in Day-0; see `docs/DAY0_PREREQUISITES.md`).
+MIT for now (owner decision recorded 2026-11-09; revisit before P5). See `LICENSE` and `docs/DECISIONS.md` ADR-0009.

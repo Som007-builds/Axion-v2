@@ -78,6 +78,9 @@ Record the question in `docs/PROGRESS.md` under "Open questions for owner" and m
 - Changing evaluation sets after tuning on them; leaking test split into training.
 - Reporting numbers that no script regenerates.
 - Silently dropping parse failures or errors.
+- Evaluating a student on teacher-labeled data.
+- Splitting by claim/context instead of by paper.
+- Presenting projections as measurements.
 - Expanding scope without an ADR.
 - Rewriting git history on shared branches.
 

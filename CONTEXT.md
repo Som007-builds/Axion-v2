@@ -16,11 +16,11 @@ Axion V2 is a **claim-level trust-propagation system for the scientific literatu
 ### 2.1 Problem
 - Retractions and integrity flags are increasingly large-batch events (e.g., conference-proceedings purges, paper-mill takedowns), and AI-generated or fabricated content is entering the literature faster than review capacity grows.
 - Existing downstream-impact alerts work at the **citation level** ("this paper cites a retracted paper"). A citation can be a passing mention, a background reference, or a load-bearing premise; citation-level alerts cannot tell these apart and therefore generate false alarms or get ignored.
-- LLM-based claim processing over an entire corpus is cost-prohibitive at publisher scale (illustratively, ~$0.01/paper × 20M papers ≈ $200k–$2M depending on assumptions). Any credible system must treat cost as a design constraint, not an afterthought.
+- LLM-based claim processing over an entire corpus is cost-prohibitive at publisher scale (illustratively, a small per-paper LLM cost across tens of millions of papers becomes a multi-million-dollar range depending on assumptions). Any credible system must treat cost as a design constraint, not an afterthought.
 
 ### 2.2 Thesis (the "two bets")
 1. **Future-proof bet — claim-level blast radius.** Determine, for a retracted/flagged source paper, which downstream *claims* depend on which *source claims*, and propagate reduced trust accordingly.
-2. **Cost bet — demand-driven cascade.** Process only what is needed: expand the graph outward from retracted/flagged nodes, and push work through a cheap-to-expensive cascade so the expensive LLM sees only ambiguous cases. Cost scales with the number of retractions, not with corpus size.
+2. **Cost bet — layered, demand-driven cascade.** Process only what is needed: expand outward from retracted/flagged nodes and push work through four layers: **(0)** deterministic JATS/sections/dedup/cache, **(1)** distilled student models trained on teacher silver labels, **(2)** rare escalation from a small LLM to a large LLM, and **(3)** lazy/priority processing with hash-cached, paper-level idempotency. The simplified planning model is `relative_cost ≈ s + e`, where `s` is student cost as a fraction of LLM-everywhere cost and `e` is the escalation rate. `e` dominates and is measured, not assumed. Illustrative values (`s≈0.01`, `e≈0.05–0.15`) are **assumptions**; a 20M-paper / 200M-claim / ~300 GB-embedding calculation is an **arithmetic illustration**, not measured data. Cost scales with retractions and escalated cases, not with the whole corpus.
 
 The headline results this project exists to produce:
 - **Cost per paper** (before vs. after the cascade, at equal measured quality).
@@ -41,6 +41,8 @@ Build a flagship, portfolio-grade, rigorously evaluated system; gain real experi
 - Trust (confidence) propagation with a documented, testable rule.
 - Full cost ledger and a cost-vs-quality frontier for every pipeline stage.
 - Reproducible evaluation with human-audited labels.
+- Train small student models (claim-sentence detector; citation-context relation classifier) from teacher silver labels, and evaluate them on human-audited gold labels with paper-level splits.
+- A cost-projection model with explicit ranges and assumptions, driven by measurements from the ledger.
 - Minimal API + dashboard demonstrating blast radius with a visible cost panel.
 
 ### 3.2 Explicitly out of scope (non-goals)
@@ -50,6 +52,7 @@ Build a flagship, portfolio-grade, rigorously evaluated system; gain real experi
 - No PDF-first pipeline (JATS first; PDF only as a documented fallback if ever needed).
 - No contradiction/reconciliation judge, gap finder, experiment recommender, temporal agent, or Coordinator Q&A loop in V2.0 (see backlog, §12).
 - No new data sources beyond Europe PMC + Crossref/Retraction Watch data unless an ADR approves them.
+- No claim of solving extraction at 20M-paper scale; V2 measures cost structure at ~5k papers and projects to larger scales with explicit assumptions.
 
 ## 4. Domain and data
 
@@ -79,6 +82,14 @@ Notes:
 | **Blast radius** | The set of downstream claims/papers affected by a retraction, with per-edge strength and aggregate trust change. |
 | **Citation-level baseline** | Treat every citing paper as affected. The thing we aim to beat on false alarms. |
 | **Cascade** | Ordered pipeline stages from cheap/deterministic to expensive/LLM; later stages run only on cases earlier stages cannot resolve. |
+| **Teacher** | An expensive LLM used to produce **silver labels** for student training; it is not an evaluator of student quality. |
+| **Student** | A small encoder model trained on silver labels; it runs the bulk of inference at low cost. |
+| **Silver labels** | Machine-generated labels (teacher, student, or heuristic). Used for **training** only; never for reported evaluation. |
+| **Gold labels** | Human-audited labels used for **evaluation** (dev for tuning, frozen test for reporting). |
+| **Escalation rate (e)** | Fraction of items sent to any LLM after the student stage; the dominant driver of `relative_cost ≈ s + e`. |
+| **Student cost ratio (s)** | Student inference cost divided by LLM-everywhere cost for the same workload; measured from the ledger. |
+| **Hot / cold corpus** | Hot corpus is prioritized risk-first (contexts citing flagged/retracted papers); cold corpus stays unprocessed until needed. |
+| **Cost projection** | Modeled cost to `N` papers from measured ledger values; always labeled **PROJECTION** with ranges and assumptions, never presented as measured. |
 | **Cost ledger** | Persistent record of every LLM call: tokens, dollars, latency, cache hit, stage, run. |
 | **Cost-quality frontier** | Plot of quality (e.g., precision/recall) vs. cost for pipeline configurations. |
 | **$/retraction analyzed** | Total ledger cost to compute the blast radius of one retracted paper, end to end. |
@@ -94,6 +105,11 @@ Targets marked *provisional* are ratified or revised at the end of Phase 1 using
 | Claim extraction precision | P1 | ≥ 90% (blocks P2 if lower) | Audit n ≥ 200; report Wilson 95% CI |
 | Cost per paper (baseline) | P1 | measured, no target | Baseline = single large model on all sections |
 | Cost per paper reduction | P2 | ≥ 60% (stretch 80%) | At ≤ 2 points precision loss vs. baseline |
+| Escalation rate `e` | P2 | measured; target TBD after first data | Fraction sent to any LLM after students; key cost driver |
+| Student cost ratio `s` | P2 | measured | Student inference cost / LLM-everywhere cost |
+| Learning curve — quality vs. silver label count | P2 | report | Quality on frozen gold test at geometric label budgets |
+| Student agreement with gold | P2/P3 | report | On frozen gold test, per task; never teacher-labeled evaluation |
+| Cost projection to `N` papers | P2/P4/P5 | report; labeled **PROJECTION** | Ranges + assumptions; never headline-as-measured |
 | Dependency detection recall | P3 | ≥ 0.80 *(provisional)* | On audited citation-context set |
 | False-alarm reduction vs. citation-level | P3 | ≥ 50% *(provisional)* | At the recall above |
 | $/retraction analyzed | P3 | measured, reported | Headline cost number |
@@ -102,19 +118,27 @@ Targets marked *provisional* are ratified or revised at the end of Phase 1 using
 **Kill / pivot rules (apply honestly):**
 - P1: if feasibility spike cannot find a sub-topic meeting the minimums, broaden to multiple sub-topics or lower minimums via ADR; do not fabricate labels.
 - P2: if no configuration reaches ≥ 50% savings within 2 points of baseline precision, publish the negative result and proceed with the best frontier point.
+- P2 students: if students cannot reach within **2 points of baseline precision** on the gold test at any label budget, publish the negative result and fall back to the best cascade without students.
 - P3: if dependency detection cannot beat the citation-level baseline on false alarms at ≥ 0.70 recall, stop and write up why; do not ship the claim.
 
 ## 7. Architecture (planned; see `docs/ARCHITECTURE.md`)
 
-Pipeline (demand-driven):
+Pipeline (layered, demand-driven):
+- **Layer 0 — deterministic.** Ingest, parse, flag, expand, deduplicate, and cache. No model calls.
+- **Layer 1 — students.** Small encoder models triage claim sentences and citation-context reliance on the bulk of the hot corpus.
+- **Layer 2 — rare escalation.** Low-confidence items move to a small LLM, then a large LLM. Escalated cases are written back as new silver labels for retraining (the flywheel).
+- **Layer 3 — lazy/incremental.** Process each paper once via content/ID hashes, prioritize by risk, and leave the cold corpus unprocessed until needed.
+
 1. **Ingest** — Europe PMC search/fetch (JATS) → raw store. No LLM.
 2. **Parse** — JATS → sections, paragraphs, references, citation contexts. No LLM.
 3. **Flag ingestion** — retraction records → link to corpus papers by DOI/PMID/PMCID.
-4. **Expand** — for each flagged source paper A, find citing papers B in the corpus and their citation contexts. No LLM.
-5. **Cascade** — classify contexts and extract claims through cheap → expensive stages.
-6. **Link** — match relying contexts to specific claims in A (embedding match + LLM only if ambiguous).
-7. **Propagate** — compute trust change with the documented rule.
-8. **Serve** — API + dashboard with cost panel.
+4. **Expand + schedule** — for each flagged source paper A, find citing papers B and their citation contexts; enqueue contexts citing flagged work first. No LLM.
+5. **Student triage** — claim-sentence and reliance students label the bulk of hot-corpus items. No LLM.
+6. **Escalate** — only low-confidence items go to a small LLM, then a large LLM; log the parent call and feed the resulting labels back into the silver store.
+7. **Link** — match relying contexts to specific claims in A (embedding/student match; LLM only if ambiguous).
+8. **Process once** — hash-cached, paper-level idempotent runs; cold items remain pending.
+9. **Propagate** — compute trust change with the documented rule.
+10. **Serve** — API + dashboard with cost panel and a separately labeled projection table.
 
 ### 7.1 Stack (decided; see ADRs)
 | Layer | Choice |
@@ -123,7 +147,8 @@ Pipeline (demand-driven):
 | API | FastAPI + Uvicorn, Pydantic v2 |
 | Graph | Neo4j 5.x Community (blast radius is graph traversal) |
 | Vectors | ChromaDB persistent, local embeddings (sentence-transformers) |
-| Ledger / run metadata / labels | SQLite (single file, easy to ship and inspect) |
+| Students | Small encoder models trained on teacher silver labels; local inference |
+| Ledger / run metadata / labels | SQLite (single file, easy to ship and inspect), including `llm_calls` and `training_runs` |
 | LLM access | Provider-agnostic `LLMClient` with tiering, retry, cooldown, caching, mandatory ledger |
 | Tests | pytest; offline by default |
 | Lint/format/types | ruff, mypy (strict on `src/axion`) |
@@ -141,21 +166,25 @@ axion-v2/
 │   ├── llm/              # LLMClient, providers, ledger
 │   ├── ingest/           # europepmc client, retraction data loader
 │   ├── parse/            # JATS parser, citation-context extractor
-│   ├── extract/          # cascade stages, claim extraction
+│   ├── extract/          # deterministic + student + escalation stages, claim extraction
 │   ├── link/             # context→claim linking, dependency detector
+│   ├── train/            # silver labeling, student training, evaluation
+│   ├── schedule/         # priority queue, incremental/hash-cached work
 │   ├── propagate/        # trust propagation rules
-│   ├── store/            # neo4j, chroma, sqlite access
+│   ├── store/            # neo4j, chroma, sqlite access (incl. labels, training_runs)
 │   └── api/              # FastAPI app
-├── eval/                 # harness, datasets, results (legacy/ for V1 benchmark)
+├── eval/                 # gold audit + silver manifests (large artifacts not committed)
 ├── tests/
-├── scripts/              # reproducible report builders
+├── scripts/              # reproducible report builders (incl. cost_model.py)
 └── web/                  # P4 demo UI
 ```
 
 ### 7.3 Planned data model
 - Nodes: `Paper{pmcid, pmid, doi, title, year, journal, source}`, `Claim{claim_id, text, section, evidence_span, base_confidence, structured fields}`, `CitationContext{ctx_id, text, section, marker}`, `RetractionNotice{notice_id, date, reason, source}`.
 - Edges: `CITES (Paper→Paper)`, `EXTRACTED_FROM (Claim→Paper)`, `IN_PAPER (CitationContext→Paper)`, `POINTS_TO (CitationContext→Paper)`, `DEPENDS_ON (CitationContext|Claim→Claim){label, strength, rationale, confidence, stage, run_id}`, `RETRACTED_BY (Paper→RetractionNotice)`.
-- Every derived edge stores `stage` (which cascade stage produced it) and `run_id`, so cost and quality can be attributed per stage.
+- Labels: `Label{label_id, target_id, label, source: teacher|human, teacher_model/version, run_id, split}`. Silver (`source=teacher`) labels train; gold (`source=human`) labels evaluate.
+- Every derived edge stores `stage` and `run_id`, so cost and quality can be attributed per stage. Allowed stage values include `rules`, `student`, `teacher_label`, `small_llm`, and `large_llm`.
+- SQLite adds `training_runs{run_id, model, data_hash, hardware, duration_s, estimated_usd}` (local training uses `estimated_usd=0` unless a real external cost is incurred).
 
 ## 8. Engineering standards
 
@@ -171,6 +200,7 @@ axion-v2/
 10. **Docs:** public behavior changes update docs in the same commit. Decisions go in `docs/DECISIONS.md`.
 11. **Idempotency:** ingestion and pipeline stages are safe to re-run; keys are content/ID based.
 12. **No dead code from V1:** ported code is cleaned, tested, and recorded in `docs/PROVENANCE.md`.
+13. **Silver trains; gold evaluates.** Teacher/student/heuristic labels are silver and may be used for training only. Human-audited labels are gold and are the only basis for reported evaluation. Split by **paper**, not by claim/context; every paper in gold dev/test is excluded from student training. Record student version/hash with each result; do not commit model artifacts (commit metadata + hashes).
 
 ## 9. Evaluation and honesty rules
 
@@ -181,16 +211,23 @@ axion-v2/
 - Never tune on the audit set used for final reporting; maintain a dev split and a frozen test split.
 - Publish negative results. Never claim a number the repo cannot regenerate.
 - Distinguish **silver** (machine/heuristic) from **gold** (human-audited) labels everywhere.
+- Gold is for evaluation: use gold dev for threshold tuning and a frozen gold test for reporting. Never evaluate a student on teacher-labeled data.
+- Split by paper, not by claim/context. Student training must exclude every paper in the gold dev/test sets.
+- Record student version/hash with every reported result; commit label manifests and hashes, not large model artifacts.
 
 ## 10. Cost rules (hard constraints)
 
-1. Every LLM call is logged: `ts, run_id, stage, provider, model, prompt_tokens, completion_tokens, usd, latency_ms, cache_hit, paper_id, error`.
+1. Every LLM call is logged: `ts, run_id, stage, provider, model, tier, prompt_tokens, completion_tokens, usd, latency_ms, cache_hit, paper_id, parent_call_id, error`.
 2. Prices come from `src/axion/config/pricing.yaml`, filled by the owner; if a price is missing, the call fails closed in dry-run and warns loudly otherwise.
 3. **Budget guard:** read `_private/budget.md` for phase spend caps. If missing or unspecified, an agent must not run any paid-model batch larger than 20 calls without owner approval.
 4. **Dry-run first:** any new batch job supports `--dry-run` that reports expected calls/tokens/cost from the ledger's historical averages before spending.
 5. **Never loop LLM calls without a counter and a cap.**
 6. **Cache first, small model second, big model last.**
 7. Every experiment reports quality **and** cost together; a result without cost is incomplete.
+8. Teacher labeling calls are ledgered with stage `teacher_label`; their outputs are silver labels with provenance (teacher model/version, prompt version, run_id).
+9. Escalations are ledgered with `parent_call_id` (or the documented equivalent) linking back to the call/stage they escalated from.
+10. Training compute is recorded in `training_runs` (run_id, model, data hash, hardware, duration, estimated USD; `0` for local compute unless a real external cost is incurred).
+11. The cost projection script must read from the ledger, not hand-typed numbers. It separates **MEASURED** from **PROJECTED** output and prints its assumptions and ranges.
 
 ## 11. Agent operating rules (summary; full text in `docs/AGENT_PROTOCOL.md`)
 
@@ -213,7 +250,7 @@ axion-v2/
 
 *Assumes ~10 hrs/week; windows stretch, order does not.
 
-**Backlog (not in scope unless ratified by ADR):** port V1 contradiction/reconciliation judge with the three-part decomposition guard; citation-faithfulness checking (does a cited paper support the citing claim); temporal claim decay; Coordinator-style Q&A; Java/other service layers; multi-user auth.
+**Backlog (not in scope unless ratified by ADR):** port V1 contradiction/reconciliation judge with the three-part decomposition guard; citation-faithfulness checking (does a cited paper support the citing claim); temporal claim decay; Coordinator-style Q&A; Java/other service layers; multi-user auth; self-hosted open-weight inference at volume; calibrated/conformal escalation thresholds; production active-learning loop.
 
 ## 13. Non-public context
 
@@ -231,6 +268,13 @@ An untracked `_private/` folder may exist locally. It holds budget caps, outreac
 - V1 limitations known: extraction precision never formally audited; confidence rule heuristic (`base + 0.08·supports − 0.12·contradictions`, clamped to [0.05, 0.98]); graph/vector stores not transactionally consistent.
 - Public comparables for orientation: commercial products group evidence as supporting/mixed/contradicting at query time; research benchmarks exist for claim verification (SciFact) and contextual contradictions (BioDivergence). Do not claim novelty without checking current literature.
 
+**External evidence for the scale approach (orientation, verify before citing; metadata checked 2026-11-14 via arXiv API and Crossref; findings are as reported by the authors and were not independently replicated by us):**
+- FrugalGPT (Chen, Zaharia, Zou), arXiv:2305.05176 — LLM cascades can match the best single LLM at lower cost on the tasks tested.
+- *Distilling Large Language Models for Biomedical Knowledge Extraction: A Case Study on Adverse Drug Events*, arXiv:2307.06439 — distillation into a task-specific student reported gains over out-of-box LLMs with cost/efficiency advantages.
+- MetaIE, arXiv:2404.00457 — a small tuned LM distilled from an LLM can be a strong starting point across information-extraction tasks; the authors report tuned small LMs outperforming prompted LLMs on the IE tasks tested.
+- *Distilling Large Language Models for Efficient Clinical Information Extraction*, arXiv:2501.00031 — distilled encoder models reported much lower cost/latency than frontier LLMs on clinical NER.
+- scite (Nicholson et al., *Quantitative Science Studies* 2021, doi:10.1162/qss_a_00146) — large-scale classification of citation statements as supporting/contrasting/mentioning; scite also surfaces retracted references in its product (verify current product behavior before citing). This is **prior art for citation-level classification**; V2's novelty claim is claim-level reliance + propagation, not citation-statement classification.
+
 ## 15. Risks
 
 | Risk | Mitigation |
@@ -241,6 +285,12 @@ An untracked `_private/` folder may exist locally. It holds budget caps, outreac
 | Cost experiments burn budget | Budget guard, dry-run, caching, caps in `_private/budget.md` |
 | Scope creep from V1 features | Non-goals list; backlog requires ADR |
 | JATS variability across publishers | Parser tests on real samples; coverage stats; fail loudly on unknown structure |
+| Student underperforms on fuzzy claim boundaries | Gold-test evaluation; learning curve; fall back to cascade without students per kill rule |
+| Teacher errors propagate into silver labels | Teacher provenance; gold audit; monitor student-vs-gold gap; do not treat silver as ground truth |
+| Domain/publisher drift requires retraining | Versioned models and labels; drift checks; scheduled re-evaluation |
+| Label budget exceeds labeling capacity | Paper-level splits; small high-quality gold sets; learning curve stops at budget |
+| Projection overreach | Ledger-driven script; ranges and sensitivity; separate MEASURED vs PROJECTED labels |
 
 ## Changelog
 - 2026-11-09 — Initial version created at repo bootstrap.
+- 2026-11-14 — Adopted ADR-0008 scale approach: four layers, `s + e` planning model, silver/gold separation, paper-level splits, lazy scheduling, and ledger-driven projections.

@@ -46,9 +46,9 @@
   - done: — | evidence: —
 
 ### [ ] P4-05 — Cost panel
-- depends: P4-02, P4-03
-- what: Per-stage cost, calls, cache hits, savings vs baseline.
-- acceptance: Numbers trace to ledger.
+- depends: P4-02, P4-03, P2-09
+- what: Per-stage cost, calls, cache hits, savings vs baseline, escalation rate `e`, student cost ratio `s`, and a projection table labeled **PROJECTION** with assumptions; visually separate measured from projected.
+- acceptance: Numbers trace to ledger; measured/projected separation is obvious; projection assumptions displayed.
   - agent: — | started: — | branch: —
   - notes:
   - done: — | evidence: —

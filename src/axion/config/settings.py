@@ -40,9 +40,19 @@ class Settings(BaseSettings):
     europepmc_contact_email: str | None = None
     axion_api_key: SecretStr | None = None
 
+    llm_small_model: str | None = None
+    llm_large_model: str | None = None
+    llm_max_attempts: int = Field(default=3, ge=1)
+    llm_retry_base_s: float = Field(default=5.0, ge=0.0)
+    llm_retry_max_s: float = Field(default=120.0, ge=0.0)
+    llm_retry_jitter_s: float = Field(default=1.0, ge=0.0)
+    llm_cooldown_s: float = Field(default=300.0, ge=0.0)
+    llm_cache_enabled: bool = True
+
     dry_run: bool = Field(default=False, validation_alias="AXION_DRY_RUN")
     data_dir: Path | None = Field(default=None, validation_alias="AXION_DATA_DIR")
     pricing_path: Path | None = Field(default=None, validation_alias="AXION_PRICING_PATH")
+    ledger_path: Path | None = Field(default=None, validation_alias="AXION_LEDGER_PATH")
 
     @field_validator("llm_provider_chain", mode="before")
     @classmethod
@@ -70,7 +80,10 @@ class Settings(BaseSettings):
         "neo4j_username",
         "crossref_contact_email",
         "europepmc_contact_email",
+        "llm_small_model",
+        "llm_large_model",
         "pricing_path",
+        "ledger_path",
         mode="before",
     )
     @classmethod
@@ -83,3 +96,16 @@ class Settings(BaseSettings):
     def resolved_pricing_path(self) -> Path:
         """Configured pricing file, or the packaged template when unset."""
         return self.pricing_path if self.pricing_path is not None else DEFAULT_PRICING_PATH
+
+    @property
+    def resolved_ledger_path(self) -> Path:
+        """Configured ledger file, or ``<data_dir>/ledger.sqlite3``.
+
+        There is deliberately no built-in fallback path: the owner must choose
+        where local state lives via ``AXION_LEDGER_PATH`` or ``AXION_DATA_DIR``.
+        """
+        if self.ledger_path is not None:
+            return self.ledger_path
+        if self.data_dir is None:
+            raise ValueError("set AXION_LEDGER_PATH or AXION_DATA_DIR before using the cost ledger")
+        return self.data_dir / "ledger.sqlite3"
