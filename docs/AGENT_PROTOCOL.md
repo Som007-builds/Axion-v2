@@ -27,6 +27,15 @@ Agents are interchangeable and can be **cut off without warning** (usage limits,
 - **Docs in the same commit** as behavior changes.
 - **Decisions:** anything that changes scope, schema, targets, data sources, or tech choices → new entry in `docs/DECISIONS.md` (status `Proposed` until the owner approves).
 
+### Branching rule for phase threads
+
+- `main` is the integration branch. A phase thread starts from the current local `main`.
+- One task per branch: `p<phase>/<task-id>-<slug>` (for example `p1/P1-03-llmclient`). Day-0 work uses `d0/<slug>`.
+- Commit early and often with Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `wip:`). Mark the task `[~]` before writing code and `[x]` with evidence after the checks pass.
+- Merge a completed task branch back into `main` with a non-fast-forward merge (`git merge --no-ff <branch>`) or a PR. Keep the task branch after merging as history; do not delete it just because it is merged.
+- Never rebase or rewrite history on a shared branch. If `main` moved, merge it into the task branch and resolve conflicts there.
+- Do not push `main`, task branches, or tags until the owner has completed the visibility/push gate in `_private/owner-action-sheet.md`. Local commits are allowed while that gate is open.
+
 ## 4. Task completion
 1. Mark `[x]` with: `done: <date>`, `evidence: <commit hash(es)>, <paths>, <command and result>`.
 2. If the task produced numbers, ensure they come from a script and note the command.
