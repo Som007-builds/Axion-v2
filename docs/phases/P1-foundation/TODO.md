@@ -36,11 +36,11 @@
     - 2026-11-09 12:05 done; 22 offline tests pass. Pricing stays blank in the template by design (owner fills).
   - done: 2026-11-09 | evidence: commits bb09f8f (claim), 80865d8 (implementation); `src/axion/config/settings.py`, `pricing.py`, `stages.py`, `pricing.yaml`, `__init__.py`; `tests/test_settings.py`, `tests/test_pricing.py`, `tests/test_stages.py`; `.env.example`, `pyproject.toml`; local run: `ruff check .` + `ruff format --check .` → passed; `mypy` → success, 13 files; `pytest` → 22 passed; secret scan → passed. Missing/incomplete price raises `MissingPriceError` under `dry_run=True` and warns loudly otherwise. CI not executed this session (no push/network).
 
-### [~] P1-03 — LLMClient + cost ledger
+### [x] P1-03 — LLMClient + cost ledger
 - depends: P1-02
 - what: Port ideas from V1 llm.py: fallback chain, retry, cooldown, content-hash cache. Add tiers small/large, structured-output validation, SQLite `llm_calls` ledger, `cost_report` CLI. Fake provider for offline tests.
 - acceptance: Every call logged (incl. cache hits at $0); report CLI prints cost by stage/model; tests cover retry, cooldown, cache, ledger.
-  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 | branch: p1
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09; fresh P1 thread resumed 2026-11-14 | branch: p1
   - notes:
     - 2026-11-09 claimed; V1 reference read from `D:\AI-Projects\schimesh` at commit `b4b6a25338057bd05bc6b74bc75b26198fe546e8` (`llm.py`, router tests, cache, parser). No V1 secrets, `.env`, data, or caches read.
     - Implemented a clean-room typed client, not a V1 file copy: `Provider` protocol + registry, injected clock/sleep for deterministic tests, per-provider retry/cooldown, persistent content-hash cache, SQLite ledger, Pydantic structured output, tier model resolution, and `axion-cost-report`.
@@ -53,14 +53,18 @@
       - **Left:** the fresh P1 thread must re-run the checks, inspect the checkpoint diff, and either close P1-03 with fresh evidence or record a defect. Then claim P1-03b (ledger schema extension); P1-04 remains blocked by the owner confirmation rule.
       - **Next commands:** `git switch main` → `git switch -c p1` (or `git switch p1` if it exists) → `python -m pytest -q` → `python -m ruff check .` → `python -m ruff format --check .` → `python -m mypy` → `git log --oneline -5`. Do not call a live LLM. Keep `AXION_DRY_RUN=true`.
       - **Gotchas:** real provider SDK adapters are deferred; the venv lacks `wheel`/setuptools>=68 so verify the CLI via `python -m axion.llm.cli --help`, not the console script; prices are intentionally blank and fail closed; remote push/PR may still be pending the owner's Day-0 actions (see `docs/phases/D0-prerequisites/TODO.md`).
-  - checkpoint evidence: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`; settings additions in `src/axion/config/settings.py`; `.env.example`; `pyproject.toml` script entry; tests in `tests/test_llm_{client,cache,ledger,structured,errors}.py` + updated `tests/test_settings.py`; local run: `ruff check .` → passed; `ruff format --check .` → 32 files formatted; `mypy` → success, 22 source files; `pytest` → **69 passed**; secret scan → passed; `python -m axion.llm.cli --help` → works. Checkpoint commits `0c79b02`, `16a37fc`, `96fe8f8`, `97b7d07`; not yet closed by a fresh P1 thread.
+    - **2026-11-14 fresh P1 thread:** created `p1` from `main` (`0269a65`). The literal branch name `p1` collided with the retained historical `p1/P1-01-bootstrap` ref namespace; the three local historical task branches were renamed to `archive/P1-03-llmclient` etc. (all still exist on `origin` under their original names; no history rewritten). Re-ran the full check suite on `p1`: 89 passed, 1 skipped (network opt-in); ruff check, ruff format --check, and strict mypy clean. Inspected the checkpoint: `client.py` resolves tiers, checks cache, walks the provider chain with retry/cooldown, validates structured output, and ledgers every success/cache hit/error; `ledger.py` records every attempt with stage/provider/model/tokens/usd/latency/cache_hit; `cli.py` reports by stage/model/provider. Every acceptance area has tests (`test_success_writes_ledger`, `test_cache_hit_is_logged_at_zero_cost`, `test_transient_retries_then_succeeds`, `test_rate_limit_exhaustion_cools_down_and_falls_back`, `test_cooldown_expiry_puts_provider_back`, `test_structured_output_failure_is_ledgered`, ledger CLI tests). No defect found. Tier persistence and `parent_call_id` are intentionally P1-03b scope.
+  - done: 2026-11-14 | evidence: checkpoint commits `0c79b02`, `16a37fc`, `96fe8f8`, `97b7d07` (inherited via merge `6986af3`); verified on `p1` at `0269a65`: `python -m pytest -q` → **89 passed, 1 skipped**; `python -m ruff check .` → passed; `python -m ruff format --check .` → 35 files formatted; `python -m mypy` → success, 22 source files; `python -m axion.llm.cli --help` → works. Files: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`, `tests/test_llm_{client,cache,ledger,structured,errors}.py`.
 
-### [ ] P1-03b — Ledger schema extension + training runs
+### [~] P1-03b — Ledger schema extension + training runs
 - depends: P1-03
 - what: Add model tier and `parent_call_id` (escalation link) to `llm_calls`; add `training_runs` (`run_id, model, data_hash, hardware, duration_s, estimated_usd`); ensure `teacher_label` stage and escalation provenance are reportable.
 - acceptance: Idempotent schema migration; every escalated call links to its parent; training runs are recorded with local cost `0` unless a real external cost exists; ledger/cost-report tests updated.
-  - agent: — | started: — | branch: p1
+  - branch: p1
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: p1
   - notes:
+    - 2026-11-14 claimed; plan: in-place `ALTER TABLE` migration guarded by `PRAGMA table_info` (idempotent, no data loss), `tier` + `parent_call_id` on `llm_calls`, `training_runs` table with `estimated_usd` defaulting to 0 for local compute, `group_by=tier`, escalated-call counts in reports, and a `--training-runs` report view.
+    - 2026-11-14 implementing: ledger migration + training-run API, `LLMRequest.parent_call_id`, `LLMResult.call_id`, tier recording on success/cache/error paths.
   - done: — | evidence: —
 
 ### [ ] P1-04 — Europe PMC client
