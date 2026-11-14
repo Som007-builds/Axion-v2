@@ -45,6 +45,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "axion.config" = ["*.yaml", "corpus/*.yaml"]
+"axion.extract" = ["prompts/*.md"]
 
 [tool.ruff]
 line-length = 100
