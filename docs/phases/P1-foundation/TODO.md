@@ -7,6 +7,8 @@
 
 ## Rules (read `docs/AGENT_PROTOCOL.md` for full text)
 - Claim a task (`[~]`) before starting; mark `[x]` with evidence when done; checkpoint notes at every step.
+- Work the whole phase on the `p1` branch (ADR-0010). `branch:` fields name that phase branch; task branches created before ADR-0010 are history, not a precedent.
+- Merge into `main` at task boundaries only when lint, types, and tests are green. Delete `p1` after the gate.
 - If you may run out of budget: write a PARTIAL-state note (done / left / exact next command) and commit WIP.
 - Take the **first** task that is `[ ]` or a stale `[~]`, respecting `depends:`.
 - Update `docs/PROGRESS.md` at session end.
@@ -17,7 +19,7 @@
 - depends: Day-0 checklist
 - what: pyproject.toml, src/axion skeleton, ruff, mypy, pytest, pre-commit (incl. secret scan), CI, .env.example, Makefile (lint/typecheck/test/report).
 - acceptance: `make lint typecheck test` passes in CI on an empty skeleton.
-  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:20 | branch: p1/P1-01-bootstrap
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:20 | branch: p1
   - notes:
     - 2026-11-09 11:20 claimed; creating packaging, package skeleton, lint/types/tests, pre-commit, CI, Makefile.
     - Soft dependency: Day-0 owner items are still open (see `docs/PROGRESS.md` Day-0 status); P1-01 is offline and does not need them.
@@ -28,7 +30,7 @@
 - depends: P1-01
 - what: Pydantic settings, config package, `pricing.yaml` template (owner fills prices), stage config schema.
 - acceptance: Settings load from env; missing price fails closed in dry-run; unit tests.
-  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:45 | branch: p1/P1-02-settings
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 11:45 | branch: p1
   - notes:
     - 2026-11-09 11:45 claimed; implementing settings, pricing loader/template, stage schema, tests, and `.env.example` sync.
     - 2026-11-09 12:05 done; 22 offline tests pass. Pricing stays blank in the template by design (owner fills).
@@ -38,7 +40,7 @@
 - depends: P1-02
 - what: Port ideas from V1 llm.py: fallback chain, retry, cooldown, content-hash cache. Add tiers small/large, structured-output validation, SQLite `llm_calls` ledger, `cost_report` CLI. Fake provider for offline tests.
 - acceptance: Every call logged (incl. cache hits at $0); report CLI prints cost by stage/model; tests cover retry, cooldown, cache, ledger.
-  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 | branch: p1/P1-03-llmclient
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-09 | branch: p1
   - notes:
     - 2026-11-09 claimed; V1 reference read from `D:\AI-Projects\schimesh` at commit `b4b6a25338057bd05bc6b74bc75b26198fe546e8` (`llm.py`, router tests, cache, parser). No V1 secrets, `.env`, data, or caches read.
     - Implemented a clean-room typed client, not a V1 file copy: `Provider` protocol + registry, injected clock/sleep for deterministic tests, per-provider retry/cooldown, persistent content-hash cache, SQLite ledger, Pydantic structured output, tier model resolution, and `axion-cost-report`.
@@ -47,8 +49,9 @@
     - 2026-11-14: owner requested the DOC-01 scale-approach docs-only task. Code/tests/config checkpointed locally as commit `0c79b02` before branching; no push while the repo is public / Day-0 is open.
     - **2026-11-14 DAY-0 RESUME CHECKPOINT (fresh P1 thread starts here):**
       - **Done:** `src/axion/llm/*` (client, providers, cache, ledger, cooldown, structured output, errors, models, CLI), settings additions, `.env.example`, script entry in `pyproject.toml`, and the LLM tests are committed. Local `main` contains this checkpoint via merge `6986af3`; task branch `p1/P1-03-llmclient` is at `97b7d07`. Last verified: 69 tests passed; ruff, ruff format, strict mypy, and secret scan passed.
+      - **2026-11-14 ADR-0010:** P1 work continues on the single phase branch `p1`. The old `p1/P1-03-llmclient` branch (`97b7d07`) is retained as history and is not used for new commits.
       - **Left:** the fresh P1 thread must re-run the checks, inspect the checkpoint diff, and either close P1-03 with fresh evidence or record a defect. Then claim P1-03b (ledger schema extension); P1-04 remains blocked by the owner confirmation rule.
-      - **Next commands:** `git switch main` → `python -m pytest -q` → `python -m ruff check .` → `python -m ruff format --check .` → `python -m mypy` → `git log --oneline -5`. Do not call a live LLM. Keep `AXION_DRY_RUN=true`.
+      - **Next commands:** `git switch main` → `git switch -c p1` (or `git switch p1` if it exists) → `python -m pytest -q` → `python -m ruff check .` → `python -m ruff format --check .` → `python -m mypy` → `git log --oneline -5`. Do not call a live LLM. Keep `AXION_DRY_RUN=true`.
       - **Gotchas:** real provider SDK adapters are deferred; the venv lacks `wheel`/setuptools>=68 so verify the CLI via `python -m axion.llm.cli --help`, not the console script; prices are intentionally blank and fail closed; remote push/PR may still be pending the owner's Day-0 actions (see `docs/phases/D0-prerequisites/TODO.md`).
   - checkpoint evidence: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`; settings additions in `src/axion/config/settings.py`; `.env.example`; `pyproject.toml` script entry; tests in `tests/test_llm_{client,cache,ledger,structured,errors}.py` + updated `tests/test_settings.py`; local run: `ruff check .` → passed; `ruff format --check .` → 32 files formatted; `mypy` → success, 22 source files; `pytest` → **69 passed**; secret scan → passed; `python -m axion.llm.cli --help` → works. Checkpoint commits `0c79b02`, `16a37fc`, `96fe8f8`, `97b7d07`; not yet closed by a fresh P1 thread.
 
@@ -56,7 +59,7 @@
 - depends: P1-03
 - what: Add model tier and `parent_call_id` (escalation link) to `llm_calls`; add `training_runs` (`run_id, model, data_hash, hardware, duration_s, estimated_usd`); ensure `teacher_label` stage and escalation provenance are reportable.
 - acceptance: Idempotent schema migration; every escalated call links to its parent; training runs are recorded with local cost `0` unless a real external cost exists; ledger/cost-report tests updated.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -64,7 +67,7 @@
 - depends: P1-01
 - what: Search + fetch JATS by PMCID; polite rate limiting; raw cache with deterministic file names.
 - acceptance: Fetches a known PMCID offline-cached; retry/backoff tested with mocks.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -72,7 +75,7 @@
 - depends: P1-04
 - what: Sections, paragraphs, reference list (DOI/PMID/PMCID), citation contexts from bibr xrefs. Golden-file tests from >=10 real samples across journals; coverage metrics.
 - acceptance: Golden tests pass; coverage report shows % papers with >=1 parsed context.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -80,7 +83,7 @@
 - depends: P1-04
 - what: Load Retraction Watch data via Crossref; link by DOI/PMID/PMCID; coverage stats (retracted, full text available, citers present). Record license/terms in docs/DATA_SOURCES.md.
 - acceptance: Linker unit-tested; coverage table generated by script.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -88,7 +91,7 @@
 - depends: P1-05, P1-06
 - what: For 3-5 candidate sub-topics count retracted OA papers with full text, in-corpus citers, and contexts. Choose per CONTEXT.md section 4; write ADR. Apply pivot rule if minimums fail.
 - acceptance: Report in docs/reports/P1-feasibility.md; ADR Proposed for owner approval.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -96,7 +99,7 @@
 - depends: P1-07 (owner-approved)
 - what: 2k-5k papers in the chosen sub-topic plus all discoverable citers of its retracted papers. Zero LLM cost.
 - acceptance: Corpus manifest committed (IDs only, no full text); counts match report.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -104,7 +107,7 @@
 - depends: P1-08
 - what: Constraints/indexes per CONTEXT.md section 7.3; idempotent loaders; Chroma collections for claims and contexts; tests with mocks/ephemeral stores.
 - acceptance: Schema script idempotent; load of corpus manifest succeeds twice with identical counts.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -112,7 +115,7 @@
 - depends: P1-03, P1-09
 - what: Structured extraction with provenance: one large model, all target sections, via LLMClient. Evidence span must be verbatim in source. Parse failures recorded. Run `--dry-run` first; respect budget caps. Persist outputs as candidate **silver** labels with provenance (teacher model/version, prompt version, run_id); they are not gold.
 - acceptance: Run completes within budget; ledger totals match report; failures logged not dropped; silver-label manifest with provenance is committed/reproducible and is never used to evaluate students.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -120,7 +123,7 @@
 - depends: P1-10
 - what: Draw seeded sample >=200 claims; label per AUDIT_RUBRIC; relabel 10% after >=7 days; commit labels with provenance; freeze dev/test split.
 - acceptance: eval/audit/claims_audit_v1.csv committed; precision + Wilson CI + agreement computed by script. (Owner labels; agent prepares export and scripts.)
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
@@ -128,12 +131,13 @@
 - depends: P1-11
 - what: Generate docs/reports/P1-baseline.md (precision, cost/paper, tokens, p95 latency, parse and linkage coverage). Propose ratification of provisional targets via ADR.
 - acceptance: Report regenerable with `make report`; PROGRESS headline table filled; gate decision recorded.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p1
   - notes:
   - done: — | evidence: —
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-14 — DeepSeek V4.1 Flash Free — workflow switched to one phase branch `p1` (ADR-0010); historical task branches retained — next: fresh P1 thread creates `p1` from `main` and resumes P1-03
 - 2026-11-14 — DeepSeek V4.1 Flash Free — Day-0 close-out merged P1-03/DOC-01 into local `main` (`6986af3`); P1-03 left `[~]` with a fresh-thread resume checkpoint — next: fresh P1 thread re-runs checks, closes P1-03, then P1-03b; do not start P1-04 without owner confirmation
 - 2026-11-09 — DeepSeek V4.1 Flash Free — P1-03 code + tests complete as uncommitted WIP on `p1/P1-03-llmclient` — next: owner Day-0 pass, then commit/push P1-03; do not start P1-04 without owner confirmation
 - 2026-11-09 — DeepSeek V4.1 Flash Free — P1-01 and P1-02 complete and merged — next: P1-03

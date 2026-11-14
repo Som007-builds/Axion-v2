@@ -196,7 +196,7 @@ axion-v2/
 6. **Config:** no hard-coded model names, prices, thresholds, or paths. Everything in `src/axion/config/` or env.
 7. **Secrets:** only in `.env` (gitignored); `.env.example` documents names. Pre-commit includes a secret scan. Never print secrets in logs.
 8. **Logging:** structured logs with `run_id`, `stage`, `paper_id`. No `print` in library code.
-9. **Git:** small commits; Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`); branch per task: `p<phase>/<task-id>-<slug>`; never force-push shared branches.
+9. **Git:** small commits; Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `wip:`); one working branch per phase (`p1`, `p2`, …); commit WIP as `wip: <task-id> <state>`; merge to `main` at task boundaries only when lint, types, and tests are green; delete the phase branch after the gate; never force-push shared branches.
 10. **Docs:** public behavior changes update docs in the same commit. Decisions go in `docs/DECISIONS.md`.
 11. **Idempotency:** ingestion and pipeline stages are safe to re-run; keys are content/ID based.
 12. **No dead code from V1:** ported code is cleaned, tested, and recorded in `docs/PROVENANCE.md`.
@@ -294,3 +294,4 @@ An untracked `_private/` folder may exist locally. It holds budget caps, outreac
 ## Changelog
 - 2026-11-09 — Initial version created at repo bootstrap.
 - 2026-11-14 — Adopted ADR-0008 scale approach: four layers, `s + e` planning model, silver/gold separation, paper-level splits, lazy scheduling, and ledger-driven projections.
+- 2026-11-14 — Adopted ADR-0010: one working branch per phase (`p1`, `p2`, …), `wip: <task-id> <state>` commits, green-gated merges at task boundaries, and phase-branch deletion after the gate. No history rewrite.

@@ -87,6 +87,21 @@ Status values: `Proposed` · `Accepted` · `Superseded` · `Rejected`. Agents ma
 - **`_private/` backup:** the owner accepts **no backup** for now. This is an explicit exception to ADR-0006; losing that folder loses untracked notes/budget context.
 **Consequences:** Day-0 can progress with offline/dry-run work; live provider calls remain blocked until keys, model IDs, and verified prices are supplied.
 
+## ADR-0010 — One working branch per phase
+**Date:** 2026-11-14 · **Status:** Accepted (owner instruction, 2026-11-14)
+**Context:** The original rule created one branch per task (`p<phase>/<task-id>-<slug>`). That produced many short-lived branches, merge overhead at every task, and a handoff surface that was split across branches. The owner wants a simpler local workflow while keeping `main` green at task boundaries.
+
+**Decision:**
+- Use one working branch per phase: `p1`, `p2`, and so on, created from `main`.
+- Do all tasks in the phase on that branch. Do not create per-task branches; pre-existing task branches and Day-0's `d0/build-ready` remain as history.
+- Commit WIP as `wip: <task-id> <state>`; use Conventional Commits otherwise.
+- Merge the phase branch into `main` at task boundaries **only** when lint, types, and tests are green. Never merge a red tree.
+- Delete the phase branch after the phase gate is recorded on `main`.
+
+**Alternatives considered:** keep one branch per task with PRs; work directly on `main`; use long-lived per-phase branches with no intermediate merges. Per-task branches added overhead without review value in a solo/agent workflow; working directly on `main` would lose the task-boundary checkpoint.
+
+**Consequences:** fewer branches and simpler handoffs; `main` advances only at green task boundaries; the phase branch must be kept current with `main`; history is not rewritten and old branches are not deleted. Docs-only change: `CONTEXT.md` §8, `docs/AGENT_PROTOCOL.md`, phase TODO `branch:` fields, and the phase prompts.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

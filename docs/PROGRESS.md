@@ -4,8 +4,8 @@
 
 ## Current state
 - **Phase:** P1 (foundation) — P1-03 is deliberately left `[~]` at a resumable checkpoint; Day-0 agent close-out is complete.
-- **Next action:** **Fresh P1 thread: resume P1-03, then P1-03b, then P1-04.** Read `docs/phases/D0-prerequisites/HANDOFF.md` and `docs/phases/P1-foundation/TODO.md` first. Do not start P1-04 without owner confirmation.
-- **Owner first action:** `main` is now on the private remote at `a39f0f2`, but the task branches are not pushed and CI has not been confirmed (no authenticated `gh` on this host). Push the task branches and confirm GitHub Actions is green. See `_private/owner-action-sheet.md`.
+- **Next action:** **Fresh P1 thread: create the `p1` branch from `main`, resume P1-03, then P1-03b, then P1-04.** Read `docs/phases/D0-prerequisites/HANDOFF.md` and `docs/phases/P1-foundation/TODO.md` first. Do not start P1-04 without owner confirmation.
+- **Owner first action:** `main` is on the private remote at `a39f0f2`; historical task branches remain local-only and are not needed under ADR-0010. CI has not been confirmed (no authenticated `gh` on this host). See `_private/owner-action-sheet.md`.
 - **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
@@ -38,7 +38,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 - V1's stack is still running from `D:\AI-Projects\schimesh` on 7474/7887; V2 uses host ports 7475/7888 so both coexist.
 
 **Owner/local blockers**
-- ⛔ Push/CI: `main` is pushed, but the task branches are not and CI has not been confirmed.
+- ⛔ Push/CI: `main` is pushed; historical task branches remain local by design (ADR-0010) and CI has not been confirmed.
 - ✅ Contact emails, Groq key, Neo4j password, and V2 Neo4j are configured locally; no secret values are tracked.
 - ⛔ P1-10: tier IDs are chosen (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) and public prices are known, but `pricing.yaml` is blank and paid-budget approval is pending.
 - ⛔ P1-06/P1-07: Retraction Watch licence/redistribution terms and data acquisition.
@@ -53,7 +53,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 ## Phase status
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
-| Day 0 | Agent close-out complete; owner items pending | — | Task-branch push/CI, paid pricing/budget, Retraction Watch terms, labeling time |
+| Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
 | P1 Foundation | In progress | — | P1-01/P1-02 done; P1-03 `[~]` checkpoint; next P1-03b, then P1-04 |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
@@ -77,7 +77,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | $/retraction analyzed | — | |
 
 ## Open questions for owner
-- **Push:** when will local `main` and the task branches be pushed to `Som007-builds/Axion-v2`, and will the P1-03/Day-0 work be a direct push or a PR to `main`?
+- **Push:** when will local `main` and the phase branches be pushed to `Som007-builds/Axion-v2`, and will the P1-03/Day-0 work be a direct push or a PR to `main`?
 - **Provider/prices:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large) on Groq; enter their published prices in `pricing.yaml` only when the owner approves a paid budget.
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
 - **Retraction Watch:** what are the current licence and redistribution terms? The CSV repo has no `LICENSE`; the Crossref page's CC BY 4.0 footer is about site content, not clearly the dataset.
@@ -95,6 +95,12 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-14 — DeepSeek V4.1 Flash Free — git workflow (ADR-0010)
+- Did: owner decision — one working branch per phase (`p1`, `p2`, …), WIP commits as `wip: <task-id> <state>`, merges to `main` at task boundaries only when lint/types/tests are green, and phase-branch deletion after the gate; updated `CONTEXT.md` §8.9, `docs/AGENT_PROTOCOL.md`, the phase TODO `branch:` fields, and the private phase prompts. No history rewrite.
+- State: docs-only; historical task branches and `d0/build-ready` are retained. `main` is unchanged apart from the documentation commit.
+- Next: fresh P1 thread creates `p1` from `main` and resumes P1-03; then P1-03b, then P1-04 (owner confirmation required).
+- Blockers/questions: owner push/CI and the other standing owner items; old task branches do not need to be pushed.
+
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — local env and V2 Neo4j
 - Did: selected Groq tier IDs `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large) from the owner's production list, because both have published prices; owner filled the Groq key, contact emails, and Neo4j password; remapped V2 Neo4j to host 7475/7888 so V1's running stack (`D:\AI-Projects\schimesh`) keeps 7474/7887; fixed Compose passing `NEO4J_PASSWORD` (Neo4j strict validation reads it as setting `PASSWORD`) and made the healthcheck read the password from `NEO4J_AUTH`; updated `.env.example`, `docs/LOCAL_SETUP.md`, and the D0 handoff.
 - State: V2 `axion-v2-neo4j-1` healthy; `cypher-shell 'RETURN 1'` succeeded; `python scripts/day0_check.py` → 5/5 PASS; `pytest -q` → **89 passed, 1 skipped**; dry-run stays true and `pricing.yaml` stays blank.

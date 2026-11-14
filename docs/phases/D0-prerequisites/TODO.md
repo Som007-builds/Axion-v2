@@ -150,7 +150,7 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
 
 ### [ ] D0-O2 — Make the repo private, confirm it is V2, and push (OWNER)
 - depends: D0-O1 (visibility)
-- what: Set `Som007-builds/Axion-v2` to private after confirming it is the V2 repo, then push local `main` and task branches and open the P1-03 merge/PR using the commands in `_private/owner-action-sheet.md`.
+- what: Set `Som007-builds/Axion-v2` to private after confirming it is the V2 repo, then push local `main` and confirm CI. Future phase work uses one phase branch (`p1`, `p2`, …) per ADR-0010; historical task branches need not be pushed.
 - acceptance: Repo is private; `origin` is the V2 remote; `main` and the P1-03 checkpoint are on the remote; CI is visible.
   - owner: — | started: — | due: —
   - notes:

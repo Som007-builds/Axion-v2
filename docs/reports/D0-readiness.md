@@ -4,6 +4,7 @@
 **Scope:** the owner-requested Day-0 close-out that makes the repository safe and complete enough for fresh per-phase agent threads. No P1 feature work was started.
 **Branch:** `d0/build-ready`, merged into local `main` after this report; nothing was pushed.
 **Decision:** **Agent close-out complete; Day 0 is not fully complete.** P1 can start locally at the P1-03 checkpoint, but normal push/CI and several later P1 tasks remain owner-blocked.
+**Workflow update (2026-11-14, ADR-0010):** the task-branch push items below are superseded. Future work uses one phase branch (`p1`, `p2`, …); historical task branches need not be pushed. The report is otherwise kept as the Day-0 snapshot.
 
 ## Checks
 

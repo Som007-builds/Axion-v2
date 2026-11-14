@@ -17,7 +17,7 @@
 - depends: P3 gate passed
 - what: List retractions, blast radius, claim provenance, health/readiness; fail-closed auth on any compute endpoint; tests.
 - acceptance: OpenAPI renders; tests green.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
@@ -25,7 +25,7 @@
 - depends: P4-01
 - what: Aggregations from ledger by stage and per retraction; tests.
 - acceptance: Endpoint outputs match ledger report.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
@@ -33,7 +33,7 @@
 - depends: P4-01
 - what: Layout, API client, offline/empty states.
 - acceptance: App builds; offline state visible without backend.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
@@ -41,7 +41,7 @@
 - depends: P4-03
 - what: Retraction picker -> graph + table (claim, citing paper, strength, evidence span) with provenance.
 - acceptance: Manual walkthrough on 3 retractions.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
@@ -49,7 +49,7 @@
 - depends: P4-02, P4-03, P2-09
 - what: Per-stage cost, calls, cache hits, savings vs baseline, escalation rate `e`, student cost ratio `s`, and a projection table labeled **PROJECTION** with assumptions; visually separate measured from projected.
 - acceptance: Numbers trace to ledger; measured/projected separation is obvious; projection assumptions displayed.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
@@ -57,7 +57,7 @@
 - depends: P4-04, P4-05
 - what: Docker Compose (Neo4j + API + web), healthchecks, loopback ports; seeded demo dataset; one-command start.
 - acceptance: Fresh clone -> demo works.
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
@@ -65,7 +65,7 @@
 - depends: P4-06
 - what: Capture screenshots; write walkthrough doc.
 - acceptance: Committed under docs/ (no secrets in images).
-  - agent: — | started: — | branch: —
+  - agent: — | started: — | branch: p4
   - notes:
   - done: — | evidence: —
 
