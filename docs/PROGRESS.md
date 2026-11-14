@@ -4,8 +4,8 @@
 
 ## Current state
 - **Phase:** P1 (foundation) — P1-01 through P1-07 are `[x]`; P1-08 through P1-12 are `[!]` pending owner decisions (sub-topic approval, prices/budget, labeling time).
-- **Next action:** **Owner decision** on ADR-0012 (proposed sub-topic: `(HSC) Medicine - Infectious Disease`). Then a fresh P1 thread resumes P1-08. Read `docs/phases/P1-foundation/TODO.md` first; P1-11 tooling is already prepared and tested.
-- **Owner first action:** approve ADR-0012 in `docs/DECISIONS.md`, or name an alternative candidate/corpus bound (unblocks P1-08). See `_private/owner-action-sheet.md`.
+- **Next action:** **Owner decision** on ADR-0012. Under the total-corpus reading it proposes `(HSC) Medicine - Infectious Disease`; under the base-papers reading it points to oncology. Then a fresh P1 thread resumes P1-08. Read `docs/phases/P1-foundation/TODO.md` first; P1-11 tooling is already prepared and tested.
+- **Owner first action:** settle the corpus-bound reading and approve ADR-0012, or name an alternative candidate/corpus bound (unblocks P1-08). See `_private/owner-action-sheet.md`.
 - **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 

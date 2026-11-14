@@ -119,9 +119,9 @@
 - acceptance: Corpus manifest committed (IDs only, no full text); counts match report.
   - agent: — | started: — | branch: p1
   - notes:
-    - Blocked: P1-07 is complete, but the sub-topic is an owner decision. ADR-0012 proposes `(HSC) Medicine - Infectious Disease`; no corpus may be built until the owner approves it or chooses an alternative.
+    - Blocked: P1-07 is complete, but the sub-topic is an owner decision. ADR-0012 proposes `(HSC) Medicine - Infectious Disease` if the 2,000-5,000 bound covers the total corpus; if it covers base papers with citers added, the ADR points to oncology. No corpus may be built until the owner settles that reading and approves a candidate.
     - Europe PMC access and the retraction loader are ready (P1-04, P1-06).
-  - done: — | blocked: 2026-11-14 | unblocks: owner approves ADR-0012 (infectious disease) or names an alternative candidate/corpus bound.
+  - done: — | blocked: 2026-11-14 | unblocks: owner settles the corpus-bound reading and approves ADR-0012 (or names an alternative candidate/corpus bound).
 
 ### [!] P1-09 — Stores: Neo4j schema v2 + Chroma
 - depends: P1-08
