@@ -138,15 +138,16 @@
     - **VERIFIED 2026-11-14:** orphan/non-source cite rows are now rejected (`CorpusLoadError`); in-memory and real Neo4j 5.18 + persistent Chroma both loaded the 30-source smoke bundle twice with identical counts (14 papers, 10 CITES, 8 CitationContext, 4 RetractionNotice, 14/10/8 vector rows). Chroma telemetry disabled.
 - **LEFT:** load the full manifest twice once P1-08 finishes; acceptance evidence is that second-load counts are identical. Do not mark `[x]` before that.
 
-### [!] P1-10 — Baseline claim extractor
+### [~] P1-10 — Baseline claim extractor
 - depends: P1-03, P1-09
 - what: Structured extraction with provenance: one large model, all target sections, via LLMClient. Evidence span must be verbatim in source. Parse failures recorded. Run `--dry-run` first; respect budget caps. Persist outputs as candidate **silver** labels with provenance (teacher model/version, prompt version, run_id); they are not gold.
 - acceptance: Run completes within budget; ledger totals match report; failures logged not dropped; silver-label manifest with provenance is committed/reproducible and is never used to evaluate students.
-  - agent: — | started: — | branch: p1
+  - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 23:56 | branch: p1
   - notes:
-    - Blocked: needs the P1-09 stores and a real paid run. Tier IDs are chosen (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) but `pricing.yaml` is intentionally blank, no paid budget is approved, and real provider SDK adapters are deferred. Dry-run only until the owner approves prices and a cap.
-    - 2026-11-14 owner scope decision (ADR-0014): run on a **seeded paper sample**, not the full corpus; size it from a dry-run cost estimate for ≥200 claims with margin and record the seed.
-  - done: — | blocked: 2026-11-14 | unblocks: P1-09 done + owner fills verified prices in `pricing.yaml`, approves a paid budget cap, approves the provider SDK dependency, and approves the seeded-sample dry-run plan.
+    - 2026-11-14 owner scope decision (ADR-0014): seeded paper sample, not the full corpus; size from a dry-run estimate for ≥200 claims with margin and record the seed.
+    - **2026-11-14 owner approval (this session):** build the offline portion now — versioned prompt, Pydantic claim schema, verbatim evidence-span validation, LLMClient runner with a fake provider + `--dry-run`, seeded 100-paper selector, silver-label manifest writer, provider adapter interface only. **No provider SDK dependency, no real calls.** Baseline sections: every body section except references, acknowledgements, funding/COI, supplementary. If 100 papers cannot plausibly yield ≥200 claims, recommend a larger sample.
+    - Blocked for the *paid* run: verified prices in `pricing.yaml`, a paid budget cap, and provider SDK approval. Tier IDs remain `openai/gpt-oss-20b` / `openai/gpt-oss-120b`.
+  - done: — | in progress: offline portion only.
 
 ### [!] P1-11 — Claim audit (human)
 - depends: P1-10
@@ -161,14 +162,14 @@
     - Blocked on the human steps only: the owner needs a claims JSONL from P1-10, ~3–6 hours to label ≥200 claims, and a ≥7-day gap to relabel 10%.
   - done: — | blocked: 2026-11-14 | unblocks: P1-10 silver claims + owner labeling time and 7-day relabel gap.
 
-### [!] P1-12 — Baseline report + gate review
+### [~] P1-12 — Baseline report + gate review
 - depends: P1-11
 - what: Generate docs/reports/P1-baseline.md (precision, cost/paper, tokens, p95 latency, parse and linkage coverage). Propose ratification of provisional targets via ADR.
 - acceptance: Report regenerable with `make report`; PROGRESS headline table filled; gate decision recorded.
-  - agent: — | started: — | branch: p1
+  - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 23:56 | branch: p1
   - notes:
-    - Blocked: depends on the P1-11 audited labels and P1-10 ledger run; reporting before those exist would fabricate numbers.
-  - done: — | blocked: 2026-11-14 | unblocks: P1-11 labelled audit + P1-10 completed run.
+    - 2026-11-14 owner approved offline report scaffolding. Build a regenerable report script with explicit "not yet measured" placeholders from ledger/audit/manifest inputs; no invented numbers. The gate review still waits for P1-11 labels and the paid P1-10 run.
+  - done: — | in progress: scaffold only.
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->

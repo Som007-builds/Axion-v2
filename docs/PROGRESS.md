@@ -102,6 +102,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-14 — Freebuff / DeepSeek V4.x Flash — P1 SESSION IN PROGRESS (23:55)
+- Status: **IN PROGRESS** — second late session; branch `p1`, clean tree at `d02dd57`, no push/merge.
+- One ingest runner is already alive from the previous session (detached), 3,400/4,967 full texts and 3,476 cached. Do **not** start a duplicate.
+- Plan: (A) let the existing runner finish; (B) full manifest + exact counts, PMID gap, parse coverage, resources; (C) load the full manifest into Neo4j/Chroma twice; (D) semantic MiniLM embeddings only if the disk/time risk is acceptable (C: has ~9 GB free), else document hash as placeholder; (E) build the offline P1-10 baseline path (prompt v1, claim schema, verbatim-span validator, fake-provider runner + dry-run, seeded 100-paper selector, silver-label manifest, provider interface only); (F) P1-12 report scaffold with "not yet measured"; (G) real-corpus dry-run estimate.
+- Constraints: no LLM calls, no provider SDKs, prices blank, dry-run on, no labels, no merge/push.
+- Next update: after the ingest finishes and counts are computed.
+
 ### 2026-11-14 — Freebuff / DeepSeek V4.x Flash — P1 SESSION IN PROGRESS
 - Status: **IN PROGRESS** — taking over after a usage-limit cutoff. Branch `p1`, clean tree at start (`d4f3171`), no push.
 - Plan (in order): (A) verify the unverified P1-08/P1-09 WIP against acceptance criteria + CONTEXT §7.3 and get tests/ruff/format/strict mypy green; (B) move reusable ingest logic from `scripts/ingest_corpus.py` into `src/axion/ingest/` with tests; (C) live smoke ingest (~30–50 papers), then the full infectious-disease corpus up to the ~5,000 cap; (D) exact counts vs §4 minimums + PMID gap; (E) load Neo4j/Chroma twice with identical counts (or in-memory fallback, stated plainly); (F) verify Neo4j heap/page-cache env names, WSL2 guidance, CPU-only torch pin, real resource numbers; (G) P1-10 dry-run readiness estimate only — no extractor code, no SDK, no LLM.
