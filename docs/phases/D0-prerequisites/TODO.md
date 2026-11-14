@@ -122,15 +122,20 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Labeling estimate is an explicit assumption: ~3–6 owner hours for P1-11, ~3–6 for P3-03, with the P1-11 relabel 7-day gap.
   - done: 2026-11-14 | evidence: `_private/owner-action-sheet.md` (untracked); ordered hard blockers vs can-wait; P1 V1 path/destination table; exact push/Neo4j/provider/labeling commands; first action = push local `main` to the private remote and confirm CI.
 
-### [ ] D0-11 — Build-ready gate report and PROGRESS update (AGENT)
+### [x] D0-11 — Build-ready gate report and PROGRESS update (AGENT)
 - depends: D0-01 … D0-10
 - what: Write `docs/reports/D0-readiness.md` with a PASS/FAIL table for repo state, tests/lint/types, CI config, compose, day0-check, data-source rows, fresh-thread artifacts, and docs consistency. Update `docs/PROGRESS.md` with the Day-0 state and next action.
 - acceptance: Every FAIL has an owner/agent classification; hard blockers vs can-wait are explicit; PROGRESS says fresh P1 thread resumes P1-03, then P1-03b, P1-04; Day 0 is not marked fully complete while owner-only blockers remain.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Final checks: 89 passed/1 skipped; ruff/format/mypy clean; custom secret scan passed; pre-commit 8/8 under Python 3.12; Compose config passed; local Markdown links 0 missing.
+    - Current host is not run-ready: `day0_check.py` reports missing owner env names, Docker daemon down, and Neo4j down. The report classifies those as owner/local blockers, not script defects.
+    - Day 0 is explicitly **not** marked fully complete; the agent close-out is complete and P1-03 is the resumable first P1 task.
+  - done: 2026-11-14 | evidence: `docs/reports/D0-readiness.md`; `docs/PROGRESS.md`; final checks above; owner blockers and first owner action (push private `main`) recorded.
 
 ## Owner tasks
+
+**Owner status (2026-11-14):** O1 partial (B3 provider unresolved; B5 open-ended; renumber confirmation requested); O2 repo private confirmed but local `main`/branches not pushed and CI not run; O3 V1 tag/hash/scan reported done, key state still to reconcile with B3; O4 can wait until P1-09; O5 waits for P1-10; O6 local Docker/Neo4j down and env values missing; O7 later (P1-11/P3-03); O8 licence/terms approval open. Details: `_private/owner-action-sheet.md` and `docs/reports/D0-readiness.md`.
 
 ### [ ] D0-O1 — Confirm B1–B6 decisions (OWNER)
 - depends: none
@@ -198,10 +203,11 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
-- 2026-11-14 — DeepSeek V4.1 Flash Free — opened Day-0 close-out tracker; merged P1-03/DOC-01 into local `main`; started `d0/build-ready` — next: complete agent tasks D0-01…D0-11, then hand off owner items.
+- 2026-11-14 — DeepSeek V4.1 Flash Free — Day-0 agent close-out complete: all D0-01…D0-11 done, build-ready report written, owner action sheet handed off; local `main` receives the `d0/build-ready` merge next — next: owner pushes private `main`, then fresh P1 thread resumes P1-03 → P1-03b → P1-04.
+- 2026-11-14 — DeepSeek V4.1 Flash Free — opened Day-0 close-out tracker; merged P1-03/DOC-01 into local `main`; started `d0/build-ready`.
 
 ## Phase exit checklist
-- [ ] All AGENT tasks `[x]` with evidence
-- [ ] Every OWNER task has an explicit status and unblocks the right phase task
-- [ ] Build-ready gate report committed in `docs/reports/D0-readiness.md`
-- [ ] `docs/PROGRESS.md` next action points to a fresh P1 thread
+- [x] All AGENT tasks `[x]` with evidence
+- [x] Every OWNER task has an explicit status and unblocks the right phase task
+- [x] Build-ready gate report committed in `docs/reports/D0-readiness.md`
+- [x] `docs/PROGRESS.md` next action points to a fresh P1 thread
