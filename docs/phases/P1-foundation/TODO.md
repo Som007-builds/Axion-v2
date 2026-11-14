@@ -67,13 +67,16 @@
     - 2026-11-14 implementing: ledger migration + training-run API, `LLMRequest.parent_call_id`, `LLMResult.call_id`, tier recording on success/cache/error paths.
   - done: 2026-11-14 | evidence: `src/axion/llm/ledger.py` (idempotent `PRAGMA table_info`-guarded `ALTER TABLE llm_calls ADD COLUMN tier/parent_call_id`, `training_runs` table + `TrainingRun` upsert API, `tier` grouping, escalated-call counts); `src/axion/llm/models.py` (`LLMRequest.parent_call_id`, `LLMResult.call_id/parent_call_id`); `src/axion/llm/client.py` (tier + parent link recorded on success, cache-hit, and error paths); `src/axion/llm/cli.py` (`--group-by tier`, `escal` column, `--training-runs` table/JSON); `tests/test_llm_ledger.py` (+9 tests incl. legacy-schema migration run twice, escalation link, training-run local cost 0/upsert/validation, CLI); `tests/test_llm_client.py` (+2 tests: parent link + cache-hit call id). Commands: `python -m pytest -q` → **99 passed, 1 skipped**; `python -m ruff check .` → passed; `python -m ruff format --check .` → 35 files formatted; `python -m mypy` → success, 22 source files.
 
-### [ ] P1-04 — Europe PMC client
+### [~] P1-04 — Europe PMC client
 - depends: P1-01
 - what: Search + fetch JATS by PMCID; polite rate limiting; raw cache with deterministic file names.
 - acceptance: Fetches a known PMCID offline-cached; retry/backoff tested with mocks.
-  - agent: — | started: — | branch: p1
+  - branch: p1
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: p1
   - notes:
-  - done: — | evidence: —
+    - 2026-11-14 claimed; owner approved live network use with polite rate limiting and the contact email from env. Tests stay offline/mocked; live calls only via an opt-in script or explicitly allowed test.
+    - 2026-11-14 implemented; live acceptance fetch of `PMC3257301` succeeded and the second read came from cache with a transport that raises on any request.
+  - done: 2026-11-14 | evidence: `src/axion/ingest/europepmc.py` (metadata search + JATS `fullTextXML`; identifying User-Agent with `mailto:`; minimum-interval throttle; exponential backoff on 429/5xx/OSError; 404 not retried; deterministic raw cache `fulltext/<PMCID>.xml` and `search/<sha256>.json` with atomic writes; PMCID validation against traversal); settings `EUROPEPMC_*` in `src/axion/config/settings.py` + `.env.example`; `tests/test_europepmc.py` (16 offline tests: parse/cache, cache-without-email, retry/backoff, 404, 403, spacing, user agent, invalid PMCID, non-JATS, settings; 1 opt-in network test). Commands: `python -m pytest -q` → **115 passed, 2 skipped**; `AXION_RUN_NETWORK=1 python -m pytest tests/test_europepmc.py -k known_pmcid` → **1 passed** (live fetch + cache reuse); ruff check/format and strict mypy clean.
 
 ### [ ] P1-05 — JATS parser + citation contexts
 - depends: P1-04

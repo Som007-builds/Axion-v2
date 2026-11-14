@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     europepmc_contact_email: str | None = None
     axion_api_key: SecretStr | None = None
 
+    europepmc_base_url: str = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+    europepmc_min_interval_s: float = Field(default=1.0, ge=0.0)
+    europepmc_timeout_s: float = Field(default=30.0, gt=0.0)
+    europepmc_max_attempts: int = Field(default=3, ge=1)
+    europepmc_cache_dir: Path | None = None
+
     llm_small_model: str | None = None
     llm_large_model: str | None = None
     llm_max_attempts: int = Field(default=3, ge=1)
@@ -84,6 +90,7 @@ class Settings(BaseSettings):
         "llm_large_model",
         "pricing_path",
         "ledger_path",
+        "europepmc_cache_dir",
         mode="before",
     )
     @classmethod
@@ -109,3 +116,14 @@ class Settings(BaseSettings):
         if self.data_dir is None:
             raise ValueError("set AXION_LEDGER_PATH or AXION_DATA_DIR before using the cost ledger")
         return self.data_dir / "ledger.sqlite3"
+
+    @property
+    def resolved_europepmc_cache_dir(self) -> Path:
+        """Configured raw cache directory, or ``<data_dir>/raw/europepmc``."""
+        if self.europepmc_cache_dir is not None:
+            return self.europepmc_cache_dir
+        if self.data_dir is None:
+            raise ValueError(
+                "set EUROPEPMC_CACHE_DIR or AXION_DATA_DIR before caching Europe PMC responses"
+            )
+        return self.data_dir / "raw" / "europepmc"
