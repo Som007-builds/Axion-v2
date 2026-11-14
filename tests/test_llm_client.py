@@ -173,6 +173,36 @@ def test_cache_hit_is_logged_at_zero_cost(tmp_path: Path) -> None:
     assert report.total_usd == first.usd
 
 
+def test_tier_and_parent_call_id_are_ledgered(tmp_path: Path) -> None:
+    provider = ScriptedProvider("primary", [_response(), _response()])
+    client, ledger = _client(tmp_path, _settings(), [provider])
+
+    parent = client.complete(_request(stage="student"))
+    assert parent.call_id is not None
+
+    child = client.complete(_request(stage="large_llm", parent_call_id=parent.call_id))
+
+    assert child.parent_call_id == parent.call_id
+    report = ledger.report("tier")
+    assert report.total_calls == 2
+    assert report.total_escalated_calls == 1
+    assert [row.key for row in report.rows] == ["small"]
+
+
+def test_cache_hit_has_a_call_id(tmp_path: Path) -> None:
+    settings = _settings(llm_cache_enabled=True)
+    cache = SQLiteCache(tmp_path / "ledger.sqlite3")
+    provider = ScriptedProvider("primary", [_response()])
+    client, _ledger = _client(tmp_path, settings, [provider], cache=cache)
+
+    first = client.complete(_request())
+    second = client.complete(_request())
+
+    assert first.call_id is not None
+    assert second.call_id is not None
+    assert second.call_id != first.call_id
+
+
 def test_transient_retries_then_succeeds(tmp_path: Path) -> None:
     sleeps: list[float] = []
     provider = ScriptedProvider(

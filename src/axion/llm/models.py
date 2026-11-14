@@ -25,6 +25,7 @@ class LLMRequest:
     max_output_tokens: int | None = None
     run_id: str | None = None
     paper_id: str | None = None
+    parent_call_id: int | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)
 
 
@@ -55,7 +56,11 @@ class ProviderResponse:
 
 @dataclass(frozen=True)
 class LLMResult:
-    """The outcome of one logical LLM call."""
+    """The outcome of one logical LLM call.
+
+    ``call_id`` is the ledger row id for this call; pass it as
+    ``parent_call_id`` on a follow-up request to record an escalation.
+    """
 
     text: str
     provider: str
@@ -66,6 +71,8 @@ class LLMResult:
     latency_ms: float
     cache_hit: bool
     parsed: BaseModel | None = None
+    call_id: int | None = None
+    parent_call_id: int | None = None
 
     @property
     def total_tokens(self) -> int:

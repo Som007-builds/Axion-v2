@@ -1,4 +1,16 @@
-"""SQLite cost ledger: every LLM attempt and every cache hit is recorded."""
+"""SQLite cost ledger: every LLM attempt, cache hit, and training run is recorded.
+
+The ledger is the single source of truth for cost reporting. It stores:
+
+* ``llm_calls`` — one row per provider attempt, cache hit, or failed attempt,
+  including the resolved ``tier`` and, for escalated calls, the ``parent_call_id``
+  of the call or stage they escalated from.
+* ``training_runs`` — one row per local or external training run, with a
+  content hash of its data and an estimated cost (``0`` for local compute).
+
+Schema changes are applied in place and are idempotent: opening an older
+database adds the missing columns without touching existing rows.
+"""
 
 from __future__ import annotations
 
@@ -11,20 +23,22 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
-GroupBy = Literal["stage", "model", "provider"]
+GroupBy = Literal["stage", "model", "provider", "tier"]
 
 _GROUP_COLUMNS: dict[GroupBy, str] = {
     "stage": "stage",
     "model": "model",
     "provider": "provider",
+    "tier": "tier",
 }
 
-_CREATE_TABLE = """
+_CREATE_LLM_CALLS = """
 CREATE TABLE IF NOT EXISTS llm_calls (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ts TEXT NOT NULL,
     run_id TEXT,
     stage TEXT NOT NULL,
+    tier TEXT,
     provider TEXT,
     model TEXT,
     prompt_tokens INTEGER,
@@ -33,9 +47,28 @@ CREATE TABLE IF NOT EXISTS llm_calls (
     latency_ms REAL,
     cache_hit INTEGER NOT NULL DEFAULT 0 CHECK (cache_hit IN (0, 1)),
     paper_id TEXT,
+    parent_call_id INTEGER,
     error TEXT
 )
 """
+
+_CREATE_TRAINING_RUNS = """
+CREATE TABLE IF NOT EXISTS training_runs (
+    run_id TEXT PRIMARY KEY,
+    ts TEXT NOT NULL,
+    model TEXT NOT NULL,
+    data_hash TEXT NOT NULL,
+    hardware TEXT NOT NULL,
+    duration_s REAL NOT NULL CHECK (duration_s >= 0),
+    estimated_usd TEXT NOT NULL
+)
+"""
+
+# Columns added after the first ledger release. Each entry is (column, DDL type).
+_LLM_CALL_MIGRATIONS: tuple[tuple[str, str], ...] = (
+    ("tier", "TEXT"),
+    ("parent_call_id", "INTEGER"),
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +85,34 @@ class LedgerEntry:
     paper_id: str | None = None
     error: str | None = None
     ts: str | None = None
+    tier: str | None = None
+    parent_call_id: int | None = None
+
+
+@dataclass(frozen=True)
+class TrainingRun:
+    """One training run, local or external.
+
+    ``estimated_usd`` is ``0`` for local compute. It is only non-zero when a
+    real external cost was incurred, and it is an estimate, not an invoice.
+    """
+
+    run_id: str
+    model: str
+    data_hash: str
+    hardware: str
+    duration_s: float = 0.0
+    estimated_usd: Decimal = Decimal("0")
+    ts: str | None = None
+
+    def __post_init__(self) -> None:
+        for field_name in ("run_id", "model", "data_hash", "hardware"):
+            if not str(getattr(self, field_name)).strip():
+                raise ValueError(f"training run {field_name} must not be empty")
+        if self.duration_s < 0:
+            raise ValueError("training run duration_s must be non-negative")
+        if self.estimated_usd < 0:
+            raise ValueError("training run estimated_usd must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -61,6 +122,7 @@ class LedgerRow:
     cache_hits: int
     errors: int
     missing_price_calls: int
+    escalated_calls: int
     prompt_tokens: int
     completion_tokens: int
     usd: Decimal
@@ -72,6 +134,7 @@ class LedgerRow:
             "cache_hits": self.cache_hits,
             "errors": self.errors,
             "missing_price_calls": self.missing_price_calls,
+            "escalated_calls": self.escalated_calls,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "usd": format(self.usd, "f"),
@@ -86,6 +149,7 @@ class LedgerReport:
     total_cache_hits: int
     total_errors: int
     total_missing_price_calls: int
+    total_escalated_calls: int
     total_prompt_tokens: int
     total_completion_tokens: int
     total_usd: Decimal
@@ -99,6 +163,7 @@ class LedgerReport:
                 "cache_hits": self.total_cache_hits,
                 "errors": self.total_errors,
                 "missing_price_calls": self.total_missing_price_calls,
+                "escalated_calls": self.total_escalated_calls,
                 "prompt_tokens": self.total_prompt_tokens,
                 "completion_tokens": self.total_completion_tokens,
                 "usd": format(self.total_usd, "f"),
@@ -112,21 +177,27 @@ class _Bucket:
     cache_hits: int = 0
     errors: int = 0
     missing_price_calls: int = 0
+    escalated_calls: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
     usd: Decimal = Decimal("0")
 
 
 class SQLiteLedger:
-    """Append-only ledger of LLM calls."""
+    """Append-only ledger of LLM calls and training runs."""
 
     def __init__(self, path: Path) -> None:
         self._path = path
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
-            connection.execute(_CREATE_TABLE)
+            connection.execute(_CREATE_LLM_CALLS)
+            self._migrate_llm_calls(connection)
+            connection.execute(_CREATE_TRAINING_RUNS)
             connection.execute("CREATE INDEX IF NOT EXISTS idx_llm_calls_stage ON llm_calls(stage)")
             connection.execute("CREATE INDEX IF NOT EXISTS idx_llm_calls_model ON llm_calls(model)")
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_llm_calls_parent ON llm_calls(parent_call_id)"
+            )
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -138,21 +209,31 @@ class SQLiteLedger:
         finally:
             connection.close()
 
+    @staticmethod
+    def _migrate_llm_calls(connection: sqlite3.Connection) -> None:
+        existing = {str(row["name"]) for row in connection.execute("PRAGMA table_info(llm_calls)")}
+        for column, ddl_type in _LLM_CALL_MIGRATIONS:
+            if column not in existing:
+                connection.execute(f"ALTER TABLE llm_calls ADD COLUMN {column} {ddl_type}")
+
     def record(self, entry: LedgerEntry) -> int:
+        """Append one call attempt and return its ledger row id."""
         timestamp = entry.ts or datetime.now(UTC).isoformat()
         usd_text = None if entry.usd is None else format(entry.usd, "f")
         with self._connect() as connection:
             cursor = connection.execute(
                 """
                 INSERT INTO llm_calls (
-                    ts, run_id, stage, provider, model, prompt_tokens,
-                    completion_tokens, usd, latency_ms, cache_hit, paper_id, error
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ts, run_id, stage, tier, provider, model, prompt_tokens,
+                    completion_tokens, usd, latency_ms, cache_hit, paper_id,
+                    parent_call_id, error
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     timestamp,
                     entry.run_id,
                     entry.stage,
+                    entry.tier,
                     entry.provider,
                     entry.model,
                     entry.prompt_tokens,
@@ -161,10 +242,64 @@ class SQLiteLedger:
                     entry.latency_ms,
                     int(entry.cache_hit),
                     entry.paper_id,
+                    entry.parent_call_id,
                     entry.error,
                 ),
             )
             return int(cursor.lastrowid or 0)
+
+    def record_training_run(self, run: TrainingRun) -> None:
+        """Insert or update one training run by ``run_id``."""
+        timestamp = run.ts or datetime.now(UTC).isoformat()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO training_runs (
+                    run_id, ts, model, data_hash, hardware, duration_s, estimated_usd
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(run_id) DO UPDATE SET
+                    ts = excluded.ts,
+                    model = excluded.model,
+                    data_hash = excluded.data_hash,
+                    hardware = excluded.hardware,
+                    duration_s = excluded.duration_s,
+                    estimated_usd = excluded.estimated_usd
+                """,
+                (
+                    run.run_id,
+                    timestamp,
+                    run.model,
+                    run.data_hash,
+                    run.hardware,
+                    run.duration_s,
+                    format(run.estimated_usd, "f"),
+                ),
+            )
+
+    def training_runs(self) -> tuple[TrainingRun, ...]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT run_id, ts, model, data_hash, hardware, duration_s, estimated_usd
+                FROM training_runs
+                ORDER BY ts, run_id
+                """
+            ).fetchall()
+        return tuple(
+            TrainingRun(
+                run_id=str(row["run_id"]),
+                ts=str(row["ts"]),
+                model=str(row["model"]),
+                data_hash=str(row["data_hash"]),
+                hardware=str(row["hardware"]),
+                duration_s=float(row["duration_s"]),
+                estimated_usd=Decimal(str(row["estimated_usd"])),
+            )
+            for row in rows
+        )
+
+    def total_training_usd(self) -> Decimal:
+        return sum((run.estimated_usd for run in self.training_runs()), Decimal("0"))
 
     def report(self, group_by: GroupBy = "stage") -> LedgerReport:
         try:
@@ -176,7 +311,7 @@ class SQLiteLedger:
             rows = connection.execute(
                 f"""
                 SELECT {column} AS group_key, prompt_tokens, completion_tokens,
-                       usd, cache_hit, error
+                       usd, cache_hit, parent_call_id, error
                 FROM llm_calls
                 """
             ).fetchall()
@@ -191,6 +326,8 @@ class SQLiteLedger:
                 bucket.cache_hits += 1
             if row["error"] is not None:
                 bucket.errors += 1
+            if row["parent_call_id"] is not None:
+                bucket.escalated_calls += 1
             bucket.prompt_tokens += int(row["prompt_tokens"] or 0)
             bucket.completion_tokens += int(row["completion_tokens"] or 0)
             usd_raw = row["usd"]
@@ -209,6 +346,7 @@ class SQLiteLedger:
                 cache_hits=bucket.cache_hits,
                 errors=bucket.errors,
                 missing_price_calls=bucket.missing_price_calls,
+                escalated_calls=bucket.escalated_calls,
                 prompt_tokens=bucket.prompt_tokens,
                 completion_tokens=bucket.completion_tokens,
                 usd=bucket.usd,
@@ -222,6 +360,7 @@ class SQLiteLedger:
             total_cache_hits=sum(row.cache_hits for row in report_rows),
             total_errors=sum(row.errors for row in report_rows),
             total_missing_price_calls=sum(row.missing_price_calls for row in report_rows),
+            total_escalated_calls=sum(row.escalated_calls for row in report_rows),
             total_prompt_tokens=sum(row.prompt_tokens for row in report_rows),
             total_completion_tokens=sum(row.completion_tokens for row in report_rows),
             total_usd=sum((row.usd for row in report_rows), Decimal("0")),

@@ -266,9 +266,10 @@ class LLMClient:
                 )
                 raise
 
-        self._ledger.record(
+        call_id = self._ledger.record(
             LedgerEntry(
                 stage=request.stage,
+                tier=request.tier,
                 provider=provider_name,
                 model=actual_model,
                 prompt_tokens=response.prompt_tokens,
@@ -278,6 +279,7 @@ class LLMClient:
                 cache_hit=False,
                 run_id=request.run_id,
                 paper_id=request.paper_id,
+                parent_call_id=request.parent_call_id,
             )
         )
         if self._cache is not None:
@@ -297,6 +299,8 @@ class LLMClient:
             latency_ms=latency_ms,
             cache_hit=False,
             parsed=parsed,
+            call_id=call_id,
+            parent_call_id=request.parent_call_id,
         )
 
     def _complete_from_cache(
@@ -325,9 +329,10 @@ class LLMClient:
                 raise
 
         latency_ms = self._elapsed_ms(started)
-        self._ledger.record(
+        call_id = self._ledger.record(
             LedgerEntry(
                 stage=request.stage,
+                tier=request.tier,
                 provider=cached.provider,
                 model=cached.model,
                 prompt_tokens=0,
@@ -337,6 +342,7 @@ class LLMClient:
                 cache_hit=True,
                 run_id=request.run_id,
                 paper_id=request.paper_id,
+                parent_call_id=request.parent_call_id,
             )
         )
         return LLMResult(
@@ -349,6 +355,8 @@ class LLMClient:
             latency_ms=latency_ms,
             cache_hit=True,
             parsed=parsed,
+            call_id=call_id,
+            parent_call_id=request.parent_call_id,
         )
 
     def _call_provider(
@@ -403,6 +411,7 @@ class LLMClient:
         self._ledger.record(
             LedgerEntry(
                 stage=request.stage,
+                tier=request.tier,
                 provider=provider,
                 model=model,
                 prompt_tokens=prompt_tokens,
@@ -412,6 +421,7 @@ class LLMClient:
                 cache_hit=cache_hit,
                 run_id=request.run_id,
                 paper_id=request.paper_id,
+                parent_call_id=request.parent_call_id,
                 error=error[:500],
             )
         )

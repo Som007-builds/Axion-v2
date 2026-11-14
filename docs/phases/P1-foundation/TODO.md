@@ -65,7 +65,7 @@
   - notes:
     - 2026-11-14 claimed; plan: in-place `ALTER TABLE` migration guarded by `PRAGMA table_info` (idempotent, no data loss), `tier` + `parent_call_id` on `llm_calls`, `training_runs` table with `estimated_usd` defaulting to 0 for local compute, `group_by=tier`, escalated-call counts in reports, and a `--training-runs` report view.
     - 2026-11-14 implementing: ledger migration + training-run API, `LLMRequest.parent_call_id`, `LLMResult.call_id`, tier recording on success/cache/error paths.
-  - done: — | evidence: —
+  - done: 2026-11-14 | evidence: `src/axion/llm/ledger.py` (idempotent `PRAGMA table_info`-guarded `ALTER TABLE llm_calls ADD COLUMN tier/parent_call_id`, `training_runs` table + `TrainingRun` upsert API, `tier` grouping, escalated-call counts); `src/axion/llm/models.py` (`LLMRequest.parent_call_id`, `LLMResult.call_id/parent_call_id`); `src/axion/llm/client.py` (tier + parent link recorded on success, cache-hit, and error paths); `src/axion/llm/cli.py` (`--group-by tier`, `escal` column, `--training-runs` table/JSON); `tests/test_llm_ledger.py` (+9 tests incl. legacy-schema migration run twice, escalation link, training-run local cost 0/upsert/validation, CLI); `tests/test_llm_client.py` (+2 tests: parent link + cache-hit call id). Commands: `python -m pytest -q` → **99 passed, 1 skipped**; `python -m ruff check .` → passed; `python -m ruff format --check .` → 35 files formatted; `python -m mypy` → success, 22 source files.
 
 ### [ ] P1-04 — Europe PMC client
 - depends: P1-01
