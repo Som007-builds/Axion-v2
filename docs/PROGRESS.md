@@ -97,7 +97,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 ## Session log (newest first)
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — git workflow (ADR-0010)
 - Did: owner decision — one working branch per phase (`p1`, `p2`, …), WIP commits as `wip: <task-id> <state>`, merges to `main` at task boundaries only when lint/types/tests are green, and phase-branch deletion after the gate; updated `CONTEXT.md` §8.9, `docs/AGENT_PROTOCOL.md`, the phase TODO `branch:` fields, and the private phase prompts. No history rewrite.
-- State: docs-only; historical task branches and `d0/build-ready` are retained. `main` is unchanged apart from the documentation commit.
+- State: docs-only; commits `52e16cd` and `cf356fe`; historical task branches and `d0/build-ready` are retained. `main` is unchanged apart from the documentation commits.
 - Next: fresh P1 thread creates `p1` from `main` and resumes P1-03; then P1-03b, then P1-04 (owner confirmation required).
 - Blockers/questions: owner push/CI and the other standing owner items; old task branches do not need to be pushed.
 
