@@ -51,6 +51,7 @@ from axion.link.citations import SourceIndex, SourceTarget
 from axion.parse.jats import JatsParseError, parse_jats
 
 BATCH_SIZE = 50
+_FULLTEXT_BATCH = 100
 MIN_SOURCES = 30
 MIN_CONTEXTS = 300
 
@@ -538,7 +539,7 @@ def download_full_text(
     request rate at one per second.
     """
     sizes: dict[str, int] = {}
-    failures: dict[str, int] = {"source": 0, "citer": 0}
+    failures: dict[str, int] = {"source": 0, "citer": 0, "error": 0}
     available: list[CorpusPaper] = []
     downloaded = 0
     hits = 0
@@ -550,27 +551,35 @@ def download_full_text(
             text = client.fetch_full_text(paper.pmcid)
         except EuropePmcError as exc:
             return paper, None, existed, type(exc).__name__
+        except Exception as exc:  # one bad response must not sink the batch
+            return paper, None, existed, f"unexpected:{type(exc).__name__}"
         return paper, len(text.encode("utf-8")), existed, None
 
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = [pool.submit(fetch_one, paper) for paper in papers]
-        for index, future in enumerate(as_completed(futures), start=1):
-            paper, size, existed, error = future.result()
-            if size is None:
-                failures[paper.role] += 1
-                print(
-                    f"fulltext failure {paper.pmcid}: {error or 'unknown'}",
-                    flush=True,
-                )
-            else:
-                sizes[paper.pmcid] = size
-                available.append(paper)
-                if existed:
-                    hits += 1
+    # Submit in bounded batches. If a worker dies unexpectedly, the executor
+    # only waits for that batch, not for every queued download.
+    done = 0
+    for start in range(0, len(papers), _FULLTEXT_BATCH):
+        batch = papers[start : start + _FULLTEXT_BATCH]
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(fetch_one, paper) for paper in batch]
+            for future in as_completed(futures):
+                paper, size, existed, error = future.result()
+                if size is None:
+                    failures["error"] += 1
+                    failures[paper.role] += 1
+                    print(
+                        f"fulltext failure {paper.pmcid}: {error or 'unknown'}",
+                        flush=True,
+                    )
                 else:
-                    downloaded += 1
-            if index % 100 == 0 or index == len(papers):
-                print(f"fulltext: {index}/{len(papers)}", flush=True)
+                    sizes[paper.pmcid] = size
+                    available.append(paper)
+                    if existed:
+                        hits += 1
+                    else:
+                        downloaded += 1
+                done += 1
+        print(f"fulltext: {done}/{len(papers)}", flush=True)
     return sizes, available, {**failures, "downloaded": downloaded, "hits": hits}
 
 

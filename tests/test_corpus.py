@@ -22,6 +22,7 @@ from axion.ingest.corpus import (
 from axion.ingest.corpus_pipeline import (
     build_edges,
     citer_papers,
+    download_full_text,
     fetch_citations,
     resolve_sources,
     run_ingest,
@@ -367,6 +368,32 @@ def test_citer_cap_counts_sources_in_the_total() -> None:
     included, truncated = select_citers(citers, edges, {"PMC1": 0, "PMC2": 1}, cap=2)
     assert included == []
     assert [citer.pmcid for citer in truncated] == ["PMC10", "PMC11"]
+
+
+def test_fulltext_stage_records_one_unexpected_failure(tmp_path: Path) -> None:
+    class Client:
+        def __init__(self) -> None:
+            self.cache_dir = tmp_path
+
+        def fetch_full_text(self, pmcid: str) -> str:
+            if pmcid == "PMC1":
+                raise ValueError("bad response")
+            return f"<article>{pmcid}</article>"
+
+    papers = [
+        CorpusPaper(pmcid="PMC1", role="source"),
+        CorpusPaper(pmcid="PMC2", role="citer"),
+        CorpusPaper(pmcid="PMC3", role="citer"),
+    ]
+    sizes, available, stats = download_full_text(
+        Client(),
+        papers,
+        workers=2,  # type: ignore[arg-type]
+    )
+    assert "PMC1" not in sizes
+    assert {paper.pmcid for paper in available} == {"PMC2", "PMC3"}
+    assert stats["error"] == 1
+    assert stats["downloaded"] == 2
 
 
 def test_end_to_end_pipeline_is_resumable_and_deterministic(tmp_path: Path) -> None:
