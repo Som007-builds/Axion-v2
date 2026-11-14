@@ -79,13 +79,16 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Observed Crossref public headers: 1 request/second, concurrency 1 (`public-array`). This is a point-in-time observation, not a promise.
   - done: 2026-11-14 | evidence: `docs/DATA_SOURCES.md` rewritten with source URLs, verification date, access methods, Retraction Watch fields, per-article Europe PMC licence rule, polite-usage rules, and an `Owner to confirm` column on every row; all unresolved points marked unclear.
 
-### [ ] D0-07 — Settings, `.env.example`, and pricing consistency (AGENT)
+### [x] D0-07 — Settings, `.env.example`, and pricing consistency (AGENT)
 - depends: D0-02
 - what: Confirm `.env.example` names match settings and local compose; keep `pricing.yaml` a blank fail-closed template; confirm no model names or prices are hard-coded in production code/config.
 - acceptance: A test or documented check proves the name match; `pricing.yaml` has `models: {}`; search finds no hard-coded model/pricing values.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Updated `NEO4J_URI` to `bolt://127.0.0.1:7887` to match the Compose host-port mapping; the existing `test_env_example_lists_every_setting` covers settings-name coverage.
+    - `pricing.yaml` remains `models: {}` and the packaged-template test asserts blank prices load.
+    - Test fixtures use obviously fake `provider/model-a` and illustrative numbers; production code/CI has no model IDs or numeric prices.
+  - done: 2026-11-14 | evidence: `.env.example`; `tests/test_settings.py::test_env_example_lists_every_setting`; `tests/test_pricing.py::test_packaged_template_loads_with_blank_prices`; `pytest -q` → **89 passed, 1 skipped**; `ruff`/format/mypy → passed; production search → no hard-coded model IDs or numeric prices.
 
 ### [ ] D0-08 — Phase-thread protocol and handoff templates (AGENT)
 - depends: D0-02
