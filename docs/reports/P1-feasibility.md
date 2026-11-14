@@ -78,6 +78,12 @@ Among candidates that clear the minimums, the recommendation prefers a corpus
 that fits the target and then the widest context margin. The ADR records the
 alternatives and the estimate method; the owner makes the final choice.
 
+**Interpretation note:** the corpus estimate counts retracted sources plus OA
+citers. If the PRD's 2,000-5,000 bound is read as *base sub-topic papers*,
+with citers added on top, then the corpus-fit tie-break should be ignored and
+the candidate with the widest context margin leads (oncology here). All five
+candidates clear the two mandatory §4 minimums under either reading.
+
 ## Method and limitations
 
 - Fixed seed `20261114`; samples are uniform over eligible records.
