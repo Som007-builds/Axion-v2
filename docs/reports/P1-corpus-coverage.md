@@ -18,3 +18,18 @@ manifest and the untracked JATS cache. No network or LLM calls.
 | Contexts / paper (mean) | 87.73 |
 | Contexts / paper (median) | 58.0 |
 | Contexts total (re-parsed) | 432,347 |
+
+## Link coverage
+
+| Measure | Value |
+| :-- | --: |
+| Source papers with >=1 incoming edge | 285 |
+| Source papers with no incoming edge | 507 |
+| Citer papers with >=1 outgoing edge | 4,134 |
+| Citer papers with no outgoing edge | 34 |
+| Papers with no edge in either direction | 533 |
+| Dual-role papers that appear as a citer | 32 |
+
+A source or citer can be isolated when it has no MEDLINE citation
+rows, its citers are not OA/full text, or its eligible citers were
+truncated by the total-corpus cap. Context counts are a lower bound.

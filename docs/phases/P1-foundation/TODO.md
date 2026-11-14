@@ -119,6 +119,7 @@
 - acceptance: Corpus manifest committed (IDs only, no full text); counts match report.
   - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 22:56 | branch: p1
   - done: 2026-11-15 | evidence: commit `62433c8`; `docs/reports/P1-corpus-{papers.csv,cites.csv,manifest.json,md}`; `docs/reports/P1-corpus-coverage.{md,json}`; `scripts/corpus_coverage.py`. Exact result: **4,928 papers** (792 sources, 4,168 citers), **6,117 contexts**, 4,928/4,928 parsed (0 failures), 3,976 edges with contexts, 1 paper without PMID, 39 full-text failures. Both §4 minimums PASS (792 ≥ 30; 6,117 ≥ 300). Wall 3,065.9s for the resumed run; peak RSS 178.2 MiB; cache 4,928 files / 644.4 MiB.
+  - link coverage: 285/792 source papers have an incoming citer edge; 507 have none. 34/4,168 citer papers have no outgoing edge; 533 papers have no edge in either direction. The 5,000-paper cap is not coverage-neutral; see `docs/reports/P1-corpus-coverage.md`.
   - notes:
     - 2026-11-14 22:56 resumed the interrupted session's unverified WIP (`d4f3171`); baseline checks green (226 passed, 2 skipped; ruff/format/mypy clean). Existing work-dir checkpoint (`data/corpus/infectious-disease-v1/`) inspected: 1,539 DOI + 31 PMID resolution rows, 797 citation lists, 13,426 citer rows, 724 cached full texts. It is resumed, not deleted. Partial-log yield: 798 unique eligible sources, 9,936 eligible citers, 4,202 selected before interruption; 5 full-text HTTP 500s (verified persistent).
     - Plan: refactor orchestration out of the 1,015-line script into `src/axion/ingest/` with tests; smoke-run 30 sources and re-run to prove resume; then full run in background.
@@ -138,7 +139,7 @@
     - 2026-11-14 22:56 claimed for verification: the interrupted session left `src/axion/store/*` and `scripts/load_stores.py` unverified. Clean V2 rewrite, no V1 port (ADR-0011).
     - Verification target: Neo4j schema v2 is idempotent; loading the smoke and full manifests twice yields identical graph/vector counts; in-memory path is the fallback if Docker is unavailable.
     - **VERIFIED 2026-11-14:** orphan/non-source cite rows are now rejected (`CorpusLoadError`); in-memory and real Neo4j 5.18 + persistent Chroma both loaded the 30-source smoke bundle twice with identical counts (14 papers, 10 CITES, 8 CitationContext, 4 RetractionNotice, 14/10/8 vector rows). Chroma telemetry disabled.
-- **LEFT:** load the full manifest twice once P1-08 finishes; acceptance evidence is that second-load counts are identical. Do not mark `[x]` before that.
+- **DONE 2026-11-15:** full manifest loaded twice; acceptance evidence is that second-load counts are identical. Load 1 == load 2: Paper 4,928; CITES 4,982; CitationContext/IN_PAPER/POINTS_TO 6,117; RetractionNotice/RETRACTED_BY 792; vectors 4,928 papers + 6,117 contexts. Re-queried live on 2026-11-15 and counts still match.
 
 ### [~] P1-10 — Baseline claim extractor
 - depends: P1-03, P1-09

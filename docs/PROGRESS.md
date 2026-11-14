@@ -5,8 +5,9 @@
 ## Current state
 - **Phase:** P1 (foundation) — P1-01 through P1-09 are `[x]`; P1-10 is offline-complete but blocked for the paid run; P1-11 is blocked on owner labels; P1-12 is scaffolded and blocked on measured values.
 - **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample). PRD P1.8 and CONTEXT §4 already use the total-corpus wording.
-- **Next action:** owner supplies verified prices, a paid cap, SDK approval, and confirms the 100-paper sample; then run the paid P1-10 baseline and the P1-11 audit.
-- **Last updated:** 2026-11-15 by Freebuff / DeepSeek V4.x Flash
+- **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Exact counts are in `docs/reports/P1-corpus-coverage.md`.
+- **Next action:** owner supplies verified prices, a paid cap, SDK approval, and confirms the 100-paper sample; then run the paid P1-10 baseline and the P1-11 audit. The owner should also decide whether a future ingest should rebalance citer selection toward one citer per source.
+- **Last updated:** 2026-11-15 by DeepSeek V4.1 Flash Free (verification pass)
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -38,18 +39,18 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 - V1's stack is still running from `D:\AI-Projects\schimesh` on 7474/7887; V2 uses host ports 7475/7888 so both coexist.
 
 **Owner/local blockers**
-- ⛔ Push/CI: `main` is pushed; historical task branches remain local by design (ADR-0010) and CI has not been confirmed.
+- ✅ Push: `p1` is pushed at `a8d6d85` (same as `origin/p1`); local `main` is 11 commits ahead of `origin/main` and was not merged or pushed. CI status is not available locally (`gh` is not installed).
 - ✅ Contact emails, Groq key, Neo4j password, and V2 Neo4j are configured locally; no secret values are tracked.
 - ⛔ P1-10: tier IDs are chosen (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) and public prices are known, but `pricing.yaml` is blank and paid-budget approval is pending.
 - ✅ P1-06: Retraction Watch CC0 verified on Crossref’s Metadata Retrieval page and owner-approved; loader/linker and coverage report committed.
-- ⛔ P1-08: owner approval of the P1-07 sub-topic ADR.
+- ✅ P1-08/P1-09: closed with exact counts and a full store load; the remaining coverage caveat is recorded above and in `docs/reports/P1-corpus-coverage.md`.
 - ⛔ P1-11/P3-03: owner labeling time (P1-11 also needs a 7-day relabel gap).
 - ⚪ Can wait: B5 weekly hours; B6 `_private/` backup risk; P5 licence/release/outreach.
 
 **Recorded facts**
 - V1 snapshot: offline suite **252 passed, 12 deselected**; `v1-final` at `b4b6a25338057bd05bc6b74bc75b26198fe546e8`; custom V1 history scan 0 candidate hits; owner reported V1 keys rotated.
 - Day-0 decisions: MIT for now; private until P5; $0 paid budget; `_private/` no backup accepted; weekly hours open-ended. ADR-0008 is the scale approach; the Day-0 ADR is ADR-0009. Owner confirmation of the renumbering is requested.
-- The GitHub repo is private, but the remote has not received the local commits; visibility alone is not the remaining blocker.
+- `origin/p1` is at `a8d6d85`; local `main` (`332fbf9`) is 11 commits ahead of `origin/main` and has not been merged with `p1`.
 
 ## Phase status
 | Phase | Status | Gate result | Notes |
@@ -81,11 +82,12 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | Retraction Watch → Europe PMC (seeded n=150) | 80 resolved (53.3%); 54 with full text (67.5% of resolved); 77/80 have citers | `docs/reports/P1-retraction-coverage.md` |
 | P1 feasibility shortlist | All 5 pass; infectious disease est. 741 sources / 4,409 contexts / 4,749-paper corpus | `docs/reports/P1-feasibility.md` |
 | Infectious-disease corpus (exact) | 4,928 papers; 792 sources; 4,168 citers; 6,117 contexts; 4,928/4,928 parsed | `docs/reports/P1-corpus.md` |
-| Full store load (twice) | Paper 4,928; CITES 4,982; contexts 6,117; notices 792; vectors 4,928 + 6,117 | `data/corpus/infectious-disease-v1/store-load.log` |
+| Corpus link coverage | 285/792 sources have an incoming citer edge; 507 do not; 34/4,168 citer papers have no outgoing edge; 533 papers have no edge | `docs/reports/P1-corpus-coverage.md` |
+| Full store load (twice) | Paper 4,928; CITES 4,982; contexts 6,117; notices 792; vectors 4,928 + 6,117 | `data/corpus/infectious-disease-v1/store-load.log` (untracked); re-queried 2026-11-15 |
 | P1-10 100-paper dry-run (estimate) | 764,084 prompt tokens; mean 7,641/paper; expected 500 claims at 5/paper | `docs/reports/P1-baseline-estimate.md` |
 
 ## Open questions for owner
-- **Push:** when will local `main` and the phase branches be pushed to `Som007-builds/Axion-v2`, and will the P1-03/Day-0 work be a direct push or a PR to `main`?
+- **Push:** `p1` is pushed. Should local `main` be fast-forwarded to `p1` now, or only at the P1 gate as ADR-0010 requires?
 - **Provider/prices:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large) on Groq; enter their published prices in `pricing.yaml` only when the owner approves a paid budget.
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
 - **Retraction Watch:** resolved 2026-11-14. Crossref’s canonical Metadata Retrieval page lists the database as CC0; owner approved use and the acquisition method (REST lookups + pinned GitLab CSV snapshot; no raw CSV committed). Recorded in `docs/DATA_SOURCES.md`.
@@ -102,6 +104,15 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-15 - DeepSeek V4.1 Flash Free - P1 verification pass
+- Status: **VERIFIED** on branch `p1`; clean tree at `a8d6d85`; `origin/p1` is the same commit. No corpus ingest, store reload, LLM call, label, or paid call was performed.
+- Re-ran: **245 passed, 2 skipped**; `ruff check` and `ruff format --check` clean (79 files); strict `mypy` clean (42 source files).
+- Re-queried live stores: Neo4j `Paper 4,928`, `CITES 4,982`, `CitationContext/IN_PAPER/POINTS_TO 6,117`, `RetractionNotice/RETRACTED_BY 792`; Chroma `papers 4,928`, `citation_contexts 6,117`, `claims 0`. This independently matches the committed store-load evidence.
+- Verified the committed CSVs: SHA-256 values match the manifest; 4,928 paper rows, 4,982 cite rows, 6,117 contexts; all cite endpoints resolve to a paper.
+- Found and recorded **link coverage**: 285/792 source papers have an incoming citer edge and 507 do not; 4,134/4,168 citer papers have an outgoing edge and 34 do not; 533 papers have no edge in either direction. The cap is not coverage-neutral. Added the count to `scripts/corpus_coverage.py` (with a unit test) and regenerated `docs/reports/P1-corpus-coverage.{md,json}`.
+- Checkpoint diagnosis of the 507 isolated sources: 1 has no PMID, 52 have no MEDLINE citation rows, 15 have no eligible OA/full-text citer, and 439 have at least one eligible citer but no included edge (cap-dominated; full-text failure can also remove an edge).
+- No data or manifest values changed. The P1-08 minimums still pass (792 sources, 6,117 contexts).
+- Next: owner decides whether a future ingest should rebalance citer selection toward one citer per source; paid P1-10 remains blocked on prices, budget cap, SDK approval, and sample confirmation.
 ### 2026-11-14 — Freebuff / DeepSeek V4.x Flash — P1 SESSION IN PROGRESS (23:55)
 - Status: **IN PROGRESS** — second late session; branch `p1`, clean tree at `d02dd57`, no push/merge.
 - One ingest runner is already alive from the previous session (detached), 3,400/4,967 full texts and 3,476 cached. Do **not** start a duplicate.

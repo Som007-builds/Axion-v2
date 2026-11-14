@@ -11,11 +11,34 @@ import json
 import statistics
 from pathlib import Path
 
-from axion.ingest.corpus import read_manifest, read_papers_csv
+from axion.ingest.corpus import (
+    CorpusCite,
+    CorpusPaper,
+    read_cites_csv,
+    read_manifest,
+    read_papers_csv,
+)
 from axion.parse.jats import JatsParseError, parse_jats_file
 
 DEFAULT_MANIFEST = Path("docs/reports/P1-corpus-manifest.json")
 DEFAULT_OUT = Path("docs/reports/P1-corpus-coverage")
+
+
+def link_coverage(papers: list[CorpusPaper], cites: list[CorpusCite]) -> dict[str, int]:
+    """Summarize how many papers are actually connected by a citer edge."""
+    source_ids = {paper.pmcid for paper in papers if paper.role == "source"}
+    citer_role_ids = {paper.pmcid for paper in papers if paper.role == "citer"}
+    source_ids_with_edge = {cite.source_pmcid for cite in cites}
+    citer_ids_with_edge = {cite.citer_pmcid for cite in cites}
+    connected = (source_ids & source_ids_with_edge) | citer_ids_with_edge
+    return {
+        "source_papers_with_incoming_edge": len(source_ids & source_ids_with_edge),
+        "source_papers_without_incoming_edge": len(source_ids - source_ids_with_edge),
+        "citer_papers_with_outgoing_edge": len(citer_ids_with_edge),
+        "citer_papers_without_outgoing_edge": len(citer_role_ids - citer_ids_with_edge),
+        "papers_without_any_edge": len(papers) - len(connected),
+        "dual_role_papers_with_outgoing_edge": len(source_ids & citer_ids_with_edge),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,6 +50,8 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = read_manifest(args.manifest)
     papers = read_papers_csv(args.manifest.parent / Path(manifest.files.papers_csv).name)
+    cites = read_cites_csv(args.manifest.parent / Path(manifest.files.cites_csv).name)
+    links = link_coverage(papers, cites)
     parsed_papers = 0
     parse_failures = 0
     missing = 0
@@ -68,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         "contexts_mean": statistics.fmean(contexts) if contexts else 0.0,
         "contexts_median": statistics.median(contexts) if contexts else 0.0,
         "contexts_total": sum(contexts),
+        **links,
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     Path(f"{args.out}.json").write_text(
@@ -96,6 +122,27 @@ def main(argv: list[str] | None = None) -> int:
                 f"| Contexts / paper (mean) | {report['contexts_mean']:.2f} |",
                 f"| Contexts / paper (median) | {report['contexts_median']:.1f} |",
                 f"| Contexts total (re-parsed) | {report['contexts_total']:,} |",
+                "",
+                "## Link coverage",
+                "",
+                "| Measure | Value |",
+                "| :-- | --: |",
+                f"| Source papers with >=1 incoming edge | "
+                f"{report['source_papers_with_incoming_edge']:,} |",
+                f"| Source papers with no incoming edge | "
+                f"{report['source_papers_without_incoming_edge']:,} |",
+                f"| Citer papers with >=1 outgoing edge | "
+                f"{report['citer_papers_with_outgoing_edge']:,} |",
+                f"| Citer papers with no outgoing edge | "
+                f"{report['citer_papers_without_outgoing_edge']:,} |",
+                f"| Papers with no edge in either direction | "
+                f"{report['papers_without_any_edge']:,} |",
+                f"| Dual-role papers that appear as a citer | "
+                f"{report['dual_role_papers_with_outgoing_edge']:,} |",
+                "",
+                "A source or citer can be isolated when it has no MEDLINE citation",
+                "rows, its citers are not OA/full text, or its eligible citers were",
+                "truncated by the total-corpus cap. Context counts are a lower bound.",
                 "",
             ]
         ),
