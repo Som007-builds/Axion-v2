@@ -113,10 +113,10 @@ Status values: `Proposed` · `Accepted` · `Superseded` · `Rejected`. Agents ma
 
 **Consequences:** no V1 provenance questions for the store layer; the schema is designed against the V2 parser and claim model. The five V1 paths no longer block P1-09. V1 remains a read-only reference for benchmark and migration-map descriptions only.
 
-## ADR-0012 — P1 sub-topic: infectious disease (Proposed)
-**Date:** 2026-11-14 · **Status:** Proposed for owner approval (owner delegated the shortlist on 2026-11-14)
+## ADR-0012 — P1 sub-topic: infectious disease
+**Date:** 2026-11-14 · **Status:** Accepted (owner decision, 2026-11-14), with conditions recorded below
 
-**Context:** P1-07 needs a sub-topic that clears the CONTEXT §4 minimums: at least **30 retracted OA source papers with full text** and at least **300 citation contexts**. The owner delegated the shortlist and asked for 3-5 candidates measured with scripts, including one non-obvious candidate, chosen by the criteria rather than topic appeal. The PRD also targets a **2,000-5,000 paper corpus** for the sub-topic plus citers; its exact boundary (does 2,000-5,000 include citers?) is ambiguous and is flagged below. This ADR reports both the retracted-source estimate and the sources-plus-citers estimate so the owner can apply either reading.
+**Context:** P1-07 needs a sub-topic that clears the CONTEXT §4 minimums: at least **30 retracted OA source papers with full text** and at least **300 citation contexts**. The owner delegated the shortlist and asked for 3-5 candidates measured with scripts, including one non-obvious candidate, chosen by the criteria rather than topic appeal. The PRD also targets a **2,000-5,000 paper corpus total, including citers** (ADR-0013 settles the bound). This ADR reports both the retracted-source estimate and the sources-plus-citers estimate.
 
 **Method:** Five Retraction Watch subject categories were fixed in advance (`scripts/feasibility_spike.py`, seed `20261114`). For each, the script took a seeded sample of 300 linkable retractions, batch-resolved them through Europe PMC, sampled up to 20 OA source papers, fetched their citation lists, batch-resolved up to 200 MEDLINE citers, and fetched JATS for up to 10 citer/source pairs to count contexts. Reference matching used DOI, PMID, or normalized title + year; the citer list came from Europe PMC's citations endpoint, not reference-list matching alone. Estimates multiply independent measured rates; ranges combine independent Wilson bounds and are not a joint CI. Full detail: `docs/reports/P1-feasibility.md` and `P1-feasibility.json`.
 
@@ -132,17 +132,44 @@ Status values: `Proposed` · `Accepted` · `Superseded` · `Rejected`. Agents ma
 
 All five clear both minimums at the lower bound. Rehabilitation/Therapy was the non-obvious candidate and passed comfortably, so the data would support a smaller clinical field too.
 
-**Decision (proposed):** Use **`(HSC) Medicine - Infectious Disease`** as the P1 sub-topic **if the PRD's 2,000-5,000 bound is read as the total ingested corpus** (retracted sources plus citers). It is then the only passing candidate whose estimate (≈4,749 papers) stays inside the target, while still clearing the mandatory minimums by wide margins (≥653 sources, ≥3,498 contexts). If the bound is read instead as *base sub-topic papers* with citers added on top, the fit tie-break does not apply and **Oncology** is the natural proposal: it has the widest measured margin (≥12,021 contexts) and its 2,143 estimated source papers fall inside 2,000-5,000 on their own. This interpretation must be settled by the owner before P1-08; either reading leaves all five candidates above the two mandatory §4 minimums.
+**Decision (accepted):** Use **`(HSC) Medicine - Infectious Disease`** as the P1 sub-topic. The 2,000-5,000 bound is the **total** ingested corpus including citers (ADR-0013), so infectious disease is the only passing candidate whose estimate (≈4,749 papers) stays inside the target, while clearing the mandatory minimums by wide margins (≥653 sources, ≥3,498 contexts).
 
-P1-08 would ingest the Retraction Watch retracted papers in the chosen subject plus all discoverable OA citers.
+**Owner conditions:**
+- P1-08 must produce **exact** counts. If either exact count falls below the CONTEXT §4 minimums (≥30 retracted sources, ≥300 contexts), stop and propose the fallback via a new **Proposed** ADR; do not proceed silently.
+- **Oncology is deferred** as a later held-out transfer corpus, to be approved by its own ADR. The P1-08 manifest must treat the sub-topic as configuration, so adding oncology later is a config change rather than a code change.
+- P1-08 must report the **PMID gap** and state that blast-radius recall is capped by MEDLINE-only citer discovery (Europe PMC's citations endpoint is PMID-based).
+
+P1-08 ingests the Retraction Watch retracted papers in that subject plus all discoverable OA citers, up to the ~5,000 hard cap.
 
 **Alternatives considered:**
-- **Oncology** gives the largest context margin (≥12,021) but implies ~17k papers, far outside the corpus target; it is the fallback if the owner prefers a larger corpus or a narrower oncology slice later.
+- **Oncology** gives the largest context margin (≥12,021) but implies ~17k papers, far outside the corpus target. It is **deferred as a later held-out transfer corpus**, to be approved by its own ADR; it is not a P1 fallback unless P1-08's exact counts fail the minimums.
 - **Gastroenterology** has the highest measured OA-source rate (176/300) but ~11k papers.
 - **Cardiovascular** and **Rehabilitation/Therapy** pass but imply ~6.6k papers.
 - A narrower cross-category slice (for example, a specific MeSH term or journal set) was not chosen now because it would add an unmeasured definition; it remains an option if the owner rejects all five.
 
-**Consequences:** P1-08 remains blocked until the owner approves this ADR or chooses an alternative. The corpus definition must be written into the P1-08 manifest: RW subject tag, RW snapshot commit, Europe PMC resolution rules, citation direction, and the OA/full-text filter. The estimates are sampling-based, so the P1-08 manifest will report exact counts and they will differ from the estimates; the point of this ADR is that the margins are large enough to absorb that. The Europe PMC citations endpoint accepts a MEDLINE id (`MED/<pmid>/citations`); `PMC/<pmcid>/citations` returns 404 (verified live), so PMIDs must be resolved first.
+**Consequences:** P1-08 builds the corpus from a config file so a later oncology run is a config change. The manifest records the RW subject tag, RW snapshot commit, Europe PMC resolution rules, citation direction, OA/full-text filter, cap, and PMID gaps. Exact counts replace the sampling estimates; the estimates suggested comfortable margins, but P1-08 must verify them. The Europe PMC citations endpoint accepts a MEDLINE id (`MED/<pmid>/citations`); `PMC/<pmcid>/citations` returns 404 (verified live), so PMIDs must be resolved first. Papers without a PMID cannot have their citers discovered, which caps blast-radius recall; P1-08 reports that gap explicitly.
+
+## ADR-0013 — P1 corpus bound is the total, citers included
+**Date:** 2026-11-14 · **Status:** Accepted (owner decision, 2026-11-14)
+
+**Context:** CONTEXT §4 and PRD P1.8 previously said “2,000–5,000 papers … plus all discoverable citers”, which could mean either (a) 2,000–5,000 total including citers or (b) 2,000–5,000 base papers with citers added. The two readings imply different sub-topic choices and different ingestion volumes. The owner has settled it.
+
+**Decision:** The 2,000–5,000 bound is the **total corpus including retracted sources and all discoverable citers**, with a hard cap of ~5,000 papers. Remove the ambiguity from CONTEXT and PRD. P1-08 selects sources first, then citers deterministically, and stops at the cap.
+
+**Alternatives considered:** base-papers-only bound with citers added (would favor oncology and produce ~17k papers); no cap (rejected as unbounded cost/disk).
+
+**Consequences:** P1-08 reports exact counts against the cap. If sources plus discoverable OA citers exceed ~5,000, citers are truncated deterministically and the manifest records the truncation; context counts are then a lower bound. The P1-08 manifest must make the inclusion rule explicit so a later oncology corpus can reuse it via config.
+
+## ADR-0014 — P1-10 baseline extraction is a seeded paper sample
+**Date:** 2026-11-14 · **Status:** Accepted (owner decision, 2026-11-14)
+
+**Context:** P1-10 originally implied running one large model over the full corpus. That is unnecessary for a baseline and exposes the project to avoidable spend; the audit only needs ≥200 claims with margin.
+
+**Decision:** Run the baseline extractor on a **seeded sample of papers**, not the full corpus. Size the sample from a dry-run cost estimate so the expected output is **≥200 claims with margin** (target ~300+), record the seed and sampling rule, and persist provenance (`teacher model/version`, prompt version, `run_id`) for every claim. Full-corpus extraction is not a P1 goal.
+
+**Alternatives considered:** full-corpus extraction (higher cost, no evaluation benefit at this stage); extract only from retracted sources (too few claims, no citer-side baseline).
+
+**Consequences:** P1-10 must present a dry-run cost estimate and sample plan before any paid call. The sample is drawn at the paper level so the audit split remains paper-level. The report must distinguish claims from the sampled papers and state the sampling fraction; it must not generalize precision to the full corpus without noting the sample.
 
 ## ADR template
 ```

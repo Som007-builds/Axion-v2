@@ -37,7 +37,7 @@ V1 components per migration map; Europe PMC REST API; Retraction Watch data via 
 4. Europe PMC client + JATS parser producing sections, paragraphs, references, and citation contexts.
 5. Retraction data loader and linker (by DOI/PMID/PMCID) with coverage stats.
 6. Feasibility report and **sub-topic decision (ADR)**.
-7. Ingested corpus of 2k–5k papers in Neo4j (schema v2) + Chroma.
+7. Ingested corpus of 2k–5k papers **total, including all discoverable citers**, in Neo4j (schema v2) + Chroma; hard cap ~5,000.
 8. Baseline claim extractor (single large model, all target sections) with ledger; outputs persisted as candidate **silver** labels with provenance (teacher model/version, prompt version, run_id), not gold.
 9. Audit rubric applied to ≥200 random claims; labels committed; Wilson CI computed.
 10. `docs/reports/P1-baseline.md` with: precision, cost/paper, p95 latency, corpus & retraction coverage stats.
@@ -51,7 +51,7 @@ V1 components per migration map; Europe PMC REST API; Retraction Watch data via 
 - **P1.5 JATS parser.** Sections, paragraphs, reference list (DOI/PMID/PMCID where present), and **citation contexts** via bibr xrefs. Golden-file tests from ≥10 real samples across journals; coverage metrics (% papers with ≥1 parsed context).
 - **P1.6 Retraction loader.** Load Retraction Watch/Crossref data; link to corpus candidates; coverage report (retracted, full text available, citers present).
 - **P1.7 Feasibility spike.** For 3–5 candidate sub-topics, count retracted OA papers with full text and in-corpus citers and contexts. Choose by criteria in `CONTEXT.md §4`; record ADR. Apply pivot rule if minimums fail.
-- **P1.8 Ingest corpus.** 2k–5k papers for the chosen sub-topic **plus all discoverable citers of its retracted papers** (so blast radius is computable). Zero LLM cost.
+- **P1.8 Ingest corpus.** 2k–5k papers **total, including retracted sources and all discoverable citers of those sources** (hard cap ~5,000; owner decision 2026-11-14), so blast radius is computable. Zero LLM cost.
 - **P1.9 Stores.** Neo4j schema v2 (constraints/indexes), Chroma collections, idempotent loaders; tests with ephemeral/mocked stores.
 - **P1.10 Baseline extractor.** Structured claim extraction with provenance, one large model, all target sections, via `LLMClient`. Cap run by budget guard; `--dry-run` first. Persist outputs as candidate **silver** labels with provenance (`teacher model/version`, `prompt version`, `run_id`); they are not gold and cannot be used to evaluate students.
 - **P1.11 Audit.** Draw a random sample of ≥200 claims (seeded), label per `docs/eval/AUDIT_RUBRIC.md`, re-label 10% after ≥7 days; commit labels.

@@ -113,15 +113,15 @@
     - `PMC/<id>/citations` returns 404; `MED/<pmid>/citations` works and was used for every citer list.
   - done: 2026-11-14 | evidence: `scripts/feasibility_spike.py`; `tests/test_feasibility.py` (9 tests); `docs/reports/P1-feasibility.md`; `docs/reports/P1-feasibility.json`; ADR-0012 Proposed in `docs/DECISIONS.md`. Measured: all candidates ≥653 est. source papers and ≥2,543 est. contexts at lower bound; infectious disease 741 (653-829) sources, 4,409 (3,498-5,332) contexts, 4,749 est. corpus; rehab (unexpected) 825 (733-918) sources, 6,958 (5,451-8,655) contexts, 6,624 corpus. Estimates are sampling-based; P1-08 will report exact counts.
 
-### [!] P1-08 — Ingest corpus
+### [~] P1-08 — Ingest corpus
 - depends: P1-07 (owner-approved)
-- what: 2k-5k papers in the chosen sub-topic plus all discoverable citers of its retracted papers. Zero LLM cost.
+- what: Ingest the owner-approved infectious-disease corpus (retracted OA sources + discoverable citers) up to the ~5,000 hard cap; exact counts. Zero LLM cost.
 - acceptance: Corpus manifest committed (IDs only, no full text); counts match report.
-  - agent: — | started: — | branch: p1
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: p1
   - notes:
-    - Blocked: P1-07 is complete, but the sub-topic is an owner decision. ADR-0012 proposes `(HSC) Medicine - Infectious Disease` if the 2,000-5,000 bound covers the total corpus; if it covers base papers with citers added, the ADR points to oncology. No corpus may be built until the owner settles that reading and approves a candidate.
-    - Europe PMC access and the retraction loader are ready (P1-04, P1-06).
-  - done: — | blocked: 2026-11-14 | unblocks: owner settles the corpus-bound reading and approves ADR-0012 (or names an alternative candidate/corpus bound).
+    - 2026-11-14 owner approved ADR-0012: infectious disease; exact counts must clear ≥30 sources and ≥300 contexts or stop and propose oncology via a new Proposed ADR. Oncology is deferred as a later held-out transfer corpus; the manifest is config-driven (ADR-0012).
+    - Corpus bound is the total including citers, hard cap ~5,000 (ADR-0013). Citer discovery is MEDLINE/PMID-only; the PMID gap and blast-radius recall cap must be reported.
+    - Planned: resumable/checkpointed ingest, batch resolution, JATS full-text cache under `data/` (never committed), exact context counts from parsed citers.
 
 ### [!] P1-09 — Stores: Neo4j schema v2 + Chroma
 - depends: P1-08
@@ -140,7 +140,8 @@
   - agent: — | started: — | branch: p1
   - notes:
     - Blocked: needs the P1-09 stores and a real paid run. Tier IDs are chosen (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) but `pricing.yaml` is intentionally blank, no paid budget is approved, and real provider SDK adapters are deferred. Dry-run only until the owner approves prices and a cap.
-  - done: — | blocked: 2026-11-14 | unblocks: P1-09 done + owner fills verified prices in `pricing.yaml`, approves a paid budget cap, and approves the provider SDK dependency.
+    - 2026-11-14 owner scope decision (ADR-0014): run on a **seeded paper sample**, not the full corpus; size it from a dry-run cost estimate for ≥200 claims with margin and record the seed.
+  - done: — | blocked: 2026-11-14 | unblocks: P1-09 done + owner fills verified prices in `pricing.yaml`, approves a paid budget cap, approves the provider SDK dependency, and approves the seeded-sample dry-run plan.
 
 ### [!] P1-11 — Claim audit (human)
 - depends: P1-10

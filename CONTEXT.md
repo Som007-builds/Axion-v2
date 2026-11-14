@@ -61,7 +61,7 @@ Build a flagship, portfolio-grade, rigorously evaluated system; gain real experi
 | Domain | Open-access biomedical literature (Europe PMC OA subset) |
 | Full-text format | JATS XML via Europe PMC REST API |
 | Retraction labels | Retraction Watch database as distributed via Crossref (**verify license and fields in Day-0**) |
-| Corpus size (initial) | 2,000–5,000 papers in one narrow sub-topic, chosen in Phase 1 by feasibility spike |
+| Corpus size (initial) | **2,000–5,000 papers total, including retracted sources and all discoverable citers; hard cap ~5,000** (owner decision 2026-11-14) |
 | Sub-topic selection criteria | Enough retracted OA papers with full text **and** enough in-corpus citers (provisional minimums: ≥30 retracted source papers, ≥300 citation contexts citing them). Revisit with real data. |
 | Legacy domain | V1 used ML papers from arXiv. V1's reviewed pair set is retained only as a clearly labeled legacy benchmark (`eval/legacy/`). |
 
