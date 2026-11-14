@@ -3,7 +3,7 @@
 Agents are interchangeable and can be **cut off without warning** (usage limits, crashes). The repo must always contain enough state for the next agent to continue. Follow this protocol exactly.
 
 ## 1. Session start (always)
-1. Read, in order: `AGENTS.md` → `CONTEXT.md` → this file → `docs/PROGRESS.md` → active phase `TODO.md` → relevant PRD section.
+1. Read, in order: `AGENTS.md` → `CONTEXT.md` → this file → `docs/PROGRESS.md` → the previous phase's `docs/phases/<phase>/HANDOFF.md` (when one exists) → active phase `TODO.md` → relevant PRD section.
 2. If `_private/` exists locally: read `_private/README.md` and `_private/budget.md`.
 3. `git status` and `git log -5`; confirm a clean working tree or understand uncommitted work (a previous agent may have been cut off — see §5).
 4. Find the active phase in `docs/PROGRESS.md`. Take the **first** task in that phase's TODO that is `[ ]` (todo) or `[~]` (stale in-progress, see §5).
@@ -26,6 +26,15 @@ Agents are interchangeable and can be **cut off without warning** (usage limits,
 - **Cost discipline:** all LLM calls via `LLMClient`; check `_private/budget.md`; use `--dry-run` first; never exceed caps.
 - **Docs in the same commit** as behavior changes.
 - **Decisions:** anything that changes scope, schema, targets, data sources, or tech choices → new entry in `docs/DECISIONS.md` (status `Proposed` until the owner approves).
+
+### Branching rule for phase threads
+
+- `main` is the integration branch. A phase thread starts from the current local `main`.
+- One task per branch: `p<phase>/<task-id>-<slug>` (for example `p1/P1-03-llmclient`). Day-0 work uses `d0/<slug>`.
+- Commit early and often with Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `wip:`). Mark the task `[~]` before writing code and `[x]` with evidence after the checks pass.
+- Merge a completed task branch back into `main` with a non-fast-forward merge (`git merge --no-ff <branch>`) or a PR. Keep the task branch after merging as history; do not delete it just because it is merged.
+- Never rebase or rewrite history on a shared branch. If `main` moved, merge it into the task branch and resolve conflicts there.
+- Do not push `main`, task branches, or tags until the owner has completed the visibility/push gate in `_private/owner-action-sheet.md`. Local commits are allowed while that gate is open.
 
 ## 4. Task completion
 1. Mark `[x]` with: `done: <date>`, `evidence: <commit hash(es)>, <paths>, <command and result>`.
@@ -86,3 +95,36 @@ Record the question in `docs/PROGRESS.md` under "Open questions for owner" and m
 
 ## 9. Definition of done (every task)
 Code + tests + docs updated; lint/types/tests green; ledger/cost rules respected; TODO updated with evidence; PROGRESS next-action updated.
+
+## 10. Phase thread protocol
+
+The owner may run each phase in a **fresh agent thread**. Fresh threads have no chat memory, so the repository is the only handoff surface.
+
+### Start of a phase thread
+1. Follow §1, including the previous phase's `HANDOFF.md`.
+2. Read the active phase's `TODO.md` and the matching PRD section before claiming work.
+3. Read `_private/README.md` and `_private/budget.md` if the local folder exists.
+4. Check `git status`, `git log -5`, and the current local `main`. Start task branches from `main` per §3.
+5. Resume the first `[ ]` or stale `[~]` task. If a `[~]` task has a partial-state note, continue it; do not restart safe WIP.
+
+### End of a phase thread (required, even if work is incomplete)
+1. Write `docs/phases/<phase>/HANDOFF.md` from the template. Include:
+   - current state and what is actually done;
+   - decisions made and their ADR/TODO references;
+   - gotchas, defects, and environment quirks;
+   - open risks and owner blockers;
+   - the exact next step and command;
+   - a link to the gate report.
+2. Write the gate report under `docs/reports/` using measured results only. Separate measured values from projections.
+3. Update `docs/PROGRESS.md`: phase status, headline numbers, session log, blocked tasks, open questions, and next action.
+4. Record every decision that exists only in chat as an ADR (if it changes scope/design) or a TODO note **before** the thread ends. Never leave knowledge only in chat.
+5. Commit the handoff, gate report, TODO, and PROGRESS changes. Push only if the owner's push gate is open.
+6. **Stop at the gate.** Do not start the next phase. Wait for the owner's explicit decision.
+
+### If the thread is cut off
+Follow §5 immediately: write the partial-state note in the task (done / left / exact next command / gotchas), commit WIP on the task branch with `wip: <task-id> <short state>`, and update `PROGRESS.md`. If time remains, update `HANDOFF.md` too.
+
+### Owner-only work inside a phase
+- Labeling tasks (for example P1-11 and P3-03) are owner work. The agent prepares the export, sampling script, rubric links, and validation checks; it does not invent labels.
+- Keys, budget caps, licence decisions, repository visibility, and paid-run approval remain owner decisions. Record them in `docs/DECISIONS.md` or `_private/` as appropriate.
+- Do not start the next phase while a gate decision is pending, even if the next phase's files look ready.

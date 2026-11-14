@@ -34,7 +34,7 @@
     - 2026-11-09 12:05 done; 22 offline tests pass. Pricing stays blank in the template by design (owner fills).
   - done: 2026-11-09 | evidence: commits bb09f8f (claim), 80865d8 (implementation); `src/axion/config/settings.py`, `pricing.py`, `stages.py`, `pricing.yaml`, `__init__.py`; `tests/test_settings.py`, `tests/test_pricing.py`, `tests/test_stages.py`; `.env.example`, `pyproject.toml`; local run: `ruff check .` + `ruff format --check .` → passed; `mypy` → success, 13 files; `pytest` → 22 passed; secret scan → passed. Missing/incomplete price raises `MissingPriceError` under `dry_run=True` and warns loudly otherwise. CI not executed this session (no push/network).
 
-### [x] P1-03 — LLMClient + cost ledger
+### [~] P1-03 — LLMClient + cost ledger
 - depends: P1-02
 - what: Port ideas from V1 llm.py: fallback chain, retry, cooldown, content-hash cache. Add tiers small/large, structured-output validation, SQLite `llm_calls` ledger, `cost_report` CLI. Fake provider for offline tests.
 - acceptance: Every call logged (incl. cache hits at $0); report CLI prints cost by stage/model; tests cover retry, cooldown, cache, ledger.
@@ -45,7 +45,12 @@
     - Real provider SDK adapters are intentionally deferred until the provider packages/deps are approved and installed; the client is provider-agnostic and offline tests use `ScriptedProvider`.
     - Implementation and checks were **uncommitted WIP** on `p1/P1-03-llmclient`, per owner instruction to hold commits/push until Day-0 passes.
     - 2026-11-14: owner requested the DOC-01 scale-approach docs-only task. Code/tests/config checkpointed locally as commit `0c79b02` before branching; no push while the repo is public / Day-0 is open.
-  - done: 2026-11-09 | evidence: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`; settings additions in `src/axion/config/settings.py`; `.env.example`; `pyproject.toml` script entry; tests in `tests/test_llm_{client,cache,ledger,structured,errors}.py` + updated `tests/test_settings.py`; local run: `ruff check .` → passed; `ruff format --check .` → 32 files formatted; `mypy` → success, 22 source files; `pytest` → **69 passed**; secret scan → passed; `python -m axion.llm.cli --help` → works. Console-script executable not generated locally because the venv lacks `wheel`; entry point is declared in `pyproject.toml` for normal installs. Local checkpoint commit `0c79b02`; push pending Day-0.
+    - **2026-11-14 DAY-0 RESUME CHECKPOINT (fresh P1 thread starts here):**
+      - **Done:** `src/axion/llm/*` (client, providers, cache, ledger, cooldown, structured output, errors, models, CLI), settings additions, `.env.example`, script entry in `pyproject.toml`, and the LLM tests are committed. Local `main` contains this checkpoint via merge `6986af3`; task branch `p1/P1-03-llmclient` is at `97b7d07`. Last verified: 69 tests passed; ruff, ruff format, strict mypy, and secret scan passed.
+      - **Left:** the fresh P1 thread must re-run the checks, inspect the checkpoint diff, and either close P1-03 with fresh evidence or record a defect. Then claim P1-03b (ledger schema extension); P1-04 remains blocked by the owner confirmation rule.
+      - **Next commands:** `git switch main` → `python -m pytest -q` → `python -m ruff check .` → `python -m ruff format --check .` → `python -m mypy` → `git log --oneline -5`. Do not call a live LLM. Keep `AXION_DRY_RUN=true`.
+      - **Gotchas:** real provider SDK adapters are deferred; the venv lacks `wheel`/setuptools>=68 so verify the CLI via `python -m axion.llm.cli --help`, not the console script; prices are intentionally blank and fail closed; remote push/PR may still be pending the owner's Day-0 actions (see `docs/phases/D0-prerequisites/TODO.md`).
+  - checkpoint evidence: `src/axion/llm/{client,providers,cache,ledger,cooldown,structured,errors,models,cli}.py`; settings additions in `src/axion/config/settings.py`; `.env.example`; `pyproject.toml` script entry; tests in `tests/test_llm_{client,cache,ledger,structured,errors}.py` + updated `tests/test_settings.py`; local run: `ruff check .` → passed; `ruff format --check .` → 32 files formatted; `mypy` → success, 22 source files; `pytest` → **69 passed**; secret scan → passed; `python -m axion.llm.cli --help` → works. Checkpoint commits `0c79b02`, `16a37fc`, `96fe8f8`, `97b7d07`; not yet closed by a fresh P1 thread.
 
 ### [ ] P1-03b — Ledger schema extension + training runs
 - depends: P1-03
@@ -129,6 +134,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-14 — DeepSeek V4.1 Flash Free — Day-0 close-out merged P1-03/DOC-01 into local `main` (`6986af3`); P1-03 left `[~]` with a fresh-thread resume checkpoint — next: fresh P1 thread re-runs checks, closes P1-03, then P1-03b; do not start P1-04 without owner confirmation
 - 2026-11-09 — DeepSeek V4.1 Flash Free — P1-03 code + tests complete as uncommitted WIP on `p1/P1-03-llmclient` — next: owner Day-0 pass, then commit/push P1-03; do not start P1-04 without owner confirmation
 - 2026-11-09 — DeepSeek V4.1 Flash Free — P1-01 and P1-02 complete and merged — next: P1-03
 

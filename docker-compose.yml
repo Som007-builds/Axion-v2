@@ -1,0 +1,33 @@
+name: axion-v2
+
+# Day-0 local infrastructure: Neo4j only.
+# The password is supplied by the local, gitignored .env and is never committed.
+# Ports are bound to loopback only. Redis/worker/API are intentionally absent.
+
+services:
+  neo4j:
+    image: neo4j:5.18-community
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}"
+      NEO4J_PASSWORD: "${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}"
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7887:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "cypher-shell -u neo4j -p \"$${NEO4J_PASSWORD}\" 'RETURN 1' >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
