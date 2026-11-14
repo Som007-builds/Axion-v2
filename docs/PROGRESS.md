@@ -3,9 +3,9 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through P1-05 are `[x]`; P1-06 through P1-12 are `[!]` pending owner decisions (Retraction Watch terms, sub-topic approval, prices/budget, labeling time).
-- **Next action:** **Owner decisions** listed under "Blocked tasks" below. Then a fresh P1 thread resumes P1-06/P1-07. Read `docs/phases/P1-foundation/TODO.md` first; P1-11 tooling is already prepared and tested.
-- **Owner first action:** confirm Retraction Watch licence/redistribution terms and data acquisition in `docs/DATA_SOURCES.md` (unblocks P1-06/P1-07). See `_private/owner-action-sheet.md`.
+- **Phase:** P1 (foundation) — P1-01 through P1-07 are `[x]`; P1-08 through P1-12 are `[!]` pending owner decisions (sub-topic approval, prices/budget, labeling time).
+- **Next action:** **Owner decision** on ADR-0012 (proposed sub-topic: `(HSC) Medicine - Infectious Disease`). Then a fresh P1 thread resumes P1-08. Read `docs/phases/P1-foundation/TODO.md` first; P1-11 tooling is already prepared and tested.
+- **Owner first action:** approve ADR-0012 in `docs/DECISIONS.md`, or name an alternative candidate/corpus bound (unblocks P1-08). See `_private/owner-action-sheet.md`.
 - **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
@@ -41,9 +41,10 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 - ⛔ Push/CI: `main` is pushed; historical task branches remain local by design (ADR-0010) and CI has not been confirmed.
 - ✅ Contact emails, Groq key, Neo4j password, and V2 Neo4j are configured locally; no secret values are tracked.
 - ⛔ P1-10: tier IDs are chosen (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) and public prices are known, but `pricing.yaml` is blank and paid-budget approval is pending.
-- ⛔ P1-06/P1-07: Retraction Watch licence/redistribution terms and data acquisition.
+- ✅ P1-06: Retraction Watch CC0 verified on Crossref’s Metadata Retrieval page and owner-approved; loader/linker and coverage report committed.
+- ⛔ P1-08: owner approval of the P1-07 sub-topic ADR.
 - ⛔ P1-11/P3-03: owner labeling time (P1-11 also needs a 7-day relabel gap).
-- ⚪ Can wait: V1 files vs rewrite for P1-09; B5 weekly hours; B6 `_private/` backup risk; P5 licence/release/outreach.
+- ⚪ Can wait: B5 weekly hours; B6 `_private/` backup risk; P5 licence/release/outreach.
 
 **Recorded facts**
 - V1 snapshot: offline suite **252 passed, 12 deselected**; `v1-final` at `b4b6a25338057bd05bc6b74bc75b26198fe546e8`; custom V1 history scan 0 candidate hits; owner reported V1 keys rotated.
@@ -54,7 +55,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | In progress | — | P1-01..P1-05 `[x]`; P1-06..P1-12 `[!]` on owner decisions |
+| P1 Foundation | In progress | — | P1-01..P1-07 `[x]`; P1-08..P1-12 `[!]` on owner decisions (sub-topic, prices/budget, labeling) |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -76,27 +77,36 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | Dependency false-alarm reduction vs citation-level | — | |
 | $/retraction analyzed | — | |
 | JATS citation-context coverage (12 CC BY fixtures) | 12/12 papers, 1,133/1,133 contexts resolved | `docs/reports/P1-jats-coverage.md` |
+| Retraction Watch snapshot | 73,822 rows; 68,369 retractions; 93.0% linkable by DOI/PMID | `docs/reports/P1-retraction-coverage.md` |
+| Retraction Watch → Europe PMC (seeded n=150) | 80 resolved (53.3%); 54 with full text (67.5% of resolved); 77/80 have citers | `docs/reports/P1-retraction-coverage.md` |
+| P1 feasibility shortlist | All 5 pass; infectious disease est. 741 sources / 4,409 contexts / 4,749-paper corpus | `docs/reports/P1-feasibility.md` |
 
 ## Open questions for owner
 - **Push:** when will local `main` and the phase branches be pushed to `Som007-builds/Axion-v2`, and will the P1-03/Day-0 work be a direct push or a PR to `main`?
 - **Provider/prices:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large) on Groq; enter their published prices in `pricing.yaml` only when the owner approves a paid budget.
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
-- **Retraction Watch:** what are the current licence and redistribution terms? The CSV repo has no `LICENSE`; the Crossref page's CC BY 4.0 footer is about site content, not clearly the dataset.
+- **Retraction Watch:** resolved 2026-11-14. Crossref’s canonical Metadata Retrieval page lists the database as CC0; owner approved use and the acquisition method (REST lookups + pinned GitLab CSV snapshot; no raw CSV committed). Recorded in `docs/DATA_SOURCES.md`.
+- **Sub-topic:** approve ADR-0012 (proposed: `(HSC) Medicine - Infectious Disease`, est. 4,749-paper corpus) or choose an alternative from `docs/reports/P1-feasibility.md`.
 - **Labeling:** when can the owner block ~3–6 hours for P1-11 and ~3–6 hours for P3-03, including the P1-11 7-day relabel gap?
-- **V1 port:** provide the five V1 paths listed in `_private/owner-action-sheet.md`, or approve rewriting P1-09 from the migration-map description.
 - **ADR renumbering:** confirm ADR-0008 (scale) and ADR-0009 (Day-0) are the intended final numbers.
 - **Local tooling:** no GNU `make` on this host; equivalent Python commands are used. Pre-commit under the 3.11 venv fails to create hook envs because its base Python is at `D:\`; the hooks pass under Python 3.12, and CI will use Ubuntu 3.11.
 - **Provider SDK adapters:** real Groq/Gemini/Anthropic adapters are deferred until packages are approved/installed. P1-03 is offline and uses a scripted provider.
 
 ## Blocked tasks
-- P1-06/P1-07: Retraction Watch licence/redistribution terms and data acquisition, then owner-approved candidate sub-topics.
-- P1-08/P1-09: follow from P1-07; P1-09 also needs the V1-port vs rewrite decision (default rewrite).
+- P1-08: owner approves ADR-0012 (infectious-disease sub-topic) or names an alternative candidate/corpus bound. P1-06/P1-07 data and tooling are ready.
+- P1-09: follows P1-08; clean V2 rewrite is decided (ADR-0011), so no V1-port question remains.
 - P1-10: P1-09 stores, verified prices in `pricing.yaml`, a paid-budget cap, and the provider SDK dependency.
 - P1-11: owner labeling time (~3–6 h for ≥200 claims) and a ≥7-day relabel gap; tooling is ready.
 - P1-12: follows from P1-11 (and the P1-10 run).
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-14 — DeepSeek V4.1 Flash Free — P1-06/P1-07 closed
+- Did: verified Crossref’s CC0 statement for Retraction Watch on the canonical Metadata Retrieval page; recorded terms, acquisition rules, snapshot commit/date/hash in `docs/DATA_SOURCES.md`; built the Retraction Watch CSV loader, DOI/PMID index and PMCID resolver hook, added Europe PMC citations/identifier lookups, generated the P1-06 coverage report + ID-only manifest; ran a five-candidate P1-07 feasibility spike (oncology, cardiovascular, infectious disease, gastroenterology, rehabilitation/therapy), wrote `docs/reports/P1-feasibility.md`/`.json`, and proposed ADR-0012 (infectious disease, because it is the only passing candidate whose estimated corpus fits 2,000-5,000).
+- State: on `p1`; P1-06/P1-07 `[x]`; all checks green — **209 passed, 2 skipped** (network opt-in), ruff check/format clean (52 files), strict mypy clean (27 source files). Snapshot `560ad745…`; coverage 73,822 rows / 68,369 retractions / 93.0% linkable; seeded n=150 → 80 resolved, 54 full text, 77/80 with citers. All five candidates pass; infectious disease est. 741 sources (653-829), 4,409 contexts (3,498-5,332), 4,749-paper corpus.
+- Next: owner approves ADR-0012 or names an alternative; then resume P1-08. Do not start P1-09/P1-10 before their owner decisions; do not push.
+- Blockers/questions: P1-08 sub-topic approval; P1-10 prices/budget; P1-11 labeling time + 7-day relabel gap.
+
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — P1-03b/04/05 closed; P1-11 tooling ready
 - Did: closed P1-03b (ledger tier/escalation/training runs), P1-04 (Europe PMC client), and P1-05 (JATS parser + 12 CC BY golden fixtures + coverage report); prepared the P1-11 audit tooling (`src/axion/eval/audit.py`, `scripts/audit_sample.py`, `scripts/audit_metrics.py`, `eval/audit/README.md`, header-only template) without creating labels; marked P1-06..P1-12 `[!]` with exact unblocks.
 - State: on `p1`; commits `809e093`/`f7485ed`/`8bf4d46` earlier, plus `809bd7f` (parse) and `a83a84e` (audit tooling). Full checks: **168 passed, 2 skipped** (network opt-in); ruff check/format and strict mypy (26 files) clean. JATS coverage: 12/12 papers, 1,133 contexts (100% resolved), 0 warnings; reference DOI coverage 102/775 is measured, not a defect.

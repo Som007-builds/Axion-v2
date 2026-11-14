@@ -114,6 +114,7 @@ class EuropePmcRecord:
     year: int | None
     is_open_access: bool | None
     has_full_text: bool | None
+    cited_by_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -122,6 +123,25 @@ class SearchPage:
     records: tuple[EuropePmcRecord, ...]
     hit_count: int
     next_cursor_mark: str | None
+
+
+@dataclass(frozen=True)
+class CitationRecord:
+    """One paper citing a target paper, as listed by Europe PMC."""
+
+    source: str
+    identifier: str
+    title: str | None
+    journal_abbreviation: str | None
+    pub_year: int | None
+    cited_by_count: int
+
+
+@dataclass(frozen=True)
+class CitationPage:
+    pmid: str
+    records: tuple[CitationRecord, ...]
+    hit_count: int
 
 
 class _ResultItem(BaseModel):
@@ -135,6 +155,7 @@ class _ResultItem(BaseModel):
     pub_year: int | None = Field(default=None, alias="pubYear")
     is_open_access: bool | None = Field(default=None, alias="isOpenAccess")
     in_epmc: bool | None = Field(default=None, alias="inEPMC")
+    cited_by_count: int = Field(default=0, alias="citedByCount")
 
     @field_validator("pub_year", mode="before")
     @classmethod
@@ -165,7 +186,42 @@ class _ResultItem(BaseModel):
             year=self.pub_year,
             is_open_access=self.is_open_access,
             has_full_text=self.in_epmc,
+            cited_by_count=self.cited_by_count,
         )
+
+
+class _CitationItem(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    source: str
+    id: str
+    title: str | None = None
+    journal_abbreviation: str | None = Field(default=None, alias="journalAbbreviation")
+    pub_year: int | None = Field(default=None, alias="pubYear")
+    cited_by_count: int = Field(default=0, alias="citedByCount")
+
+    def to_record(self) -> CitationRecord:
+        return CitationRecord(
+            source=self.source,
+            identifier=self.id,
+            title=self.title,
+            journal_abbreviation=self.journal_abbreviation,
+            pub_year=self.pub_year,
+            cited_by_count=self.cited_by_count,
+        )
+
+
+class _CitationList(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    citation: list[_CitationItem] = Field(default_factory=list)
+
+
+class _CitationsResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    hit_count: int = Field(default=0, alias="hitCount")
+    citation_list: _CitationList | None = Field(default=None, alias="citationList")
 
 
 class _ResultList(BaseModel):
@@ -284,6 +340,60 @@ class EuropePmcClient:
             next_cursor_mark=response.next_cursor_mark,
         )
 
+    def find_by_doi(self, doi: str) -> EuropePmcRecord | None:
+        """Resolve one DOI to a Europe PMC record, or ``None`` when absent."""
+        normalized = _normalize_doi(doi)
+        page = self.search(f'DOI:"{normalized}"', page_size=1)
+        for record in page.records:
+            if record.doi and _normalize_doi(record.doi) == normalized:
+                return record
+        return page.records[0] if page.records else None
+
+    def find_by_pmid(self, pmid: str) -> EuropePmcRecord | None:
+        """Resolve one MEDLINE id to a Europe PMC record."""
+        normalized = _normalize_pmid(pmid)
+        page = self.search(f"EXT_ID:{normalized} AND SRC:MED", page_size=1)
+        return page.records[0] if page.records else None
+
+    def citations(
+        self, pmid: str, *, page: int = 1, page_size: int = 1000, force: bool = False
+    ) -> CitationPage:
+        """Return one page of papers citing ``pmid``.
+
+        Europe PMC exposes citations by MEDLINE id (``MED/<pmid>/citations``);
+        a PMCID path returns 404, so callers must resolve a PMID first.
+        """
+        normalized = _normalize_pmid(pmid)
+        if page < 1:
+            raise ValueError("page must be at least 1")
+        if not 1 <= page_size <= 1000:
+            raise ValueError("page_size must be between 1 and 1000")
+        params = {
+            "format": "json",
+            "page": str(page),
+            "pageSize": str(page_size),
+        }
+        cache_path = self._cache_dir / "citations" / f"MED-{normalized}-p{page}-n{page_size}.json"
+        body = self._read_cache(cache_path) if not force else None
+        if body is None:
+            url = (
+                f"{self._base_url}/MED/{normalized}/citations?" f"{urllib.parse.urlencode(params)}"
+            )
+            body = self._request(url, not_found=f"citations for PMID {normalized}")
+            self._write_cache(cache_path, body)
+
+        parsed = _parse_json(body, cache_path)
+        try:
+            response = _CitationsResponse.model_validate(parsed)
+        except Exception as exc:  # pydantic.ValidationError
+            raise EuropePmcResponseError(f"unexpected citations response: {exc}") from exc
+
+        records = tuple(
+            item.to_record()
+            for item in (response.citation_list.citation if response.citation_list else [])
+        )
+        return CitationPage(pmid=normalized, records=records, hit_count=response.hit_count)
+
     def fetch_full_text(self, pmcid: str, *, force: bool = False) -> str:
         """Return JATS full text for an OA PMCID, using the raw cache first."""
         normalized = _normalize_pmcid(pmcid)
@@ -378,6 +488,23 @@ def _normalize_pmcid(pmcid: str) -> str:
         normalized = f"PMC{normalized}"
     if not _PMCID_PATTERN.match(normalized):
         raise ValueError(f"invalid PMCID: {pmcid!r}")
+    return normalized
+
+
+def _normalize_pmid(pmid: str) -> str:
+    normalized = pmid.strip()
+    if not normalized.isdigit():
+        raise ValueError(f"invalid PMID: {pmid!r}")
+    return normalized
+
+
+def _normalize_doi(doi: str) -> str:
+    normalized = doi.strip().lower()
+    for prefix in ("https://doi.org/", "http://doi.org/", "doi:"):
+        if normalized.startswith(prefix):
+            normalized = normalized[len(prefix) :]
+    if not normalized:
+        raise ValueError(f"invalid DOI: {doi!r}")
     return normalized
 
 

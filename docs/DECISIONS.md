@@ -102,6 +102,46 @@ Status values: `Proposed` · `Accepted` · `Superseded` · `Rejected`. Agents ma
 
 **Consequences:** fewer branches and simpler handoffs; `main` advances only at green task boundaries; the phase branch must be kept current with `main`; history is not rewritten and old branches are not deleted. Docs-only change: `CONTEXT.md` §8, `docs/AGENT_PROTOCOL.md`, phase TODO `branch:` fields, and the phase prompts.
 
+## ADR-0011 — Rewrite the store layer in V2 (no V1 port)
+**Date:** 2026-11-14 · **Status:** Accepted (owner instruction, 2026-11-14)
+
+**Context:** P1-09 needs a Neo4j schema and Chroma loaders. The Day-0 audit identified five V1 store files that could be ported, but V1's graph was built for a different corpus and its provenance model predates the claim-level design. The owner has now chosen between porting those files and writing a clean V2 implementation.
+
+**Decision:** Implement P1-09 as a clean V2 rewrite. Do not port V1 store code. Use CONTEXT §7.3 for constraints/indexes and the claim/context model in `docs/ARCHITECTURE.md`.
+
+**Alternatives considered:** port the V1 files and adapt them; hybrid (schema from V1, loaders rewritten). A port would import assumptions that P1-05/P1-10 do not share and would require auditing code the project is not otherwise keeping.
+
+**Consequences:** no V1 provenance questions for the store layer; the schema is designed against the V2 parser and claim model. The five V1 paths no longer block P1-09. V1 remains a read-only reference for benchmark and migration-map descriptions only.
+
+## ADR-0012 — P1 sub-topic: infectious disease (Proposed)
+**Date:** 2026-11-14 · **Status:** Proposed for owner approval (owner delegated the shortlist on 2026-11-14)
+
+**Context:** P1-07 needs a sub-topic that clears the CONTEXT §4 minimums: at least **30 retracted OA source papers with full text** and at least **300 citation contexts**. The owner delegated the shortlist and asked for 3-5 candidates measured with scripts, including one non-obvious candidate, chosen by the criteria rather than topic appeal. The PRD also targets a **2,000-5,000 paper corpus** (retracted sources plus discoverable citers), so an otherwise excellent but enormous category may not fit P1-08.
+
+**Method:** Five Retraction Watch subject categories were fixed in advance (`scripts/feasibility_spike.py`, seed `20261114`). For each, the script took a seeded sample of 300 linkable retractions, batch-resolved them through Europe PMC, sampled up to 20 OA source papers, fetched their citation lists, batch-resolved up to 200 MEDLINE citers, and fetched JATS for up to 10 citer/source pairs to count contexts. Reference matching used DOI, PMID, or normalized title + year; the citer list came from Europe PMC's citations endpoint, not reference-list matching alone. Estimates multiply independent measured rates; ranges combine independent Wilson bounds and are not a joint CI. Full detail: `docs/reports/P1-feasibility.md` and `P1-feasibility.json`.
+
+**Measured results (point estimate; lower-upper range):**
+
+| Candidate | Est. OA sources | Est. contexts | Est. corpus | Minimums at lower bound |
+| :-- | --: | --: | --: | :-- |
+| Oncology | 2,143 (1,921-2,360) | 14,926 (12,021-17,962) | 17,069 | pass |
+| Cardiovascular | 1,244 (1,103-1,385) | 3,230 (2,543-3,914) | 6,628 | pass |
+| **Infectious disease** | **741 (653-829)** | **4,409 (3,498-5,332)** | **4,749** | **pass** |
+| Gastroenterology | 910 (822-994) | 10,274 (8,510-12,121) | 11,184 | pass |
+| Rehabilitation/Therapy | 825 (733-918) | 6,958 (5,451-8,655) | 6,624 | pass |
+
+All five clear both minimums at the lower bound. Rehabilitation/Therapy was the non-obvious candidate and passed comfortably, so the data would support a smaller clinical field too.
+
+**Decision (proposed):** Use **`(HSC) Medicine - Infectious Disease`** as the P1 sub-topic. It is the only passing candidate whose estimated corpus (≈4,749 papers) stays inside the PRD's 2,000-5,000 target, and it clears the minimums by wide margins (≥653 sources, ≥3,498 contexts). P1-08 would ingest the Retraction Watch retracted papers in that subject plus all discoverable OA citers.
+
+**Alternatives considered:**
+- **Oncology** gives the largest context margin (≥12,021) but implies ~17k papers, far outside the corpus target; it is the fallback if the owner prefers a larger corpus or a narrower oncology slice later.
+- **Gastroenterology** has the highest measured OA-source rate (176/300) but ~11k papers.
+- **Cardiovascular** and **Rehabilitation/Therapy** pass but imply ~6.6k papers.
+- A narrower cross-category slice (for example, a specific MeSH term or journal set) was not chosen now because it would add an unmeasured definition; it remains an option if the owner rejects all five.
+
+**Consequences:** P1-08 remains blocked until the owner approves this ADR or chooses an alternative. The corpus definition must be written into the P1-08 manifest: RW subject tag, RW snapshot commit, Europe PMC resolution rules, citation direction, and the OA/full-text filter. The estimates are sampling-based, so the P1-08 manifest will report exact counts and they will differ from the estimates; the point of this ADR is that the margins are large enough to absorb that. The Europe PMC citations endpoint accepts a MEDLINE id (`MED/<pmid>/citations`); `PMC/<pmcid>/citations` returns 404 (verified live), so PMIDs must be resolved first.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

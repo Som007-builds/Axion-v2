@@ -1,0 +1,7 @@
+Record ID,Title,Subject,Institution,Journal,Publisher,Country,Author,URLS,ArticleType,RetractionDate,RetractionDOI,RetractionPubMedID,OriginalPaperDate,OriginalPaperDOI,OriginalPaperPubMedID,RetractionNature,Reason,Paywalled,Notes,
+1001,Alpha trial,"(HSC) Medicine - Oncology;(HSC) Medicine - Pharmacology",,Journal of Tests,Test Press,UK,Smith J,https://example.org/1,Research Article,1/2/2021 0:00,10.1000/retract.1,111,12/1/2020 0:00,10.1000/alpha.1,222,Retraction,"Data Fabrication;Concerns/Issues about Data",No,
+1002,Beta trial,"(HSC) Medicine - Cardiology",,Cardiology Tests,Test Press,US,Doe A,https://example.org/2,Research Article,3/4/2022 0:00,unavailable,0,2/1/2022 0:00,unavailable,0,Retraction,Plagiarism,Yes,
+1003,Gamma correction,"(BLS) Genetics",,Genetics Tests,Test Press,DE,Roe B,,Correction,5/6/2020 0:00,10.1000/retract.3,0,4/1/2020 0:00,10.1000/gamma.3,0,Correction,Error in Image,No,
+1004,Delta study,"(HSC) Medicine - Neurology",,Neuro Tests,Test Press,FR,Moe C,,Research Article,7/8/2023 0:00,10.1000/RETRACT.4,0,6/1/2023 0:00,https://doi.org/10.1000/Delta.4,333,Retraction,Duplication of Article,,
+,,,,,,,,,,,,,,,,,,,,
+1006,Epsilon study,"(HSC) Medicine - Oncology",,Oncology Tests,Test Press,JP,Lee D,,Research Article,9/10/2024 0:00,10.1000/retract.6,444,8/1/2024 0:00,10.1000/epsilon.6,12345,Expression of concern,Concerns/Issues about Results,No,

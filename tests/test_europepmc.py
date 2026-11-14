@@ -303,6 +303,74 @@ def test_settings_resolve_cache_dir(tmp_path: Path) -> None:
     assert custom.resolved_europepmc_cache_dir == tmp_path / "custom"
 
 
+def test_find_by_doi_returns_matching_record(tmp_path: Path) -> None:
+    transport = FakeTransport([TransportResponse(200, json.dumps(_SEARCH_JSON).encode())])
+    client = _client(tmp_path, transport)
+    record = client.find_by_doi("https://doi.org/10.1/ONE")
+    assert record is not None
+    assert record.pmcid == "PMC123"
+    assert record.cited_by_count == 0
+    assert "DOI%3A%2210.1%2Fone%22" in transport.calls[0]
+
+
+def test_find_by_pmid_and_cited_by_count(tmp_path: Path) -> None:
+    payload = {
+        "hitCount": 1,
+        "resultList": {"result": [{"pmid": "222", "doi": "10.1/two", "citedByCount": 7}]},
+    }
+    transport = FakeTransport([TransportResponse(200, json.dumps(payload).encode())])
+    client = _client(tmp_path, transport)
+    record = client.find_by_pmid("222")
+    assert record is not None
+    assert record.cited_by_count == 7
+    assert "EXT_ID%3A222" in transport.calls[0]
+    assert "SRC%3AMED" in transport.calls[0]
+
+
+def test_citations_parse_and_cache(tmp_path: Path) -> None:
+    payload = {
+        "hitCount": 2,
+        "citationList": {
+            "citation": [
+                {
+                    "source": "MED",
+                    "id": "333",
+                    "title": "Citing paper",
+                    "journalAbbreviation": "J Test",
+                    "pubYear": 2024,
+                    "citedByCount": 3,
+                },
+                {"source": "PPR", "id": "PPR1", "title": "Preprint"},
+            ]
+        },
+    }
+    transport = FakeTransport([TransportResponse(200, json.dumps(payload).encode())])
+    client = _client(tmp_path, transport)
+    page = client.citations("444")
+    assert page.pmid == "444"
+    assert page.hit_count == 2
+    assert page.records[0].identifier == "333"
+    assert page.records[0].journal_abbreviation == "J Test"
+    assert page.records[1].source == "PPR"
+
+    offline = _client(tmp_path, FakeTransport([]))
+    assert offline.citations("444").hit_count == 2
+
+
+def test_citations_validation_and_not_found(tmp_path: Path) -> None:
+    client = _client(tmp_path, FakeTransport([]))
+    with pytest.raises(ValueError, match="invalid PMID"):
+        client.citations("PMC123")
+    with pytest.raises(ValueError, match="page must be"):
+        client.citations("123", page=0)
+    with pytest.raises(ValueError, match="page_size"):
+        client.citations("123", page_size=1001)
+
+    not_found = _client(tmp_path / "nf", FakeTransport([TransportResponse(404, b"{}")]))
+    with pytest.raises(EuropePmcNotFoundError):
+        not_found.citations("123")
+
+
 @pytest.mark.network
 @pytest.mark.skipif(
     os.getenv("AXION_RUN_NETWORK") != "1",
