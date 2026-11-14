@@ -36,13 +36,17 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Kept `p1/P1-01-bootstrap`, `p1/P1-02-settings`, `p1/P1-03-llmclient`, and `docs/scale-approach` for history.
   - done: 2026-11-14 | evidence: merge `6986af3`; local branches `main`, `d0/build-ready`, `p1/P1-03-llmclient`; `docs/AGENT_PROTOCOL.md` §3 branching rule; `git ls-files | Select-String '_private|\.env'` → only `.env.example`.
 
-### [ ] D0-03 — Full-history secret scan and provenance audit (AGENT)
+### [x] D0-03 — Full-history secret scan and provenance audit (AGENT)
 - depends: D0-02
 - what: Run a full-history secret scan with `gitleaks` or `detect-secrets` if available; otherwise use the strongest available fallback and record the limitation. Audit whether any tracked V2 file was copied from V1 or written fresh; update `docs/PROVENANCE.md` honestly.
 - acceptance: Scan result recorded; `docs/PROVENANCE.md` states the copy/fresh status; no secrets found or every finding is explained.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - `gitleaks` and `trufflehog` were unavailable; installed `detect-secrets==1.5.0` into the local venv for the requested scan.
+    - Exported 98 unique text blobs from all refs plus reflog, preserving original paths, then scanned with `detect-secrets scan --all-files --no-verify`.
+    - 9 findings, all unverified false positives: repeated historical copies of the P1-01 evidence line containing the phrase "secret scan" (Secret Keyword) and the fake test env value in `tests/test_settings.py` (Base64 High Entropy String). No credential or private key was found.
+    - The custom `scripts/check_secrets.py` working-tree scan passed. No history was rewritten.
+  - done: 2026-11-14 | evidence: `detect-secrets` 1.5.0 full-history scan: 98 blobs, 9 unverified false positives, 0 verified secrets; `python scripts/check_secrets.py` → passed; `docs/PROVENANCE.md` fresh-vs-copied audit (59 V2 blobs vs 185 allowed V1 blobs; only empty `docs/reports/.gitkeep` hash match, not a substantive copy).
 
 ### [ ] D0-04 — Minimal Neo4j Docker Compose (AGENT)
 - depends: D0-02
