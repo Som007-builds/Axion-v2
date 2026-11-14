@@ -68,13 +68,16 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Current local run reports honest failures/skips: missing owner env names, Docker daemon unreachable at this moment, Neo4j configured but not reachable. It prints names/status only, never values.
   - done: 2026-11-14 | evidence: `scripts/day0_check.py`; `tests/test_day0_check.py`; `pytest -q` → **89 passed, 1 skipped** (network test opt-in via `AXION_RUN_NETWORK=1`); `ruff check .` and `ruff format --check .` → passed; direct `python scripts/day0_check.py` prints PASS/FAIL/SKIP. `make` is unavailable on this Windows host, so the target was verified by running its command directly.
 
-### [ ] D0-06 — Data-source terms research (AGENT)
+### [x] D0-06 — Data-source terms research (AGENT)
 - depends: D0-02
 - what: Research Europe PMC OA-subset full-text use/redistribution and Retraction Watch data via Crossref (access, fields, license, redistribution), plus polite-usage rules and observed rate limits. Record source URLs, verification date, and "owner to confirm" on every row.
 - acceptance: `docs/DATA_SOURCES.md` has verified rows and explicit unknowns; no unverified claim is stated as fact.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Verified the Europe PMC OA-subset page, REST page, Crossref Retraction Watch documentation, Crossref API documentation, and the Retraction Watch GitLab README read-only on 2026-11-14.
+    - Recorded explicit unknowns: Europe PMC numeric rate limit not published on the accessible page; site terms blocked by bot verification; Retraction Watch CSV repository has no `LICENSE`, and the Crossref site-content CC BY 4.0 footer does not clearly cover the dataset.
+    - Observed Crossref public headers: 1 request/second, concurrency 1 (`public-array`). This is a point-in-time observation, not a promise.
+  - done: 2026-11-14 | evidence: `docs/DATA_SOURCES.md` rewritten with source URLs, verification date, access methods, Retraction Watch fields, per-article Europe PMC licence rule, polite-usage rules, and an `Owner to confirm` column on every row; all unresolved points marked unclear.
 
 ### [ ] D0-07 — Settings, `.env.example`, and pricing consistency (AGENT)
 - depends: D0-02
