@@ -29,7 +29,7 @@
 | Fresh-thread docs | Protocol, D0 handoff, P1–P5 handoff templates | PASS | `docs/AGENT_PROTOCOL.md` §1 and §10; `docs/phases/D0-prerequisites/HANDOFF.md` filled; P1–P5 templates exist. | Agent |
 | Fresh-thread prompts | P1–P5 kickoff + mid-phase resume | PASS | Six untracked files in `_private/phase-prompts/`; `git check-ignore` confirms `_private/`; `git ls-files _private` is empty. | Agent |
 | Owner handoff | Action sheet ordered by soonest blocker | PASS | `_private/owner-action-sheet.md` (untracked): push, contact emails/Neo4j, provider/prices/budget, Retraction Watch terms, V1 files, labeling time, B1–B6, P5 release. | Agent |
-| Docs | Local Markdown links resolve | PASS | 25 Markdown files checked; 0 missing local links. | Agent |
+| Docs | Local Markdown links resolve | PASS | 26 Markdown files checked; 0 missing local links. | Agent |
 | ADR numbering | ADR-0008 scale approach; ADR-0009 Day-0 | PASS (owner confirmation pending) | `docs/DECISIONS.md` records the renumbering and the updated private/open-ended-hours facts; owner confirmation requested in D0-O1. | Agent + owner |
 | Remote/CI | Private remote has local `main` and branches | FAIL | Repo is private (unauthenticated GitHub API 404 on 2026-11-14), but `origin/main` is still `f0eea8f`; local `main` is ahead. No task branches are on the remote; CI has not run. | Owner |
 | P1-04/P1-05/P1-06 | Live fetch prerequisites | FAIL | Contact emails, Neo4j password/start, and network confirmation are missing. Offline implementation can proceed. | Owner |
