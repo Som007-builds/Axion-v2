@@ -117,21 +117,23 @@
 - depends: P1-07 (owner-approved)
 - what: Ingest the owner-approved infectious-disease corpus (retracted OA sources + discoverable citers) up to the ~5,000 hard cap; exact counts. Zero LLM cost.
 - acceptance: Corpus manifest committed (IDs only, no full text); counts match report.
-  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: p1
+  - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 22:56 | branch: p1
   - notes:
+    - 2026-11-14 22:56 resumed the interrupted session's unverified WIP (`d4f3171`); baseline checks green (226 passed, 2 skipped; ruff/format/mypy clean). Existing work-dir checkpoint (`data/corpus/infectious-disease-v1/`) inspected: 1,539 DOI + 31 PMID resolution rows, 797 citation lists, 13,426 citer rows, 724 cached full texts. It is resumed, not deleted. Partial-log yield: 798 unique eligible sources, 9,936 eligible citers, 4,202 selected before interruption; 5 full-text HTTP 500s (verified persistent).
+    - Plan: refactor orchestration out of the 1,015-line script into `src/axion/ingest/` with tests; smoke-run 30 sources and re-run to prove resume; then full run in background.
     - 2026-11-14 owner approved ADR-0012: infectious disease; exact counts must clear ≥30 sources and ≥300 contexts or stop and propose oncology via a new Proposed ADR. Oncology is deferred as a later held-out transfer corpus; the manifest is config-driven (ADR-0012).
     - Corpus bound is the total including citers, hard cap ~5,000 (ADR-0013). Citer discovery is MEDLINE/PMID-only; the PMID gap and blast-radius recall cap must be reported.
     - Planned: resumable/checkpointed ingest, batch resolution, JATS full-text cache under `data/` (never committed), exact context counts from parsed citers.
 
-### [!] P1-09 — Stores: Neo4j schema v2 + Chroma
+### [~] P1-09 — Stores: Neo4j schema v2 + Chroma
 - depends: P1-08
 - what: Constraints/indexes per CONTEXT.md section 7.3; idempotent loaders; Chroma collections for claims and contexts; tests with mocks/ephemeral stores.
 - acceptance: Schema script idempotent; load of corpus manifest succeeds twice with identical counts.
-  - agent: — | started: — | branch: p1
+  - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 22:56 | branch: p1
   - notes:
-    - Blocked: the loader needs the P1-08 corpus manifest.
-    - Store-layer direction is decided: clean V2 rewrite, no V1 port (ADR-0011, owner instruction 2026-11-14).
-  - done: — | blocked: 2026-11-14 | unblocks: P1-08 corpus manifest.
+    - 2026-11-14 22:56 claimed for verification: the interrupted session left `src/axion/store/*` and `scripts/load_stores.py` unverified. Clean V2 rewrite, no V1 port (ADR-0011).
+    - Verification target: Neo4j schema v2 is idempotent; loading the smoke and full manifests twice yields identical graph/vector counts; in-memory path is the fallback if Docker is unavailable.
+    - Known audit point: the loader validates duplicate PMCIDs but not orphan cite endpoints; a `MATCH`-based Neo4j write would silently drop them. Fixing before the load run.
 
 ### [!] P1-10 — Baseline claim extractor
 - depends: P1-03, P1-09

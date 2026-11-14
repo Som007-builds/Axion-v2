@@ -101,6 +101,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-14 — Freebuff / DeepSeek V4.x Flash — P1 SESSION IN PROGRESS
+- Status: **IN PROGRESS** — taking over after a usage-limit cutoff. Branch `p1`, clean tree at start (`d4f3171`), no push.
+- Plan (in order): (A) verify the unverified P1-08/P1-09 WIP against acceptance criteria + CONTEXT §7.3 and get tests/ruff/format/strict mypy green; (B) move reusable ingest logic from `scripts/ingest_corpus.py` into `src/axion/ingest/` with tests; (C) live smoke ingest (~30–50 papers), then the full infectious-disease corpus up to the ~5,000 cap; (D) exact counts vs §4 minimums + PMID gap; (E) load Neo4j/Chroma twice with identical counts (or in-memory fallback, stated plainly); (F) verify Neo4j heap/page-cache env names, WSL2 guidance, CPU-only torch pin, real resource numbers; (G) P1-10 dry-run readiness estimate only — no extractor code, no SDK, no LLM.
+- Constraints: dry-run on, prices blank, $0 budget, zero LLM calls, no merge/push, do not delete the existing `data/corpus/infectious-disease-v1` checkpoint.
+- Partial checkpoint found: `data/corpus/infectious-disease-v1/` (citations.jsonl, citers.jsonl, ingest.log, sources_doi.jsonl, sources_pmid.jsonl) — to be inspected, not deleted.
+- Next update: after baseline checks (Step A).
+
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — P1-06/P1-07 closed
 - Did: verified Crossref’s CC0 statement for Retraction Watch on the canonical Metadata Retrieval page; recorded terms, acquisition rules, snapshot commit/date/hash in `docs/DATA_SOURCES.md`; built the Retraction Watch CSV loader, DOI/PMID index and PMCID resolver hook, added Europe PMC citations/identifier lookups, generated the P1-06 coverage report + ID-only manifest; ran a five-candidate P1-07 feasibility spike (oncology, cardiovascular, infectious disease, gastroenterology, rehabilitation/therapy), wrote `docs/reports/P1-feasibility.md`/`.json`, and proposed ADR-0012 (infectious disease, because it is the only passing candidate whose estimated corpus fits 2,000-5,000).
 - State: on `p1`; P1-06/P1-07 `[x]`; all checks green — **209 passed, 2 skipped** (network opt-in), ruff check/format clean (52 files), strict mypy clean (27 source files). Snapshot `560ad745…`; coverage 73,822 rows / 68,369 retractions / 93.0% linkable; seeded n=150 → 80 resolved, 54 full text, 77/80 with citers. All five candidates pass; infectious disease est. 741 sources (653-829), 4,409 contexts (3,498-5,332), 4,749-paper corpus.
