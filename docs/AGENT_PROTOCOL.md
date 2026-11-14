@@ -42,7 +42,7 @@ Agents are interchangeable and can be **cut off without warning** (usage limits,
 2. If the task produced numbers, ensure they come from a script and note the command.
 3. Append a **session log entry** in `docs/PROGRESS.md` (template §7).
 4. Update "Next action" in `docs/PROGRESS.md` to the next unclaimed task.
-5. Push/merge per repo rules; do not leave work only in the local tree.
+5. Commit the TODO update; merge to `main` per §3 only when the task boundary is green. Push only if the owner's push gate is open.
 
 ## 5. Resuming after an interruption
 Signs: a task is `[~]` and its `started` time is old; uncommitted changes exist; a phase branch exists with WIP commits.
