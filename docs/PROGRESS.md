@@ -3,9 +3,9 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-03 is deliberately left `[~]` at a resumable checkpoint; Day-0 agent close-out is complete.
-- **Next action:** **Fresh P1 thread: create the `p1` branch from `main`, resume P1-03, then P1-03b, then P1-04.** Read `docs/phases/D0-prerequisites/HANDOFF.md` and `docs/phases/P1-foundation/TODO.md` first. Do not start P1-04 without owner confirmation.
-- **Owner first action:** `main` is on the private remote at `a39f0f2`; historical task branches remain local-only and are not needed under ADR-0010. CI has not been confirmed (no authenticated `gh` on this host). See `_private/owner-action-sheet.md`.
+- **Phase:** P1 (foundation) — P1-01 through P1-05 are `[x]`; P1-06 through P1-12 are `[!]` pending owner decisions (Retraction Watch terms, sub-topic approval, prices/budget, labeling time).
+- **Next action:** **Owner decisions** listed under "Blocked tasks" below. Then a fresh P1 thread resumes P1-06/P1-07. Read `docs/phases/P1-foundation/TODO.md` first; P1-11 tooling is already prepared and tested.
+- **Owner first action:** confirm Retraction Watch licence/redistribution terms and data acquisition in `docs/DATA_SOURCES.md` (unblocks P1-06/P1-07). See `_private/owner-action-sheet.md`.
 - **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
@@ -15,7 +15,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 
 **Agent close-out — done**
 - ✅ Local `main` contains P1-01, P1-02, DOC-01, and the P1-03 checkpoint (merge `6986af3`). Task branches retained.
-- ✅ P1-03 is `[~]` with exact done/left/next-command/gotchas for a fresh P1 thread.
+- ✅ P1-03 is `[~]` with exact done/left/next-command/gotchas for a fresh P1 thread. (Superseded 2026-11-14: P1-03, P1-03b, P1-04, and P1-05 are now `[x]`.)
 - ✅ Only `.env.example` is tracked among env/private paths; `_private/` is ignored.
 - ✅ Full-history `detect-secrets` scan: 98 unique blobs across all refs + reflog; 9 unverified false positives; **0 verified secrets**. Custom working-tree scan passed.
 - ✅ Provenance audit: 59 V2 blobs vs 185 allowed V1 blobs; only empty `docs/reports/.gitkeep` matched an empty V1 `__init__.py`; no substantive V1 copy.
@@ -54,7 +54,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | In progress | — | P1-01/P1-02 done; P1-03 `[~]` checkpoint; next P1-03b, then P1-04 |
+| P1 Foundation | In progress | — | P1-01..P1-05 `[x]`; P1-06..P1-12 `[!]` on owner decisions |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -75,6 +75,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | Cost per paper after cascade | — | |
 | Dependency false-alarm reduction vs citation-level | — | |
 | $/retraction analyzed | — | |
+| JATS citation-context coverage (12 CC BY fixtures) | 12/12 papers, 1,133/1,133 contexts resolved | `docs/reports/P1-jats-coverage.md` |
 
 ## Open questions for owner
 - **Push:** when will local `main` and the phase branches be pushed to `Som007-builds/Axion-v2`, and will the P1-03/Day-0 work be a direct push or a PR to `main`?
@@ -88,13 +89,20 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - **Provider SDK adapters:** real Groq/Gemini/Anthropic adapters are deferred until packages are approved/installed. P1-03 is offline and uses a scripted provider.
 
 ## Blocked tasks
-- P1-04: owner confirmation before starting; local contact emails and Neo4j are now ready. Offline implementation can proceed.
-- P1-06/P1-07: Retraction Watch terms/data and owner-approved feasibility ADR.
-- P1-10: provider/model IDs, verified prices, and paid-budget approval.
-- P1-11: owner labeling; P1-12 waits for it.
+- P1-06/P1-07: Retraction Watch licence/redistribution terms and data acquisition, then owner-approved candidate sub-topics.
+- P1-08/P1-09: follow from P1-07; P1-09 also needs the V1-port vs rewrite decision (default rewrite).
+- P1-10: P1-09 stores, verified prices in `pricing.yaml`, a paid-budget cap, and the provider SDK dependency.
+- P1-11: owner labeling time (~3–6 h for ≥200 claims) and a ≥7-day relabel gap; tooling is ready.
+- P1-12: follows from P1-11 (and the P1-10 run).
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-14 — DeepSeek V4.1 Flash Free — P1-03b/04/05 closed; P1-11 tooling ready
+- Did: closed P1-03b (ledger tier/escalation/training runs), P1-04 (Europe PMC client), and P1-05 (JATS parser + 12 CC BY golden fixtures + coverage report); prepared the P1-11 audit tooling (`src/axion/eval/audit.py`, `scripts/audit_sample.py`, `scripts/audit_metrics.py`, `eval/audit/README.md`, header-only template) without creating labels; marked P1-06..P1-12 `[!]` with exact unblocks.
+- State: on `p1`; commits `809e093`/`f7485ed`/`8bf4d46` earlier, plus `809bd7f` (parse) and `a83a84e` (audit tooling). Full checks: **168 passed, 2 skipped** (network opt-in); ruff check/format and strict mypy (26 files) clean. JATS coverage: 12/12 papers, 1,133 contexts (100% resolved), 0 warnings; reference DOI coverage 102/775 is measured, not a defect.
+- Next: owner decisions below; then resume P1-06/P1-07.
+- Blockers/questions: Retraction Watch terms, candidate sub-topics, V1-port/rewrite, prices/paid budget, labeling time + 7-day relabel gap.
+
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — git workflow (ADR-0010)
 - Did: owner decision — one working branch per phase (`p1`, `p2`, …), WIP commits as `wip: <task-id> <state>`, merges to `main` at task boundaries only when lint/types/tests are green, and phase-branch deletion after the gate; updated `CONTEXT.md` §8.9, `docs/AGENT_PROTOCOL.md`, the phase TODO `branch:` fields, and the private phase prompts. No history rewrite.
 - State: docs-only; commits `52e16cd` and `cf356fe`; historical task branches and `d0/build-ready` are retained. `main` is unchanged apart from the documentation commits.
