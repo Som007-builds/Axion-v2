@@ -86,7 +86,7 @@ def load_claims(path: Path) -> list[ClaimRecord]:
     """Load and validate a claim JSONL file; reject duplicate claim ids."""
     claims: list[ClaimRecord] = []
     seen: set[str] = set()
-    with path.open(encoding="utf-8") as handle:
+    with path.open(encoding="utf-8-sig") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
                 continue
@@ -192,7 +192,7 @@ def write_export(path: Path, rows: Sequence[dict[str, str]]) -> None:
 
 def read_audit(path: Path) -> list[dict[str, str]]:
     """Read a labelled audit CSV and validate its required columns."""
-    with path.open(encoding="utf-8", newline="") as handle:
+    with path.open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         missing = [column for column in AUDIT_COLUMNS if column not in (reader.fieldnames or [])]
         if missing:

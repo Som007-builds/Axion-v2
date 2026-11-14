@@ -138,6 +138,20 @@ def test_export_roundtrip_and_column_order(tmp_path: Path) -> None:
     assert read_audit(path)[0]["claim_id"] == "PMC1:1"
 
 
+def test_load_claims_accepts_utf8_bom(tmp_path: Path) -> None:
+    path = tmp_path / "claims.jsonl"
+    path.write_text("\ufeff" + _claim(1).model_dump_json() + "\n", encoding="utf-8")
+    assert load_claims(path)[0].claim_id == "PMC1:1"
+
+
+def test_read_audit_accepts_utf8_bom(tmp_path: Path) -> None:
+    path = tmp_path / "audit.csv"
+    write_export(path, export_rows([_claim(1)]))
+    content = path.read_text(encoding="utf-8")
+    path.write_bytes(b"\xef\xbb\xbf" + content.encode("utf-8"))
+    assert read_audit(path)[0]["claim_id"] == "PMC1:1"
+
+
 def test_read_audit_rejects_missing_columns(tmp_path: Path) -> None:
     path = tmp_path / "audit.csv"
     path.write_text("claim_id,label\nx,CORRECT\n", encoding="utf-8")
