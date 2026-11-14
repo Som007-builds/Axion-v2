@@ -25,7 +25,12 @@ class ChromaVectorStore:
             raise StoreConfigurationError(
                 "chromadb is not installed; install the 'store' extra from " "docs/LOCAL_SETUP.md"
             ) from exc
-        self._client: Any = chromadb.PersistentClient(path=str(path))
+        self._client: Any = chromadb.PersistentClient(
+            path=str(path),
+            # chromadb 0.6.3's bundled telemetry client can raise on a posthog
+            # API change; it is unrelated to the load, so keep logs clean.
+            settings=chromadb.config.Settings(anonymized_telemetry=False),
+        )
         self._collections: dict[str, Any] = {}
 
     def ensure_collections(self, names: Iterable[str]) -> None:

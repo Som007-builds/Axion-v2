@@ -5,12 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from scripts.ingest_corpus import (
-    fetch_citations,
-    resolve_sources,
-    select_citers,
-    source_papers,
-)
 
 from axion.ingest.corpus import (
     CorpusCite,
@@ -25,6 +19,15 @@ from axion.ingest.corpus import (
     write_cites_csv,
     write_papers_csv,
 )
+from axion.ingest.corpus_pipeline import (
+    build_edges,
+    citer_papers,
+    fetch_citations,
+    resolve_sources,
+    run_ingest,
+    select_citers,
+    source_papers,
+)
 from axion.ingest.europepmc import (
     CitationPage,
     CitationRecord,
@@ -36,6 +39,43 @@ from axion.link.citations import SourceIndex, SourceTarget
 from axion.parse.jats import CitationContext, ParsedPaper, Reference
 
 CONFIG = Path("src/axion/config/corpus/infectious-disease.yaml")
+
+SOURCE_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<article article-type="research-article">
+  <front>
+    <journal-meta><journal-title-group><journal-title>J</journal-title></journal-title-group></journal-meta>
+    <article-meta>
+      <article-id pub-id-type="pmcid">PMC1</article-id>
+      <article-id pub-id-type="pmid">42</article-id>
+      <article-id pub-id-type="doi">10.1000/source</article-id>
+      <title-group><article-title>Source Paper</article-title></title-group>
+      <pub-date><year>2020</year></pub-date>
+    </article-meta>
+  </front>
+  <body><sec><p>The trial reported a large effect.</p></sec></body>
+</article>
+"""
+
+CITER_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<article article-type="research-article">
+  <front>
+    <journal-meta><journal-title-group><journal-title>J2</journal-title></journal-title-group></journal-meta>
+    <article-meta>
+      <article-id pub-id-type="pmcid">PMC2</article-id>
+      <article-id pub-id-type="pmid">43</article-id>
+      <article-id pub-id-type="doi">10.1000/citer</article-id>
+      <title-group><article-title>Citing Paper</article-title></title-group>
+      <pub-date><year>2022</year></pub-date>
+    </article-meta>
+  </front>
+  <body><sec><p>The trial reported a large effect.
+  The effect was robust <xref ref-type="bibr" rid="b1">1</xref>.</p></sec></body>
+  <back><ref-list><ref id="b1"><label>1</label><element-citation>
+    <article-title>Source Paper</article-title><year>2020</year>
+    <pub-id pub-id-type="doi">10.1000/source</pub-id>
+  </element-citation></ref></ref-list></back>
+</article>
+"""
 
 
 def _context(ref_id: str, index: int = 0) -> CitationContext:
@@ -278,5 +318,141 @@ def test_source_papers_filters_and_dedupes() -> None:
         [_rw_record(), _rw_record()], rows, filters=config.filters
     )
     assert len(sources) == 1
-    assert sources["PMC1"].rw_record_ids == ("7", "7")
+    assert sources["PMC1"].rw_record_ids == ("7",)
     assert (non_oa, no_ft, no_pmcid) == (0, 0, 0)
+
+
+def test_build_edges_and_citer_filtering() -> None:
+    config = load_corpus_config(CONFIG)
+    med_ids = {"43", "44"}
+    rows = {
+        "43": {
+            "pmid": "43",
+            "found": True,
+            "pmcid": "PMC2",
+            "doi": "10.1000/citer",
+            "is_open_access": True,
+            "has_full_text": True,
+        },
+        "44": {
+            "pmid": "44",
+            "found": True,
+            "pmcid": "PMC3",
+            "doi": None,
+            "is_open_access": False,
+            "has_full_text": True,
+        },
+    }
+    citers, resolved, not_found, non_oa, no_ft, no_pmcid = citer_papers(
+        med_ids, rows, filters=config.filters
+    )
+    assert set(citers) == {"PMC2"}
+    assert (resolved, not_found, non_oa, no_ft, no_pmcid) == (2, 0, 1, 0, 0)
+
+    source = type("S", (), {"pmid": "42", "pmcid": "PMC1"})()
+    edges = build_edges(
+        {"PMC1": source},  # type: ignore[dict-item]
+        {"42": {"med_ids": ["43", "44"]}},
+        citers,
+    )
+    assert edges == {"PMC2": {"PMC1"}}
+
+
+def test_citer_cap_counts_sources_in_the_total() -> None:
+    citers = {
+        "PMC10": type("C", (), {"pmcid": "PMC10", "pmid": "10"})(),
+        "PMC11": type("C", (), {"pmcid": "PMC11", "pmid": "11"})(),
+    }
+    edges = {"PMC10": {"PMC1"}, "PMC11": {"PMC2"}}
+    included, truncated = select_citers(citers, edges, {"PMC1": 0, "PMC2": 1}, cap=2)
+    assert included == []
+    assert [citer.pmcid for citer in truncated] == ["PMC10", "PMC11"]
+
+
+def test_end_to_end_pipeline_is_resumable_and_deterministic(tmp_path: Path) -> None:
+    cache = tmp_path / "cache"
+    (cache / "fulltext").mkdir(parents=True)
+    csv_path = tmp_path / "rw.csv"
+    csv_path.write_text(
+        "Record ID,Title,Journal,Subject,RetractionDate,RetractionDOI,"
+        "RetractionPubMedID,OriginalPaperDate,OriginalPaperDOI,OriginalPaperPubMedID,"
+        "RetractionNature,Reason,Paywalled\n"
+        '7,"Retracted paper",J,"(HSC) Medicine - Infectious Disease",'
+        "15/01/2021,10.1000/notice,,15/01/2020,10.1000/source,42,Retraction,Fabrication,No\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "rw-manifest.json"
+    import hashlib
+    import json
+
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "snapshot_commit": "abc",
+                "snapshot_date": "2026-11-13",
+                "csv_sha256": hashlib.sha256(csv_path.read_bytes()).hexdigest(),
+                "csv_bytes": csv_path.stat().st_size,
+                "rows": 1,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.cache_dir = cache
+            self.citation_calls = 0
+
+        def search(self, query: str, **_: object) -> SearchPage:
+            if query.startswith("EXT_ID:"):
+                record = _record(pmcid="PMC2", pmid="43", doi="10.1000/citer")
+            else:
+                record = _record()
+            return SearchPage(query=query, records=(record,), hit_count=1, next_cursor_mark=None)
+
+        def citations(self, pmid: str, **_: object) -> CitationPage:
+            self.citation_calls += 1
+            return CitationPage(
+                pmid=pmid,
+                records=(
+                    CitationRecord(
+                        source="MED",
+                        identifier="43",
+                        title="Citing paper",
+                        journal_abbreviation="J",
+                        pub_year=2022,
+                        cited_by_count=1,
+                    ),
+                ),
+                hit_count=1,
+            )
+
+        def fetch_full_text(self, pmcid: str) -> str:
+            text = SOURCE_XML if pmcid == "PMC1" else CITER_XML
+            (cache / "fulltext" / f"{pmcid}.xml").write_text(text, encoding="utf-8")
+            return text
+
+    client = FakeClient()
+    kwargs = {
+        "config_path": CONFIG,
+        "rw_csv_path": csv_path,
+        "rw_manifest_path": manifest_path,
+        "work_dir": tmp_path / "work",
+        "out_prefix": tmp_path / "out",
+        "client": client,
+        "base_url": "https://example.invalid",
+        "max_sources": 1,
+    }
+    first = run_ingest(**kwargs)  # type: ignore[arg-type]
+    calls = client.citation_calls
+    second = run_ingest(**kwargs)  # type: ignore[arg-type]
+
+    assert first.counts == second.counts
+    assert first.files.papers_sha256 == second.files.papers_sha256
+    assert first.files.cites_sha256 == second.files.cites_sha256
+    assert first.counts.papers_total == 2
+    assert first.counts.sources_total == 1
+    assert first.counts.citers_included == 1
+    assert first.counts.contexts_total == 1
+    assert calls == 1
+    assert client.citation_calls == calls

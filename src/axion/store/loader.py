@@ -155,6 +155,22 @@ def load_corpus(
         raise CorpusLoadError("corpus has no papers")
     if len({paper.pmcid for paper in papers}) != len(papers):
         raise CorpusLoadError("corpus paper list contains duplicate PMCIDs")
+    paper_roles = {paper.pmcid: paper.role for paper in papers}
+    orphans = sorted(
+        (cite.citer_pmcid, cite.source_pmcid)
+        for cite in cites
+        if cite.citer_pmcid not in paper_roles or cite.source_pmcid not in paper_roles
+    )
+    if orphans:
+        raise CorpusLoadError(
+            f"{len(orphans)} cite rows reference papers outside the manifest; "
+            f"first: {orphans[0][0]} -> {orphans[0][1]}"
+        )
+    non_sources = sorted(
+        cite.source_pmcid for cite in cites if paper_roles[cite.source_pmcid] != "source"
+    )
+    if non_sources:
+        raise CorpusLoadError(f"cite target is not a source paper: {non_sources[0]}")
 
     graph.apply_schema()
     vectors.ensure_collections(COLLECTIONS)

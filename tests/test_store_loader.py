@@ -128,6 +128,34 @@ def test_loader_is_idempotent_and_creates_contexts(tmp_path: Path) -> None:
     assert graph.contexts["PMC2:p0:c0"]["source_pmcid"] == "PMC1"
 
 
+def test_loader_rejects_cites_outside_the_manifest(tmp_path: Path) -> None:
+    orphan = [CorpusCite(citer_pmcid="PMC2", source_pmcid="PMC999", contexts=0)]
+    with pytest.raises(CorpusLoadError, match="outside the manifest"):
+        load_corpus(
+            PAPERS,
+            orphan,
+            graph=InMemoryGraph(),
+            vectors=InMemoryVectorStore(),
+            embedder=HashEmbedder(),
+            cache_dir=_cache(tmp_path),
+            run_id="run-1",
+        )
+
+
+def test_loader_rejects_a_cite_to_a_non_source(tmp_path: Path) -> None:
+    backwards = [CorpusCite(citer_pmcid="PMC1", source_pmcid="PMC2", contexts=0)]
+    with pytest.raises(CorpusLoadError, match="not a source"):
+        load_corpus(
+            PAPERS,
+            backwards,
+            graph=InMemoryGraph(),
+            vectors=InMemoryVectorStore(),
+            embedder=HashEmbedder(),
+            cache_dir=_cache(tmp_path),
+            run_id="run-1",
+        )
+
+
 def test_loader_fails_clearly_when_full_text_is_missing(tmp_path: Path) -> None:
     cache = _cache(tmp_path)
     (cache / "fulltext" / "PMC2.xml").unlink()
