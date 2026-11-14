@@ -100,21 +100,27 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - D0 handoff is filled in; P1–P5 handoffs are empty templates with the required state/decisions/gotchas/risks/next-step/gate sections.
   - done: 2026-11-14 | evidence: `docs/AGENT_PROTOCOL.md` §1 and §10; `docs/phases/D0-prerequisites/HANDOFF.md`; `docs/phases/P1-foundation/HANDOFF.md`; `docs/phases/P2-cost-cascade/HANDOFF.md`; `docs/phases/P3-blast-radius/HANDOFF.md`; `docs/phases/P4-demo/HANDOFF.md`; `docs/phases/P5-release/HANDOFF.md`. No source/tests/CI changes.
 
-### [ ] D0-09 — Fresh-thread phase prompts (AGENT, untracked)
+### [x] D0-09 — Fresh-thread phase prompts (AGENT, untracked)
 - depends: D0-08
 - what: Create `_private/phase-prompts/P1.md` … `P5.md` and `_private/phase-prompts/mid-phase-resume.md` with reading order, phase goal/gate, owner-only tasks, budget rules, stop conditions, and exact deliverables.
 - acceptance: Files exist under `_private/` only; tailored to each phase; no private contents quoted in tracked files.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Created six untracked prompts under `_private/phase-prompts/`.
+    - Each includes the fresh-thread reading order, phase goal/gate, owner-only tasks (including P1-11/P3-03 labeling), budget rules, stop conditions, and end-of-thread deliverables.
+  - done: 2026-11-14 | evidence: `_private/phase-prompts/{P1,P2,P3,P4,P5,mid-phase-resume}.md`; `git check-ignore -v _private/phase-prompts/P1.md` → `.gitignore:7:_private/`; `git ls-files _private` → empty. No tracked file quotes private contents.
 
-### [ ] D0-10 — P1 owner-dependency review and action sheet (AGENT, untracked)
+### [x] D0-10 — P1 owner-dependency review and action sheet (AGENT, untracked)
 - depends: D0-01, D0-06
 - what: Review every P1 task for owner-only dependencies (keys, budget, V1 files, license, labeling time); write `_private/owner-action-sheet.md` ordered by what blocks soonest, with exact commands and realistic labeling-hour estimates.
 - acceptance: Action sheet is untracked and complete; report states hard blockers vs can-wait and the first owner action.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Reviewed P1-03 through P1-12 against the owner-only categories: visibility/push, contact emails/network, provider/prices/budget, Retraction Watch terms, V1 files, and P1-11/P3-03 labeling.
+    - Confirmed the GitHub repo is private via unauthenticated API 404, but `origin/main` is still `f0eea8f` while local `main` is ahead; push remains the first owner action.
+    - P1 actual V1-file needs are limited to `embeddings/store.py` and `graph/neo4j_{client,schema,queries}.py`; `agents/reader.py` is REDESIGN reference only.
+    - Labeling estimate is an explicit assumption: ~3–6 owner hours for P1-11, ~3–6 for P3-03, with the P1-11 relabel 7-day gap.
+  - done: 2026-11-14 | evidence: `_private/owner-action-sheet.md` (untracked); ordered hard blockers vs can-wait; P1 V1 path/destination table; exact push/Neo4j/provider/labeling commands; first action = push local `main` to the private remote and confirm CI.
 
 ### [ ] D0-11 — Build-ready gate report and PROGRESS update (AGENT)
 - depends: D0-01 … D0-10
