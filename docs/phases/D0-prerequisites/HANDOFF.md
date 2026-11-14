@@ -20,7 +20,7 @@
 - This Windows host has no GNU `make`; the equivalent Python commands are the verification path. CI runs the Makefile targets on Ubuntu.
 - The venv lacks a working `wheel`/setuptools>=68 install, so verify the CLI with `python -m axion.llm.cli`, not the console script.
 - Docker Desktop may be stopped; `day0-check` will report Docker/Neo4j failures or skips honestly.
-- A V1 Neo4j container may already own ports 7474/7887. Stop it before running V2's Compose stack; never reuse V1 volumes.
+- V1's Neo4j may already own ports 7474/7887. V2 uses host ports 7475/7888 so both can coexist; never reuse V1 volumes or credentials.
 - `detect-secrets` reports historical false positives: the literal phrase "secret scan" in P1-01 evidence and a fake test env value. No verified secret was found.
 - Do not push while the repo visibility/push gate is open.
 

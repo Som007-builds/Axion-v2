@@ -57,6 +57,7 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Added Neo4j 5.18 Community only; no V1 data volumes or extra services.
     - Validated with a temporary dummy process environment value; no real password printed.
   - done: 2026-11-14 | evidence: `docker-compose.yml`; `docs/LOCAL_SETUP.md`; `docker compose config --quiet` → PASS; loopback `127.0.0.1:7474` and `127.0.0.1:7887`; named `neo4j_data`/`neo4j_logs` volumes; healthcheck uses `cypher-shell`.
+  - follow-up 2026-11-14: live start found two issues. Host ports were remapped to `7475`/`7888` so V1's stack keeps `7474`/`7887`, and the redundant `NEO4J_PASSWORD` service env var was removed because Neo4j strict validation reads it as setting `PASSWORD`. V2 container is healthy and `cypher-shell 'RETURN 1'` passed.
 
 ### [x] D0-05 — `day0-check` script and tests (AGENT)
 - depends: D0-02
@@ -67,6 +68,7 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Added `scripts/day0_check.py`, `scripts/__init__.py`, `tests/test_day0_check.py`, and a `make day0-check` target.
     - Current local run reports honest failures/skips: missing owner env names, Docker daemon unreachable at this moment, Neo4j configured but not reachable. It prints names/status only, never values.
   - done: 2026-11-14 | evidence: `scripts/day0_check.py`; `tests/test_day0_check.py`; `pytest -q` → **89 passed, 1 skipped** (network test opt-in via `AXION_RUN_NETWORK=1`); `ruff check .` and `ruff format --check .` → passed; direct `python scripts/day0_check.py` prints PASS/FAIL/SKIP. `make` is unavailable on this Windows host, so the target was verified by running its command directly.
+  - follow-up 2026-11-14: current host now passes all five checks after the owner filled `.env` and the V2 Neo4j stack was started.
 
 ### [x] D0-06 — Data-source terms research (AGENT)
 - depends: D0-02
@@ -86,6 +88,7 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
   - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
     - Updated `NEO4J_URI` to `bolt://127.0.0.1:7887` to match the Compose host-port mapping; the existing `test_env_example_lists_every_setting` covers settings-name coverage.
+    - Follow-up 2026-11-14: `NEO4J_URI` moved to `bolt://127.0.0.1:7888` after the V2 port remap; `.env.example` updated to match.
     - `pricing.yaml` remains `models: {}` and the packaged-template test asserts blank prices load.
     - Test fixtures use obviously fake `provider/model-a` and illustrative numbers; production code/CI has no model IDs or numeric prices.
   - done: 2026-11-14 | evidence: `.env.example`; `tests/test_settings.py::test_env_example_lists_every_setting`; `tests/test_pricing.py::test_packaged_template_loads_with_blank_prices`; `pytest -q` → **89 passed, 1 skipped**; `ruff`/format/mypy → passed; production search → no hard-coded model IDs or numeric prices.

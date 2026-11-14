@@ -8,7 +8,7 @@ This is the minimal local stack for the foundation phase: **Neo4j only**. Redis,
 - Docker Desktop with Docker Compose v2.
 - A local `.env` copied from `.env.example` and filled in. Never commit it.
 - `NEO4J_PASSWORD` set to a non-empty password (Neo4j rejects the default `neo4j` password).
-- `NEO4J_URI=bolt://127.0.0.1:7887` to match the Compose port mapping.
+- `NEO4J_URI=bolt://127.0.0.1:7888` to match the Compose port mapping.
 
 ## Start and stop
 
@@ -19,7 +19,7 @@ docker compose up -d
 docker compose ps
 ```
 
-The browser UI is on `http://127.0.0.1:7474`; Bolt is on `127.0.0.1:7887`. Both bindings are loopback-only. Data and logs live in the named volumes `neo4j_data` and `neo4j_logs`.
+The browser UI is on `http://127.0.0.1:7475`; Bolt is on `127.0.0.1:7888`. Both bindings are loopback-only. Data and logs live in the named volumes `neo4j_data` and `neo4j_logs`.
 
 Stop the container without deleting data:
 
@@ -33,7 +33,7 @@ Delete the local database as well (destructive):
 docker compose down -v
 ```
 
-Do not run this stack and an old V1 Neo4j container at the same time: both try to own ports 7474 and 7887. Stop the V1 container first, and never point V2 at V1's data volumes.
+V1's Neo4j uses host ports 7474/7887; V2 uses 7475/7888, so both stacks can run side by side. Never point V2 at V1's data volumes or reuse V1's credentials — V2 needs its own database and schema.
 
 ## Checks
 

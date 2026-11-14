@@ -81,3 +81,11 @@ python scripts/day0_check.py                # current host: 3 FAIL, 1 SKIP
 - The Compose healthcheck was validated by config only; Docker was stopped at the final check.
 - Data-source terms are recorded as observed on 2026-11-14; they are not legal advice and are not owner-approved yet.
 - Labeling-hour estimates are planning assumptions, not measured times.
+
+## Post-close-out update (2026-11-14, later)
+
+- Owner filled `.env` (Groq key, contact emails, Neo4j password) and selected Groq tiers: `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large). Both have published prices; `pricing.yaml` remains blank and dry-run stays on.
+- V1's stack was found running from `D:\AI-Projects\schimesh` on 7474/7887. V2 was remapped to 7475/7888 so both coexist; `.env.example`, `LOCAL_SETUP.md`, and the D0 handoff were updated.
+- Live start exposed a Compose defect that config-only validation missed: passing `NEO4J_PASSWORD` as a service env var makes Neo4j 5.18 strict validation reject setting `PASSWORD`. The variable was removed and the healthcheck now derives the password from `NEO4J_AUTH`.
+- Verified: `axion-v2-neo4j-1` healthy; `cypher-shell 'RETURN 1'` → ok; `python scripts/day0_check.py` → 5/5 PASS; `pytest -q` → 89 passed, 1 skipped.
+- Still open: task branches not pushed, CI unconfirmed, paid budget/pricing approval for P1-10, Retraction Watch terms, labeling time.

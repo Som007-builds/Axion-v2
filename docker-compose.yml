@@ -9,11 +9,14 @@ services:
     image: neo4j:5.18-community
     restart: unless-stopped
     environment:
+      # Only NEO4J_AUTH is passed. Neo4j maps every NEO4J_* variable to a
+      # server setting, so passing NEO4J_PASSWORD too fails strict validation
+      # with "No declared setting with name: PASSWORD".
       NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}"
-      NEO4J_PASSWORD: "${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}"
     ports:
-      - "127.0.0.1:7474:7474"
-      - "127.0.0.1:7887:7687"
+      # Host ports 7475/7888 avoid V1's 7474/7887, so both stacks can coexist.
+      - "127.0.0.1:7475:7474"
+      - "127.0.0.1:7888:7687"
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
@@ -21,7 +24,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "cypher-shell -u neo4j -p \"$${NEO4J_PASSWORD}\" 'RETURN 1' >/dev/null 2>&1 || exit 1",
+          "cypher-shell -u neo4j -p \"$${NEO4J_AUTH#neo4j/}\" 'RETURN 1' >/dev/null 2>&1 || exit 1",
         ]
       interval: 10s
       timeout: 10s
