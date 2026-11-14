@@ -82,6 +82,32 @@ model. The real local embedder is `sentence-transformers/all-MiniLM-L6-v2`
 `--in-memory` runs the full loader without Docker or Chroma and is useful for a
 smoke test.
 
+### Verified environment facts (2026-11-14)
+
+- **Use the venv interpreter explicitly on this host:** `.venv/Scripts/python.exe`.
+  The bare `python` on PATH resolves to a `D:\` shim whose venv launcher fails
+  with `No pyvenv.cfg file`; pre-commit hooks that call `python` fail for the
+  same reason unless the venv `Scripts` directory is first on PATH.
+- **Neo4j 5.18 memory settings are verified**, not assumed: after
+  `docker compose up -d --force-recreate neo4j`,
+  `CALL dbms.listConfig()` reports heap initial `512.00MiB`, heap max `1.00GiB`,
+  and page cache `512.00MiB`. The env names are therefore correct for the
+  pinned image.
+- **Host resources at verification time:** 15.6 GB RAM; 134.3 GB free on `D:`
+  (repository/work drive); 9.1 GB free on `C:`. Docker Desktop uses the WSL2
+  backend and **no `C:\Users\<you>\.wslconfig` exists yet**; the cap below is
+  guidance until the owner creates it and runs `wsl --shutdown`.
+- **Chroma telemetry is disabled** in the adapter. With the pinned
+  `chromadb==0.6.3` the bundled telemetry client logs a posthog API mismatch
+  on every collection creation; it does not affect the load.
+- **One ingest at a time.** The checkpoint directory is shared state. Before
+  starting a run, check for a stale `scripts/ingest_corpus.py` process from an
+  earlier session; two concurrent runs duplicate requests and interleave
+  checkpoint appends. Stop only the exact stale PID, never by name pattern.
+- The hash embedder is a deterministic plumbing check, not a semantic model.
+  This verification run used `--embedder hash`; sentence-transformers/CPU torch
+  are pinned above but were not installed.
+
 ### Memory and disk caps
 
 `docker-compose.yml` caps Neo4j at a 1 GB heap and a 512 MB page cache using

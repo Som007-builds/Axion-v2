@@ -3,8 +3,9 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through P1-07 are `[x]`; P1-08 through P1-12 are `[!]` pending owner decisions (sub-topic approval, prices/budget, labeling time).
-- **Next action:** **Owner decision** on ADR-0012. Under the total-corpus reading it proposes `(HSC) Medicine - Infectious Disease`; under the base-papers reading it points to oncology. Then a fresh P1 thread resumes P1-08. Read `docs/phases/P1-foundation/TODO.md` first; P1-11 tooling is already prepared and tested.
+- **Phase:** P1 (foundation) — P1-01 through P1-07 are `[x]`; P1-08 and P1-09 are `[~]` in the 2026-11-14 late session; P1-10 through P1-12 remain blocked.
+- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample). PRD P1.8 and CONTEXT §4 already use the total-corpus wording.
+- **Next action:** finish the full infectious-disease ingest, commit the ID-only manifest, then load Neo4j/Chroma twice; after that, P1-10 needs owner prices/budget/SDK approval and a confirmed sample size.
 - **Owner first action:** settle the corpus-bound reading and approve ADR-0012, or name an alternative candidate/corpus bound (unblocks P1-08). See `_private/owner-action-sheet.md`.
 - **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
@@ -86,16 +87,16 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - **Provider/prices:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large) on Groq; enter their published prices in `pricing.yaml` only when the owner approves a paid budget.
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
 - **Retraction Watch:** resolved 2026-11-14. Crossref’s canonical Metadata Retrieval page lists the database as CC0; owner approved use and the acquisition method (REST lookups + pinned GitLab CSV snapshot; no raw CSV committed). Recorded in `docs/DATA_SOURCES.md`.
-- **Sub-topic:** approve ADR-0012 (proposed: `(HSC) Medicine - Infectious Disease`, est. 4,749-paper corpus) or choose an alternative from `docs/reports/P1-feasibility.md`.
+- **Sub-topic:** resolved 2026-11-14 — ADR-0012 accepted (`(HSC) Medicine - Infectious Disease`), with the exact-count stop condition and PMID-gap reporting. Oncology deferred to its own ADR as a held-out transfer corpus.
 - **Labeling:** when can the owner block ~3–6 hours for P1-11 and ~3–6 hours for P3-03, including the P1-11 7-day relabel gap?
 - **ADR renumbering:** confirm ADR-0008 (scale) and ADR-0009 (Day-0) are the intended final numbers.
 - **Local tooling:** no GNU `make` on this host; equivalent Python commands are used. Pre-commit under the 3.11 venv fails to create hook envs because its base Python is at `D:\`; the hooks pass under Python 3.12, and CI will use Ubuntu 3.11.
 - **Provider SDK adapters:** real Groq/Gemini/Anthropic adapters are deferred until packages are approved/installed. P1-03 is offline and uses a scripted provider.
 
 ## Blocked tasks
-- P1-08: owner approves ADR-0012 (infectious-disease sub-topic) or names an alternative candidate/corpus bound. P1-06/P1-07 data and tooling are ready.
-- P1-09: follows P1-08; clean V2 rewrite is decided (ADR-0011), so no V1-port question remains.
-- P1-10: P1-09 stores, verified prices in `pricing.yaml`, a paid-budget cap, and the provider SDK dependency.
+- P1-08: in progress (full ingest running; exact counts pending).
+- P1-09: in progress (loader verified in-memory and against Neo4j/Chroma on a smoke bundle; full-manifest load pending P1-08).
+- P1-10: P1-09 stores, verified prices in `pricing.yaml`, a paid-budget cap, the provider SDK dependency, and owner confirmation of the seeded-sample size (dry-run estimate prepared).
 - P1-11: owner labeling time (~3–6 h for ≥200 claims) and a ≥7-day relabel gap; tooling is ready.
 - P1-12: follows from P1-11 (and the P1-10 run).
 - P3-03: owner labeling (later phase).
@@ -106,7 +107,8 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - Plan (in order): (A) verify the unverified P1-08/P1-09 WIP against acceptance criteria + CONTEXT §7.3 and get tests/ruff/format/strict mypy green; (B) move reusable ingest logic from `scripts/ingest_corpus.py` into `src/axion/ingest/` with tests; (C) live smoke ingest (~30–50 papers), then the full infectious-disease corpus up to the ~5,000 cap; (D) exact counts vs §4 minimums + PMID gap; (E) load Neo4j/Chroma twice with identical counts (or in-memory fallback, stated plainly); (F) verify Neo4j heap/page-cache env names, WSL2 guidance, CPU-only torch pin, real resource numbers; (G) P1-10 dry-run readiness estimate only — no extractor code, no SDK, no LLM.
 - Constraints: dry-run on, prices blank, $0 budget, zero LLM calls, no merge/push, do not delete the existing `data/corpus/infectious-disease-v1` checkpoint.
 - Partial checkpoint found: `data/corpus/infectious-disease-v1/` (citations.jsonl, citers.jsonl, ingest.log, sources_doi.jsonl, sources_pmid.jsonl) — to be inspected, not deleted.
-- Next update: after baseline checks (Step A).
+- Checkpoint 2026-11-14 23:44 — **Step A done:** baseline 226 passed/2 skipped, ruff/format/strict mypy clean. **Step B done:** orchestration moved to `src/axion/ingest/corpus_pipeline.py`, CLI thin, orphan-cite validation, bounded full-text batches, end-to-end offline resume test (`231 passed, 2 skipped` at that commit). **Step C partly done:** 30-source smoke ran end-to-end and three consecutive runs produced identical counts/hashes (14 papers, 4 sources, 10 citers, 8 contexts; 0 downloads on the re-run). Full ingest running; 2,898 full texts cached. **Step E partly done:** in-memory and real Neo4j 5.18 + persistent Chroma smoke loads both loaded twice with identical counts (14 papers, 10 CITES, 8 contexts). **Step F partly done:** Neo4j heap/page-cache env names verified via `dbms.listConfig`; host 15.6 GB RAM, D: 134.3 GB free, C: 9.1 GB free, no `.wslconfig`. A stale ingest process from the interrupted session was found and stopped; cap one ingest at a time. **G:** estimator script written and validated on the smoke manifest; real report waits for the full manifest.
+- Next update: after the full ingest and store load.
 
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — P1-06/P1-07 closed
 - Did: verified Crossref’s CC0 statement for Retraction Watch on the canonical Metadata Retrieval page; recorded terms, acquisition rules, snapshot commit/date/hash in `docs/DATA_SOURCES.md`; built the Retraction Watch CSV loader, DOI/PMID index and PMCID resolver hook, added Europe PMC citations/identifier lookups, generated the P1-06 coverage report + ID-only manifest; ran a five-candidate P1-07 feasibility spike (oncology, cardiovascular, infectious disease, gastroenterology, rehabilitation/therapy), wrote `docs/reports/P1-feasibility.md`/`.json`, and proposed ADR-0012 (infectious disease, because it is the only passing candidate whose estimated corpus fits 2,000-5,000).

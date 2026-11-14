@@ -905,6 +905,8 @@ def run_ingest(
         "A citation context is counted only when the citing JATS reference matches a "
         "source by DOI, PMID, or normalized title plus a ±1 year window. Unresolved or "
         "ambiguous references are not counted.",
+        "Citer discovery keeps only MEDLINE (MED) and preprint (PPR) citation records; "
+        "other Europe PMC source types are ignored.",
         "Full text is Europe PMC OA JATS and is stored in the untracked raw cache; the "
         "committed manifest contains identifiers and counts only.",
         "RetractionNotice nodes carry the Retraction Watch record id and source only; "
