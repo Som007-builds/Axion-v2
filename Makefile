@@ -16,4 +16,4 @@ day0-check:
 	$(PYTHON) scripts/day0_check.py
 
 report:
-	@echo "not implemented"
+	$(PYTHON) scripts/build_p1_report.py
