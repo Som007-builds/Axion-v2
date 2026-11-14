@@ -12,11 +12,18 @@
 | Cost per paper | NOT YET MEASURED | ledger + manifest |
 | Tokens per paper | NOT YET MEASURED | ledger + manifest |
 | p95 latency | NOT YET MEASURED | ledger |
-| Corpus claim coverage | NOT YET MEASURED | manifest |
+| Corpus claim coverage | see corpus section | manifest |
 
-## Corpus
+## Corpus (ID-only manifest)
 
-- Corpus manifest: **NOT YET MEASURED** (`docs\reports\P1-corpus-manifest.json` not found)
+- Corpus: `infectious-disease-v1`; cap 5,000
+- Papers: 4,928 (792 sources, 4,168 citers)
+- Citation contexts: 6,117; edges with contexts: 3,976
+- Papers parsed during the context stage: 4,168; parse failures: 0
+- All-paper parse coverage: 4,928/4,928 parsed, 0 failures; 4,777 papers with ≥1 context (`docs/reports/P1-corpus-coverage.md`)
+- Papers without PMID: 1 (1 sources)
+- Manifest wall time: 3,065.9s; peak RSS: 178.2 MiB; disk: 649.5 MiB
+- Contexts per paper: 1.24
 
 ## Cost ledger
 

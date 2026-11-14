@@ -1,0 +1,16 @@
+{
+  "context_coverage": 0.9693587662337663,
+  "contexts_mean": 87.73275162337663,
+  "contexts_median": 58.0,
+  "contexts_total": 432347,
+  "corpus_id": "infectious-disease-v1",
+  "missing_fulltext": 0,
+  "papers": 4928,
+  "papers_with_contexts": 4777,
+  "papers_with_sections": 4862,
+  "paragraphs_mean": 39.17025162337662,
+  "parse_coverage": 1.0,
+  "parse_failures": 0,
+  "parsed": 4928,
+  "sections_mean": 9.278612012987013
+}

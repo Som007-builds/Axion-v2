@@ -7,6 +7,7 @@ never fabricates a number and never calls an LLM.
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 from pathlib import Path
 
@@ -32,6 +33,18 @@ def _corpus_section(manifest_path: Path) -> list[str]:
     manifest = read_manifest(manifest_path)
     counts = manifest.counts
     resources = manifest.resources
+    coverage_path = manifest_path.parent / "P1-corpus-coverage.json"
+    coverage: dict[str, object] | None = None
+    if coverage_path.exists():
+        coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+    coverage_line = (
+        f"- All-paper parse coverage: {coverage['parsed']:,}/"
+        f"{coverage['papers']:,} parsed, {coverage['parse_failures']:,} failures; "
+        f"{coverage['papers_with_contexts']:,} papers with ≥1 context "
+        "(`docs/reports/P1-corpus-coverage.md`)"
+        if coverage is not None
+        else "- All-paper parse coverage: see `scripts/corpus_coverage.py`"
+    )
     return [
         "## Corpus (ID-only manifest)",
         "",
@@ -40,7 +53,9 @@ def _corpus_section(manifest_path: Path) -> list[str]:
         f"{counts.citers_included:,} citers)",
         f"- Citation contexts: {counts.contexts_total:,}; edges with contexts: "
         f"{counts.edges_with_contexts:,}",
-        f"- Papers parsed: {counts.papers_parsed:,}; parse failures: " f"{counts.parse_failures:,}",
+        f"- Papers parsed during the context stage: {counts.papers_parsed:,}; "
+        f"parse failures: {counts.parse_failures:,}",
+        coverage_line,
         f"- Papers without PMID: {counts.papers_without_pmid:,} "
         f"({counts.papers_without_pmid_sources:,} sources)",
         f"- Manifest wall time: {resources.wall_time_s:,.1f}s; peak RSS: "

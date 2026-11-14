@@ -1,0 +1,99 @@
+{
+  "cap": 5000,
+  "config_path": "src\\axion\\config\\corpus\\infectious-disease.yaml",
+  "config_sha256": "aba53804bf5c1003c3a886c0d15d3cbaaf0541959064ae416f258a6f7aaff90a",
+  "corpus_id": "infectious-disease-v1",
+  "counts": {
+    "citation_targets_with_pmid": 791,
+    "citation_targets_without_pmid": 1,
+    "citers_eligible": 9936,
+    "citers_fulltext_failed": 34,
+    "citers_included": 4168,
+    "citers_med_unique": 13426,
+    "citers_non_oa": 3490,
+    "citers_not_found": 0,
+    "citers_ppr_skipped": 451,
+    "citers_resolved": 13426,
+    "citers_truncated": 5734,
+    "citers_without_full_text": 0,
+    "citers_without_pmcid": 0,
+    "contexts_total": 6117,
+    "edges_with_contexts": 3976,
+    "edges_without_contexts": 1006,
+    "fulltext_failures": 39,
+    "papers_both_roles": 32,
+    "papers_parsed": 4168,
+    "papers_total": 4928,
+    "papers_with_pmid": 4927,
+    "papers_without_pmid": 1,
+    "papers_without_pmid_citers": 0,
+    "papers_without_pmid_sources": 1,
+    "parse_failures": 0,
+    "rw_linkable": 1565,
+    "rw_retractions_in_subject": 1586,
+    "rw_unlinkable": 21,
+    "sources_fulltext_failed": 6,
+    "sources_non_oa": 480,
+    "sources_not_found": 289,
+    "sources_resolved": 1297,
+    "sources_total": 792,
+    "sources_with_pmid": 791,
+    "sources_without_full_text": 0,
+    "sources_without_pmcid": 19,
+    "sources_without_pmid": 1
+  },
+  "created_at": "2026-11-14T19:03:37+00:00",
+  "europe_pmc": {
+    "base_url": "https://www.ebi.ac.uk/europepmc/webservices/rest",
+    "citation_endpoint": "MED/<pmid>/citations",
+    "retrieved_at": "2026-11-14T19:03:37+00:00"
+  },
+  "files": {
+    "cites_csv": "docs\\reports\\P1-corpus-cites.csv",
+    "cites_rows": 4982,
+    "cites_sha256": "0c23c97d162ba44bfb039b4aba6e6ba4d1b6c6a53963c5829fea0a184dc9779c",
+    "papers_csv": "docs\\reports\\P1-corpus-papers.csv",
+    "papers_rows": 4928,
+    "papers_sha256": "7adf8572c623cd70407a49ad93e4e8741fd8972f0d21ea2dfe01e50d64cef6ff"
+  },
+  "filters": {
+    "full_text": true,
+    "open_access": true,
+    "require_pmcid": true
+  },
+  "limitations": [
+    "Citer discovery uses Europe PMC's MEDLINE citations endpoint (MED/<pmid>/citations), which is PMID-based. Papers without a PMID are invisible as citers and their own citers cannot be discovered, so blast-radius recall is capped by this source.",
+    "A citation context is counted only when the citing JATS reference matches a source by DOI, PMID, or normalized title plus a ±1 year window. Unresolved or ambiguous references are not counted.",
+    "Full text is Europe PMC OA JATS and is stored in the untracked raw cache; the committed manifest contains identifiers and counts only.",
+    "RetractionNotice nodes carry the Retraction Watch record id and source only; notice date/reason enrichment is deferred to P3 flag ingestion.",
+    "5,734 eligible citers were truncated by the 5,000-paper total cap; context counts are a lower bound."
+  ],
+  "resources": {
+    "checkpoint_bytes": 4944348,
+    "disk_mb": 649.4818620681763,
+    "estimated_disk_mb": 564.0866703987122,
+    "fulltext_cache_bytes": 675702694,
+    "fulltext_cache_files": 4928,
+    "fulltext_cache_hits": 2839,
+    "fulltext_downloaded": 2089,
+    "fulltext_wall_time_s": 2878.074271999998,
+    "metadata_wall_time_s": 3.169130000002042,
+    "parse_wall_time_s": 184.41671710000082,
+    "peak_rss_mb": 178.19921875,
+    "wall_time_s": 3065.930909900002
+  },
+  "retraction_snapshot": {
+    "csv_bytes": 68092153,
+    "csv_sha256": "4d0509f648ec6dc7f7de43a2260943ed15c56b239d882d73f468f4f40ef917dd",
+    "licence": "CC0",
+    "licence_url": "https://www.crossref.org/documentation/retrieve-metadata/",
+    "snapshot_commit": "560ad745cb621e240501422ad485bd81b4590860",
+    "snapshot_date": "2026-11-13"
+  },
+  "schema_version": 1,
+  "sub_topic": {
+    "description": "Retracted infectious-disease papers and the OA papers that cite them",
+    "key": "infectious-disease",
+    "subject": "(HSC) Medicine - Infectious Disease"
+  }
+}
