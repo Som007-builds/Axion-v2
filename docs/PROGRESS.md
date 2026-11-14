@@ -3,11 +3,10 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through P1-07 are `[x]`; P1-08 and P1-09 are `[~]` in the 2026-11-14 late session; P1-10 through P1-12 remain blocked.
+- **Phase:** P1 (foundation) — P1-01 through P1-09 are `[x]`; P1-10 is offline-complete but blocked for the paid run; P1-11 is blocked on owner labels; P1-12 is scaffolded and blocked on measured values.
 - **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample). PRD P1.8 and CONTEXT §4 already use the total-corpus wording.
-- **Next action:** finish the full infectious-disease ingest, commit the ID-only manifest, then load Neo4j/Chroma twice; after that, P1-10 needs owner prices/budget/SDK approval and a confirmed sample size.
-- **Owner first action:** settle the corpus-bound reading and approve ADR-0012, or name an alternative candidate/corpus bound (unblocks P1-08). See `_private/owner-action-sheet.md`.
-- **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
+- **Next action:** owner supplies verified prices, a paid cap, SDK approval, and confirms the 100-paper sample; then run the paid P1-10 baseline and the P1-11 audit.
+- **Last updated:** 2026-11-15 by Freebuff / DeepSeek V4.x Flash
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -56,7 +55,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | In progress | — | P1-01..P1-07 `[x]`; P1-08..P1-12 `[!]` on owner decisions (sub-topic, prices/budget, labeling) |
+| P1 Foundation | In progress | — | P1-01..P1-09 `[x]`; P1-10 offline-complete (paid run blocked on prices/budget/SDK); P1-11 blocked on owner labels; P1-12 scaffolded |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -81,6 +80,9 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | Retraction Watch snapshot | 73,822 rows; 68,369 retractions; 93.0% linkable by DOI/PMID | `docs/reports/P1-retraction-coverage.md` |
 | Retraction Watch → Europe PMC (seeded n=150) | 80 resolved (53.3%); 54 with full text (67.5% of resolved); 77/80 have citers | `docs/reports/P1-retraction-coverage.md` |
 | P1 feasibility shortlist | All 5 pass; infectious disease est. 741 sources / 4,409 contexts / 4,749-paper corpus | `docs/reports/P1-feasibility.md` |
+| Infectious-disease corpus (exact) | 4,928 papers; 792 sources; 4,168 citers; 6,117 contexts; 4,928/4,928 parsed | `docs/reports/P1-corpus.md` |
+| Full store load (twice) | Paper 4,928; CITES 4,982; contexts 6,117; notices 792; vectors 4,928 + 6,117 | `data/corpus/infectious-disease-v1/store-load.log` |
+| P1-10 100-paper dry-run (estimate) | 764,084 prompt tokens; mean 7,641/paper; expected 500 claims at 5/paper | `docs/reports/P1-baseline-estimate.md` |
 
 ## Open questions for owner
 - **Push:** when will local `main` and the phase branches be pushed to `Som007-builds/Axion-v2`, and will the P1-03/Day-0 work be a direct push or a PR to `main`?
@@ -94,9 +96,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - **Provider SDK adapters:** real Groq/Gemini/Anthropic adapters are deferred until packages are approved/installed. P1-03 is offline and uses a scripted provider.
 
 ## Blocked tasks
-- P1-08: in progress (full ingest running; exact counts pending).
-- P1-09: in progress (loader verified in-memory and against Neo4j/Chroma on a smoke bundle; full-manifest load pending P1-08).
-- P1-10: P1-09 stores, verified prices in `pricing.yaml`, a paid-budget cap, the provider SDK dependency, and owner confirmation of the seeded-sample size (dry-run estimate prepared).
+- P1-10: offline portion complete; the paid run needs verified prices in `pricing.yaml`, a paid-budget cap, the provider SDK dependency, and owner confirmation of the seeded-sample size (dry-run estimate prepared).
 - P1-11: owner labeling time (~3–6 h for ≥200 claims) and a ≥7-day relabel gap; tooling is ready.
 - P1-12: follows from P1-11 (and the P1-10 run).
 - P3-03: owner labeling (later phase).
@@ -107,7 +107,49 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - One ingest runner is already alive from the previous session (detached), 3,400/4,967 full texts and 3,476 cached. Do **not** start a duplicate.
 - Plan: (A) let the existing runner finish; (B) full manifest + exact counts, PMID gap, parse coverage, resources; (C) load the full manifest into Neo4j/Chroma twice; (D) semantic MiniLM embeddings only if the disk/time risk is acceptable (C: has ~9 GB free), else document hash as placeholder; (E) build the offline P1-10 baseline path (prompt v1, claim schema, verbatim-span validator, fake-provider runner + dry-run, seeded 100-paper selector, silver-label manifest, provider interface only); (F) P1-12 report scaffold with "not yet measured"; (G) real-corpus dry-run estimate.
 - Constraints: no LLM calls, no provider SDKs, prices blank, dry-run on, no labels, no merge/push.
-- Next update: after the ingest finishes and counts are computed.
+- Checkpoint 2026-11-15 00:50 — **A/B/C/D/E/F/G done to the allowed boundary.** Full ingest finished: **4,928 papers / 792 sources / 4,168 citers / 6,117 contexts**; both §4 minimums pass. Parse coverage 4,928/4,928, 0 failures. Full Neo4j + Chroma (MiniLM) load twice: identical counts in 491s. Semantic stack installed CPU-only (torch 2.5.1+cpu, sentence-transformers 3.3.1), HF cache on D:. Offline P1-10 pipeline and 100-paper dry-run estimate are built; provider SDK and paid calls remain blocked. P1-12 report scaffold emits NOT YET MEASURED placeholders.
+
+#### SESSION HANDOFF FOR THE REVIEWER (2026-11-15 00:50)
+**1. Files changed and confidence**
+- `src/axion/ingest/corpus_pipeline.py`, `scripts/ingest_corpus.py` — **verified by live full run + tests**; resumed a single runner, 4,928-paper manifest.
+- `docs/reports/P1-corpus-{papers.csv,cites.csv,manifest.json,md}`, `P1-corpus-coverage.{md,json}` — **verified by scripts**; IDs only, no full text.
+- `src/axion/extract/{claims,prompting,baseline}.py`, `src/axion/extract/prompts/claim-extraction-v1.md`, `scripts/run_baseline_extraction.py`, `src/axion/llm/adapters.py` — **verified by tests + real-corpus dry run**; no provider SDK, no LLM call.
+- `scripts/build_p1_report.py`, `Makefile`, `docs/reports/P1-baseline.md` — **verified by test + live generation**; placeholders only where inputs are absent.
+- `src/axion/store/{loader,chroma}.py` — **verified by tests + full live load twice**.
+- `tests/test_extract_baseline.py`, `tests/test_p1_report.py`, `tests/test_corpus.py`, `tests/test_store_loader.py` — **verified by pytest**.
+- **Unverified:** the paid P1-10 run, any precision/cost measurement, and the P1-11 audit.
+
+**2. Commands to re-verify** (use `.venv/Scripts/python.exe`)
+```
+.venv/Scripts/python.exe -m pytest -q            # 244 passed, 2 skipped
+.venv/Scripts/python.exe -m ruff check . && .venv/Scripts/python.exe -m ruff format --check .
+.venv/Scripts/python.exe -m mypy
+.venv/Scripts/python.exe scripts/corpus_coverage.py
+.venv/Scripts/python.exe scripts/run_baseline_extraction.py --manifest docs/reports/P1-corpus-manifest.json --sample 100
+HF_HOME=D:/hf-cache .venv/Scripts/python.exe scripts/load_stores.py --manifest docs/reports/P1-corpus-manifest.json --chroma-dir data/chroma-full --twice --embedder sentence-transformers
+.venv/Scripts/python.exe scripts/build_p1_report.py
+```
+
+**3. Known issues / risks**
+- 39 full-text downloads are permanent Europe PMC HTTP 500s and are excluded; 6 sources and 34 citers are affected.
+- The cap truncated 5,734 eligible citers; context counts are for the included set. 1 source has no PMID, so its citers cannot be discovered.
+- Only MED/PPR citation records are kept; other Europe PMC source types are ignored.
+- Chroma still prints telemetry warnings from its bundled client; loads succeed and the adapter sets anonymized telemetry off.
+- Docker's data lives in WSL on C:, which has 8.6 GB free; Neo4j grew to 545 MB. Watch this before adding more stores.
+- `data/chroma-full`, the JATS cache, and the Neo4j volume are untracked and required to reproduce the store load.
+- No audit labels exist; precision and the gate remain unmeasured.
+
+**4. Exact counts / resources**
+- Corpus: 4,928 papers (792 sources, 4,168 citers, 32 dual-role), 6,117 contexts, 3,976 edges with contexts, 1,006 without; 4,928/4,928 parsed, 0 parse failures; 4,777 papers with ≥1 context.
+- Ingest: 3,065.9s wall (resumed process), metadata 3.2s, full text 2,878.1s, parse/context 184.4s; peak RSS 178.2 MiB; cache 644.4 MiB / 4,928 files; 2,089 downloaded + 2,839 cache hits.
+- Store load: 491s for two loads; Paper 4,928; CITES 4,982; contexts/IN_PAPER/POINTS_TO 6,117; notices 792; vectors 4,928 + 6,117 + 0 claims. Chroma 53 MB; Neo4j volume 545 MB; raw cache 801 MB on disk.
+- Semantic stack: torch 2.5.1+cpu (CUDA false), sentence-transformers 3.3.1, MiniLM 384-d, normalized; HF cache at `D:/hf-cache`.
+- P1-10 estimate (100 seeded papers, seed 20261114): **764,084 prompt tokens**, mean 7,641, median 6,971, p95 15,867; output 24k/60k/120k and expected 200/500/1,000 claims at 2/5/10 per paper. No dollar cost (prices blank).
+
+**5. Next 3 actions**
+1. Owner: supply verified tier prices, a paid cap, SDK approval, and confirm the 100-paper sample; then run the paid baseline.
+2. Draw the ≥200-claim audit sample and label it (P1-11); relabel 10% after ≥7 days.
+3. Regenerate `docs/reports/P1-baseline.md` and the gate decision once P1-10/P1-11 have measured values.
 
 ### 2026-11-14 — Freebuff / DeepSeek V4.x Flash — P1 SESSION IN PROGRESS
 - Status: **IN PROGRESS** — taking over after a usage-limit cutoff. Branch `p1`, clean tree at start (`d4f3171`), no push.

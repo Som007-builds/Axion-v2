@@ -113,11 +113,12 @@
     - `PMC/<id>/citations` returns 404; `MED/<pmid>/citations` works and was used for every citer list.
   - done: 2026-11-14 | evidence: `scripts/feasibility_spike.py`; `tests/test_feasibility.py` (9 tests); `docs/reports/P1-feasibility.md`; `docs/reports/P1-feasibility.json`; ADR-0012 Proposed in `docs/DECISIONS.md`. Measured: all candidates ≥653 est. source papers and ≥2,543 est. contexts at lower bound; infectious disease 741 (653-829) sources, 4,409 (3,498-5,332) contexts, 4,749 est. corpus; rehab (unexpected) 825 (733-918) sources, 6,958 (5,451-8,655) contexts, 6,624 corpus. Estimates are sampling-based; P1-08 will report exact counts.
 
-### [~] P1-08 — Ingest corpus
+### [x] P1-08 — Ingest corpus
 - depends: P1-07 (owner-approved)
 - what: Ingest the owner-approved infectious-disease corpus (retracted OA sources + discoverable citers) up to the ~5,000 hard cap; exact counts. Zero LLM cost.
 - acceptance: Corpus manifest committed (IDs only, no full text); counts match report.
   - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 22:56 | branch: p1
+  - done: 2026-11-15 | evidence: commit `62433c8`; `docs/reports/P1-corpus-{papers.csv,cites.csv,manifest.json,md}`; `docs/reports/P1-corpus-coverage.{md,json}`; `scripts/corpus_coverage.py`. Exact result: **4,928 papers** (792 sources, 4,168 citers), **6,117 contexts**, 4,928/4,928 parsed (0 failures), 3,976 edges with contexts, 1 paper without PMID, 39 full-text failures. Both §4 minimums PASS (792 ≥ 30; 6,117 ≥ 300). Wall 3,065.9s for the resumed run; peak RSS 178.2 MiB; cache 4,928 files / 644.4 MiB.
   - notes:
     - 2026-11-14 22:56 resumed the interrupted session's unverified WIP (`d4f3171`); baseline checks green (226 passed, 2 skipped; ruff/format/mypy clean). Existing work-dir checkpoint (`data/corpus/infectious-disease-v1/`) inspected: 1,539 DOI + 31 PMID resolution rows, 797 citation lists, 13,426 citer rows, 724 cached full texts. It is resumed, not deleted. Partial-log yield: 798 unique eligible sources, 9,936 eligible citers, 4,202 selected before interruption; 5 full-text HTTP 500s (verified persistent).
     - Plan: refactor orchestration out of the 1,015-line script into `src/axion/ingest/` with tests; smoke-run 30 sources and re-run to prove resume; then full run in background.
@@ -127,11 +128,12 @@
     - Exact next command: `.venv/Scripts/python.exe scripts/ingest_corpus.py >> data/corpus/infectious-disease-v1/full-run.log 2>&1` (resumes from cache/checkpoints), then inspect `docs/reports/P1-corpus.md` and `.json`.
     - Gotcha: the detached process may still be running; check for `scripts/ingest_corpus.py` before starting another. One ingest at a time.
 
-### [~] P1-09 — Stores: Neo4j schema v2 + Chroma
+### [x] P1-09 — Stores: Neo4j schema v2 + Chroma
 - depends: P1-08
 - what: Constraints/indexes per CONTEXT.md section 7.3; idempotent loaders; Chroma collections for claims and contexts; tests with mocks/ephemeral stores.
 - acceptance: Schema script idempotent; load of corpus manifest succeeds twice with identical counts.
   - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 22:56 | branch: p1
+  - done: 2026-11-15 | evidence: `python scripts/load_stores.py --manifest docs/reports/P1-corpus-manifest.json --chroma-dir data/chroma-full --twice --embedder sentence-transformers` → exit 0, **491s**, load 1 == load 2: Paper 4,928; CITES 4,982; CitationContext/IN_PAPER/POINTS_TO 6,117; RetractionNotice/RETRACTED_BY 792; vectors papers 4,928, citation_contexts 6,117. Schema v2 idempotent; orphan/non-source edges rejected. MiniLM (384-d) semantic embeddings installed and used; Chroma dir 53 MB; Neo4j volume 545 MB.
   - notes:
     - 2026-11-14 22:56 claimed for verification: the interrupted session left `src/axion/store/*` and `scripts/load_stores.py` unverified. Clean V2 rewrite, no V1 port (ADR-0011).
     - Verification target: Neo4j schema v2 is idempotent; loading the smoke and full manifests twice yields identical graph/vector counts; in-memory path is the fallback if Docker is unavailable.
@@ -147,7 +149,8 @@
     - 2026-11-14 owner scope decision (ADR-0014): seeded paper sample, not the full corpus; size from a dry-run estimate for ≥200 claims with margin and record the seed.
     - **2026-11-14 owner approval (this session):** build the offline portion now — versioned prompt, Pydantic claim schema, verbatim evidence-span validation, LLMClient runner with a fake provider + `--dry-run`, seeded 100-paper selector, silver-label manifest writer, provider adapter interface only. **No provider SDK dependency, no real calls.** Baseline sections: every body section except references, acknowledgements, funding/COI, supplementary. If 100 papers cannot plausibly yield ≥200 claims, recommend a larger sample.
     - Blocked for the *paid* run: verified prices in `pricing.yaml`, a paid budget cap, and provider SDK approval. Tier IDs remain `openai/gpt-oss-20b` / `openai/gpt-oss-120b`.
-  - done: — | in progress: offline portion only.
+  - 2026-11-15 offline portion done: `claim-extraction-v1.md`, `claims.py`, `prompting.py`, `baseline.py`, `scripts/run_baseline_extraction.py`, fake-provider tests. Dry run on the real 100-paper sample (seed 20261114): 764,084 prompt tokens (mean 7,641/paper), 0 missing/failed; expected claims 200/500/1,000 at 2/5/10 per paper. Full report: `docs/reports/P1-baseline-estimate.md`.
+  - done (paid run): — | blocked: prices, paid budget, SDK approval, sample-size confirmation.
 
 ### [!] P1-11 — Claim audit (human)
 - depends: P1-10
@@ -169,6 +172,7 @@
   - agent: Freebuff / DeepSeek V4.x Flash | started: 2026-11-14 23:56 | branch: p1
   - notes:
     - 2026-11-14 owner approved offline report scaffolding. Build a regenerable report script with explicit "not yet measured" placeholders from ledger/audit/manifest inputs; no invented numbers. The gate review still waits for P1-11 labels and the paid P1-10 run.
+  - 2026-11-15 scaffold done: `scripts/build_p1_report.py`, `make report`, `docs/reports/P1-baseline.md` with manifest/coverage values and NOT YET MEASURED placeholders for precision/cost/tokens/latency. Gate review remains blocked on P1-11.
   - done: — | in progress: scaffold only.
 
 ## Phase handoff log (append newest first)

@@ -104,9 +104,17 @@ smoke test.
   starting a run, check for a stale `scripts/ingest_corpus.py` process from an
   earlier session; two concurrent runs duplicate requests and interleave
   checkpoint appends. Stop only the exact stale PID, never by name pattern.
-- The hash embedder is a deterministic plumbing check, not a semantic model.
-  This verification run used `--embedder hash`; sentence-transformers/CPU torch
-  are pinned above but were not installed.
+- The CPU semantic stack is installed and verified (2026-11-15): torch
+  `2.5.1+cpu` with CUDA unavailable, sentence-transformers `3.3.1`, and
+  `sentence-transformers/all-MiniLM-L6-v2` (384-d, L2-normalized). The HF cache
+  was set to `D:/hf-cache` and the pip cache to `D:/pip-cache`. The full store
+  load used `--embedder sentence-transformers`. The hash embedder remains a
+  deterministic offline plumbing option only.
+- **Measured P1 store sizes:** JATS raw cache 801 MB on disk (644 MiB of file
+  bytes), Chroma `data/chroma-full` 53 MB, Neo4j named volume 545 MB. Docker
+  Desktop stores its data in WSL (`/var/lib/docker`) on `C:`, which had only
+  **8.6 GB free** at verification time; the Neo4j volume is the part that grows
+  on `C:` and needs monitoring.
 
 ### Memory and disk caps
 
@@ -132,11 +140,10 @@ swap=2GB
 Apply it with `wsl --shutdown`, then restart Docker Desktop. On a 16 GB laptop,
 leave at least half the host RAM outside WSL2.
 
-Budget roughly **10 GB free disk** for the P1 stack: ~0.7 GB of untracked JATS
-full text, ~1–2 GB of Neo4j data/WAL/indexes, ~1–2 GB of Chroma persistence,
-and headroom for the Python environment. The exact corpus usage is written to
-`docs/reports/P1-corpus.md` by the ingest script. Raw full text and Chroma
-persistence stay under `data/` and are never committed.
+The measured P1 stack is about **1.4 GB**: 801 MB of untracked JATS cache,
+53 MB of Chroma persistence, and a 545 MB Neo4j volume (plus the Python
+environment). The exact ingest usage is in `docs/reports/P1-corpus.md`; raw
+full text and Chroma persistence stay under `data/` and are never committed.
 
 ## Files
 
