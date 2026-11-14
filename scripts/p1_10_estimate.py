@@ -108,7 +108,7 @@ def _report(
         "## Sample",
         "",
         f"- Corpus: `{manifest.corpus_id}` ({manifest.counts.papers_total:,} papers)",
-        f"- Manifest: `docs/reports/{Path(manifest.files.papers_csv).name}`",
+        f"- Manifest bundle: `{manifest.files.papers_csv}`",
         f"- Sample: **{sample_size} papers**, uniform without replacement, "
         f"seed `{seed}` (paper-level)",
         f"- Parsed successfully: {parsed:,}; parse failures: {parse_failures:,}",

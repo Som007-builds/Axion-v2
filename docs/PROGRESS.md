@@ -110,6 +110,47 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - Checkpoint 2026-11-14 23:44 — **Step A done:** baseline 226 passed/2 skipped, ruff/format/strict mypy clean. **Step B done:** orchestration moved to `src/axion/ingest/corpus_pipeline.py`, CLI thin, orphan-cite validation, bounded full-text batches, end-to-end offline resume test (`231 passed, 2 skipped` at that commit). **Step C partly done:** 30-source smoke ran end-to-end and three consecutive runs produced identical counts/hashes (14 papers, 4 sources, 10 citers, 8 contexts; 0 downloads on the re-run). Full ingest running; 2,898 full texts cached. **Step E partly done:** in-memory and real Neo4j 5.18 + persistent Chroma smoke loads both loaded twice with identical counts (14 papers, 10 CITES, 8 contexts). **Step F partly done:** Neo4j heap/page-cache env names verified via `dbms.listConfig`; host 15.6 GB RAM, D: 134.3 GB free, C: 9.1 GB free, no `.wslconfig`. A stale ingest process from the interrupted session was found and stopped; cap one ingest at a time. **G:** estimator script written and validated on the smoke manifest; real report waits for the full manifest.
 - Next update: after the full ingest and store load.
 
+#### SESSION HANDOFF FOR THE REVIEWER (2026-11-14 23:51)
+**1. Files changed and confidence**
+- `src/axion/ingest/corpus_pipeline.py` — **verified by tests + live smoke + partial live run.** Holds the moved orchestration, bounded full-text batches, per-paper failure capture, cache-size accounting, PMID/MED limits. End-to-end offline resume test passes; 30-source live smoke passed three times with identical counts/hashes.
+- `scripts/ingest_corpus.py` — **verified by tests + live smoke** (thin CLI; exit 1 when below §4 minimums, 130 on Ctrl+C).
+- `src/axion/store/{loader,chroma}.py` — **verified by tests + live Neo4j/Chroma smoke** (orphan/non-source edges rejected; load twice identical; telemetry off).
+- `src/axion/eval/cost_estimate.py`, `scripts/p1_10_estimate.py` — **verified on the smoke manifest only**; final estimate not generated.
+- `tests/{test_corpus,test_store_loader,test_cost_estimate}.py` — **verified by pytest.**
+- `docs/LOCAL_SETUP.md`, `docs/PROGRESS.md`, `docs/phases/P1-foundation/TODO.md` — docs, verified by review/commands below.
+- **Unverified:** the full infectious-disease manifest, its exact counts, full store load, and any P1-10 sample numbers.
+
+**2. Commands to re-verify** (use `.venv/Scripts/python.exe`; bare `python` is a broken D: shim)
+```
+.venv/Scripts/python.exe -m pytest -q                 # 236 passed, 2 skipped
+.venv/Scripts/python.exe -m ruff check .
+.venv/Scripts/python.exe -m ruff format --check .
+.venv/Scripts/python.exe -m mypy                      # 38 source files
+.venv/Scripts/python.exe scripts/ingest_corpus.py      # resumes; writes docs/reports/P1-corpus-*
+.venv/Scripts/python.exe scripts/load_stores.py --manifest docs/reports/P1-corpus-manifest.json --twice
+.venv/Scripts/python.exe scripts/p1_10_estimate.py --manifest docs/reports/P1-corpus-manifest.json --sample 50
+```
+
+**3. Known issues / risky areas**
+- **Full ingest incomplete:** 3,276/4,967 full texts cached; a detached run was at 3,200/4,967 when the session ended and may be killed by session cleanup. No `docs/reports/P1-corpus-*` files exist yet. Check for a running `scripts/ingest_corpus.py` before starting another; never run two.
+- A stale ingest from the interrupted session was found still running at 22:25 and was stopped; that is why duplicate requests appeared. Always check process command lines.
+- Full-text HTTP 500s are permanent for a few PMCIDs (~11 so far, ~0.7%); they are dropped and counted.
+- Chroma verification used the non-semantic `HashEmbedder`; CPU torch/sentence-transformers are pinned in docs but **not installed**. Do not describe the smoke vectors as semantic.
+- Only MED/PPR citation records are used; other Europe PMC source types are ignored. PMID-less papers cannot have citers discovered.
+- Provisional checkpoint counts (not final manifest): 798 eligible sources; 1 source without PMID; 9,936 eligible MEDLINE citers; 4,202 included; 5,734 truncated by the 5,000 cap.
+
+**4. Exact numbers / resources (measured this session)**
+- Tests **236 passed, 2 skipped**; ruff/format clean (69 files); strict mypy clean (38 source files).
+- Smoke: 30 records → 4 sources, 10 citers, 14 papers, 8 contexts; three runs identical; last run 0 downloads / 14 cache hits, ~3.8 s.
+- Neo4j 5.18: heap 512 MiB initial / 1 GiB max, page cache 512 MiB, verified with `dbms.listConfig()`.
+- Host: 15.6 GB RAM; D: 134.3 GB free; C: 9.1 GB free; no `.wslconfig`.
+- P1-10 provisional estimate on 14 smoke papers: mean 5,902 tokens/paper (chars/4 heuristic, all parsed sections); final report pending.
+
+**5. Next 3 actions**
+1. Resume/complete the ingest, then commit `docs/reports/P1-corpus-{papers.csv,cites.csv,manifest.json,md}` (IDs only).
+2. Run `load_stores.py --twice` on the full manifest and record identical graph/vector counts.
+3. Generate `P1-baseline-estimate.md` from the full manifest, then ask the owner for prices, budget cap, SDK approval, and sample-size confirmation.
+
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — P1-06/P1-07 closed
 - Did: verified Crossref’s CC0 statement for Retraction Watch on the canonical Metadata Retrieval page; recorded terms, acquisition rules, snapshot commit/date/hash in `docs/DATA_SOURCES.md`; built the Retraction Watch CSV loader, DOI/PMID index and PMCID resolver hook, added Europe PMC citations/identifier lookups, generated the P1-06 coverage report + ID-only manifest; ran a five-candidate P1-07 feasibility spike (oncology, cardiovascular, infectious disease, gastroenterology, rehabilitation/therapy), wrote `docs/reports/P1-feasibility.md`/`.json`, and proposed ADR-0012 (infectious disease, because it is the only passing candidate whose estimated corpus fits 2,000-5,000).
 - State: on `p1`; P1-06/P1-07 `[x]`; all checks green — **209 passed, 2 skipped** (network opt-in), ruff check/format clean (52 files), strict mypy clean (27 source files). Snapshot `560ad745…`; coverage 73,822 rows / 68,369 retractions / 93.0% linkable; seeded n=150 → 80 resolved, 54 full text, 77/80 with citers. All five candidates pass; infectious disease est. 741 sources (653-829), 4,409 contexts (3,498-5,332), 4,749-paper corpus.

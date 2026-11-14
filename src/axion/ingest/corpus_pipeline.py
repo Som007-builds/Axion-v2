@@ -892,7 +892,7 @@ def run_ingest(
 
     checkpoint_bytes = sum(path.stat().st_size for path in work_dir.glob("*.jsonl"))
     output_bytes = sum(path.stat().st_size for path in (papers_csv, cites_csv) if path.exists())
-    cache_bytes = sum(sizes.values())
+    cache_files, cache_bytes = cache_size(fulltext_dir)
     disk_mb = (cache_bytes + checkpoint_bytes + output_bytes) / (1024 * 1024)
 
     papers_with_pmid = sum(1 for paper in papers if paper.pmid)
@@ -1002,7 +1002,7 @@ def run_ingest(
             peak_rss_mb=peak_rss_mb(),
             disk_mb=disk_mb,
             estimated_disk_mb=estimated_disk_mb,
-            fulltext_cache_files=len(sizes),
+            fulltext_cache_files=cache_files,
             fulltext_cache_bytes=cache_bytes,
             fulltext_downloaded=download_stats["downloaded"],
             fulltext_cache_hits=download_stats["hits"],

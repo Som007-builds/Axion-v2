@@ -123,7 +123,9 @@
     - Plan: refactor orchestration out of the 1,015-line script into `src/axion/ingest/` with tests; smoke-run 30 sources and re-run to prove resume; then full run in background.
     - 2026-11-14 owner approved ADR-0012: infectious disease; exact counts must clear ≥30 sources and ≥300 contexts or stop and propose oncology via a new Proposed ADR. Oncology is deferred as a later held-out transfer corpus; the manifest is config-driven (ADR-0012).
     - Corpus bound is the total including citers, hard cap ~5,000 (ADR-0013). Citer discovery is MEDLINE/PMID-only; the PMID gap and blast-radius recall cap must be reported.
-    - Planned: resumable/checkpointed ingest, batch resolution, JATS full-text cache under `data/` (never committed), exact context counts from parsed citers.
+    - **PARTIAL STATE 2026-11-14 23:51 (session ended by owner):** code refactor, tests, and live smoke are done; the full ingest is **not finished**. Full-text cache has 3,276/4,967 papers; detached run was at 3,200/4,967 when the session ended. No committed manifest yet. Known stage counts from this run: 798 eligible sources, 9,936 eligible MEDLINE citers, 4,202 included, 5,734 truncated by the 5,000 total cap; ~11 permanent HTTP 500s so far.
+    - Exact next command: `.venv/Scripts/python.exe scripts/ingest_corpus.py >> data/corpus/infectious-disease-v1/full-run.log 2>&1` (resumes from cache/checkpoints), then inspect `docs/reports/P1-corpus.md` and `.json`.
+    - Gotcha: the detached process may still be running; check for `scripts/ingest_corpus.py` before starting another. One ingest at a time.
 
 ### [~] P1-09 — Stores: Neo4j schema v2 + Chroma
 - depends: P1-08
@@ -133,7 +135,8 @@
   - notes:
     - 2026-11-14 22:56 claimed for verification: the interrupted session left `src/axion/store/*` and `scripts/load_stores.py` unverified. Clean V2 rewrite, no V1 port (ADR-0011).
     - Verification target: Neo4j schema v2 is idempotent; loading the smoke and full manifests twice yields identical graph/vector counts; in-memory path is the fallback if Docker is unavailable.
-    - Known audit point: the loader validates duplicate PMCIDs but not orphan cite endpoints; a `MATCH`-based Neo4j write would silently drop them. Fixing before the load run.
+    - **VERIFIED 2026-11-14:** orphan/non-source cite rows are now rejected (`CorpusLoadError`); in-memory and real Neo4j 5.18 + persistent Chroma both loaded the 30-source smoke bundle twice with identical counts (14 papers, 10 CITES, 8 CitationContext, 4 RetractionNotice, 14/10/8 vector rows). Chroma telemetry disabled.
+- **LEFT:** load the full manifest twice once P1-08 finishes; acceptance evidence is that second-load counts are identical. Do not mark `[x]` before that.
 
 ### [!] P1-10 — Baseline claim extractor
 - depends: P1-03, P1-09
