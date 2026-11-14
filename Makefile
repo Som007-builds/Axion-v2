@@ -1,4 +1,4 @@
-.PHONY: lint typecheck test report
+.PHONY: lint typecheck test report day0-check
 
 PYTHON ?= python
 
@@ -11,6 +11,9 @@ typecheck:
 
 test:
 	$(PYTHON) -m pytest
+
+day0-check:
+	$(PYTHON) scripts/day0_check.py
 
 report:
 	@echo "not implemented"

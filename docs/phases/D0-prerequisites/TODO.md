@@ -58,13 +58,15 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Validated with a temporary dummy process environment value; no real password printed.
   - done: 2026-11-14 | evidence: `docker-compose.yml`; `docs/LOCAL_SETUP.md`; `docker compose config --quiet` → PASS; loopback `127.0.0.1:7474` and `127.0.0.1:7887`; named `neo4j_data`/`neo4j_logs` volumes; healthcheck uses `cypher-shell`.
 
-### [ ] D0-05 — `day0-check` script and tests (AGENT)
+### [x] D0-05 — `day0-check` script and tests (AGENT)
 - depends: D0-02
 - what: Add `scripts/day0_check.py` and `make day0-check`; check Python version, env var names (never values), Docker, Neo4j when reachable, and opt-in Europe PMC/Crossref reachability with contact email. Add offline unit tests.
 - acceptance: Offline tests pass; script prints PASS/FAIL/SKIP per check; network checks are opt-in; no secret values are printed.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Added `scripts/day0_check.py`, `scripts/__init__.py`, `tests/test_day0_check.py`, and a `make day0-check` target.
+    - Current local run reports honest failures/skips: missing owner env names, Docker daemon unreachable at this moment, Neo4j configured but not reachable. It prints names/status only, never values.
+  - done: 2026-11-14 | evidence: `scripts/day0_check.py`; `tests/test_day0_check.py`; `pytest -q` → **89 passed, 1 skipped** (network test opt-in via `AXION_RUN_NETWORK=1`); `ruff check .` and `ruff format --check .` → passed; direct `python scripts/day0_check.py` prints PASS/FAIL/SKIP. `make` is unavailable on this Windows host, so the target was verified by running its command directly.
 
 ### [ ] D0-06 — Data-source terms research (AGENT)
 - depends: D0-02
