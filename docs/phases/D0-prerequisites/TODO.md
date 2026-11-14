@@ -48,13 +48,15 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - The custom `scripts/check_secrets.py` working-tree scan passed. No history was rewritten.
   - done: 2026-11-14 | evidence: `detect-secrets` 1.5.0 full-history scan: 98 blobs, 9 unverified false positives, 0 verified secrets; `python scripts/check_secrets.py` → passed; `docs/PROVENANCE.md` fresh-vs-copied audit (59 V2 blobs vs 185 allowed V1 blobs; only empty `docs/reports/.gitkeep` hash match, not a substantive copy).
 
-### [ ] D0-04 — Minimal Neo4j Docker Compose (AGENT)
+### [x] D0-04 — Minimal Neo4j Docker Compose (AGENT)
 - depends: D0-02
 - what: Add a minimal `docker-compose.yml` with Neo4j 5.x only, a healthcheck, loopback-only ports, password from the environment, and named volumes. Document it briefly.
 - acceptance: Compose file validates with `docker compose config --quiet`; no Redis/worker/API services; no secret values committed.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Added Neo4j 5.18 Community only; no V1 data volumes or extra services.
+    - Validated with a temporary dummy process environment value; no real password printed.
+  - done: 2026-11-14 | evidence: `docker-compose.yml`; `docs/LOCAL_SETUP.md`; `docker compose config --quiet` → PASS; loopback `127.0.0.1:7474` and `127.0.0.1:7887`; named `neo4j_data`/`neo4j_logs` volumes; healthcheck uses `cypher-shell`.
 
 ### [ ] D0-05 — `day0-check` script and tests (AGENT)
 - depends: D0-02

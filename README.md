@@ -29,6 +29,7 @@ When a paper is retracted or flagged, which claims in *other* papers actually de
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Architecture decision records |
 | [`docs/AGENT_PROTOCOL.md`](docs/AGENT_PROTOCOL.md) | Working agreement for AI agents |
+| [`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md) | Day-0 local Neo4j stack and checks |
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | Live status and session log |
 | [`docs/eval/AUDIT_RUBRIC.md`](docs/eval/AUDIT_RUBRIC.md) | Human labeling rubric |
 
