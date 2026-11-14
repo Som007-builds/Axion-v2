@@ -90,13 +90,15 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
     - Test fixtures use obviously fake `provider/model-a` and illustrative numbers; production code/CI has no model IDs or numeric prices.
   - done: 2026-11-14 | evidence: `.env.example`; `tests/test_settings.py::test_env_example_lists_every_setting`; `tests/test_pricing.py::test_packaged_template_loads_with_blank_prices`; `pytest -q` → **89 passed, 1 skipped**; `ruff`/format/mypy → passed; production search → no hard-coded model IDs or numeric prices.
 
-### [ ] D0-08 — Phase-thread protocol and handoff templates (AGENT)
+### [x] D0-08 — Phase-thread protocol and handoff templates (AGENT)
 - depends: D0-02
 - what: Add a "Phase thread protocol" section to `docs/AGENT_PROTOCOL.md`; create a filled D0 `HANDOFF.md` and empty P1–P5 `HANDOFF.md` templates.
 - acceptance: Protocol covers one thread per phase, previous-phase handoff, end-of-thread handoff, gate report, PROGRESS update, ADR/TODO capture, and stopping at the gate; all template files exist.
-  - agent: — | started: — | branch: —
+  - agent: DeepSeek V4.1 Flash Free | started: 2026-11-14 | branch: d0/build-ready
   - notes:
-  - done: — | evidence: —
+    - Added §10 to `docs/AGENT_PROTOCOL.md` and updated the session-start reading order to include the previous phase handoff.
+    - D0 handoff is filled in; P1–P5 handoffs are empty templates with the required state/decisions/gotchas/risks/next-step/gate sections.
+  - done: 2026-11-14 | evidence: `docs/AGENT_PROTOCOL.md` §1 and §10; `docs/phases/D0-prerequisites/HANDOFF.md`; `docs/phases/P1-foundation/HANDOFF.md`; `docs/phases/P2-cost-cascade/HANDOFF.md`; `docs/phases/P3-blast-radius/HANDOFF.md`; `docs/phases/P4-demo/HANDOFF.md`; `docs/phases/P5-release/HANDOFF.md`. No source/tests/CI changes.
 
 ### [ ] D0-09 — Fresh-thread phase prompts (AGENT, untracked)
 - depends: D0-08
