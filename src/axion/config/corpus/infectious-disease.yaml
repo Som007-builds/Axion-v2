@@ -1,0 +1,21 @@
+# P1 corpus definition.
+#
+# Adding a sub-topic is a config change, not a code change: copy this file,
+# change corpus_id/sub_topic_key/description/retraction_subject, and run the
+# ingest script with --config. The cap is the TOTAL corpus size, including
+# discoverable citers (ADR-0013).
+corpus_id: infectious-disease-v1
+sub_topic_key: infectious-disease
+description: Retracted infectious-disease papers and the OA papers that cite them
+retraction_subject: (HSC) Medicine - Infectious Disease
+cap: 5000
+citation_page_size: 1000
+citation_max_pages: 20
+# Europe PMC requests are high latency; the workers below still share the
+# client's global 1 request/second throttle, so the total rate stays polite.
+metadata_workers: 8
+fulltext_workers: 12
+filters:
+  open_access: true
+  full_text: true
+  require_pmcid: true

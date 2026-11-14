@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import re
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -272,6 +273,7 @@ class EuropePmcClient:
         self._clock = clock
         self._sleep = sleep
         self._last_request_at: float | None = None
+        self._throttle_lock = threading.Lock()
 
     @classmethod
     def from_settings(
@@ -459,12 +461,15 @@ class EuropePmcClient:
         )
 
     def _throttle(self) -> None:
-        if self._last_request_at is not None and self._min_interval_s > 0:
-            elapsed = self._clock() - self._last_request_at
-            remaining = self._min_interval_s - elapsed
-            if remaining > 0:
-                self._sleep(remaining)
-        self._last_request_at = self._clock()
+        # The lock keeps the shared request rate polite when callers use a
+        # thread pool for high-latency full-text downloads.
+        with self._throttle_lock:
+            if self._last_request_at is not None and self._min_interval_s > 0:
+                elapsed = self._clock() - self._last_request_at
+                remaining = self._min_interval_s - elapsed
+                if remaining > 0:
+                    self._sleep(remaining)
+            self._last_request_at = self._clock()
 
     def _backoff(self, attempt: int) -> float:
         return min(self._backoff_max_s, self._backoff_base_s * (2.0 ** (attempt - 1)))

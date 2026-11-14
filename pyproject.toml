@@ -23,6 +23,16 @@ dev = [
   "ruff==0.8.4",
   "types-PyYAML==6.0.12.20240917",
 ]
+# P1-09 stores. These are optional so the offline test suite stays small.
+store = [
+  "neo4j==5.26.0",
+  "chromadb==0.6.3",
+]
+# Real local embeddings. Install CPU-only torch first (docs/LOCAL_SETUP.md);
+# sentence-transformers otherwise pulls a multi-GB CUDA build on some hosts.
+embeddings = [
+  "sentence-transformers==3.3.1",
+]
 
 [project.scripts]
 axion-cost-report = "axion.llm.cli:main"
@@ -34,7 +44,7 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-"axion.config" = ["*.yaml"]
+"axion.config" = ["*.yaml", "corpus/*.yaml"]
 
 [tool.ruff]
 line-length = 100
@@ -55,6 +65,17 @@ warn_unreachable = true
 show_error_codes = true
 pretty = true
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+  "neo4j",
+  "neo4j.*",
+  "chromadb",
+  "chromadb.*",
+  "sentence_transformers",
+  "sentence_transformers.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"
