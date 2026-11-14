@@ -203,7 +203,7 @@ This tracker covers the owner-requested Day-0 close-out that makes the repositor
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
-- 2026-11-14 — DeepSeek V4.1 Flash Free — Day-0 agent close-out complete: all D0-01…D0-11 done, build-ready report written, owner action sheet handed off; local `main` receives the `d0/build-ready` merge next — next: owner pushes private `main`, then fresh P1 thread resumes P1-03 → P1-03b → P1-04.
+- 2026-11-14 — DeepSeek V4.1 Flash Free — Day-0 agent close-out complete: all D0-01…D0-11 done, build-ready report written, owner action sheet handed off, `d0/build-ready` merged into local `main` as `739d0b1` — next: owner pushes private `main`, then fresh P1 thread resumes P1-03 → P1-03b → P1-04.
 - 2026-11-14 — DeepSeek V4.1 Flash Free — opened Day-0 close-out tracker; merged P1-03/DOC-01 into local `main`; started `d0/build-ready`.
 
 ## Phase exit checklist

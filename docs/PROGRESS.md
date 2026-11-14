@@ -5,7 +5,7 @@
 ## Current state
 - **Phase:** P1 (foundation) — P1-03 is deliberately left `[~]` at a resumable checkpoint; Day-0 agent close-out is complete.
 - **Next action:** **Fresh P1 thread: resume P1-03, then P1-03b, then P1-04.** Read `docs/phases/D0-prerequisites/HANDOFF.md` and `docs/phases/P1-foundation/TODO.md` first. Do not start P1-04 without owner confirmation.
-- **Owner first action:** local `main` and the task branches are not on the private remote yet (`origin/main` is `f0eea8f`). Push `main` and confirm GitHub Actions is green. See `_private/owner-action-sheet.md`.
+- **Owner first action:** local `main` (merge `739d0b1`) and the task branches are not on the private remote yet (`origin/main` is `f0eea8f`). Push `main` and confirm GitHub Actions is green. See `_private/owner-action-sheet.md`.
 - **Last updated:** 2026-11-14 by DeepSeek V4.1 Flash Free
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
@@ -96,8 +96,8 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 ## Session log (newest first)
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — Day-0 build-ready close-out
 - Did: merged P1-03/DOC-01 into local `main`; created `d0/build-ready`; added the D0 tracker and P1-03 resume checkpoint; ran full-history `detect-secrets`; updated `PROVENANCE.md`; added `docker-compose.yml` + `docs/LOCAL_SETUP.md`; added `scripts/day0_check.py` + offline tests + Makefile target; rewrote `DATA_SOURCES.md` with verified terms and unknowns; aligned `.env.example`; added phase-thread protocol and D0/P1–P5 handoffs; created untracked phase prompts and owner action sheet; wrote `D0-readiness.md`.
-- State: local `main` contains the checkpoint; `d0/build-ready` has the close-out commits; nothing pushed. Final checks: 89 passed/1 skipped; ruff/format/mypy clean; pre-commit 8/8 under Python 3.12; Compose config pass; 25 Markdown files, 0 missing local links. Current host `day0-check`: env/Docker failures, Neo4j skip.
-- Next: merge `d0/build-ready` into local `main`; owner pushes private `main` and confirms CI; fresh P1 thread resumes P1-03, then P1-03b, P1-04.
+- State: local `main` contains the checkpoint and the Day-0 close-out (merge `739d0b1`); nothing pushed. Final checks on `main`: 89 passed/1 skipped; ruff/format/mypy clean; pre-commit 8/8 under Python 3.12; Compose config pass; 26 Markdown files, 0 missing local links. Current host `day0-check`: env/Docker failures, Neo4j skip.
+- Next: owner pushes private `main` and confirms CI; fresh P1 thread resumes P1-03, then P1-03b, P1-04.
 - Blockers/questions: push/CI, contact emails/Neo4j, provider/prices/budget, Retraction Watch terms, labeling time; V1 port/rewrite can wait.
 
 ### 2026-11-14 — DeepSeek V4.1 Flash Free — DOC-01
