@@ -1,0 +1,431 @@
+{
+  "PMC10178844": {
+    "journal": "The Journal of Clinical Investigation",
+    "year": 2023,
+    "sections": 32,
+    "paragraphs": 96,
+    "references": 63,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 63,
+    "bibr_markers": 111,
+    "contexts": 111,
+    "contexts_resolved": 111,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Introduction",
+      "Results",
+      "Discussion",
+      "Methods",
+      "Author contributions",
+      "Supplementary Material",
+      "Acknowledgments",
+      null,
+      "Footnotes",
+      "Contributor Information",
+      "References",
+      "Associated Data"
+    ],
+    "first_context": {
+      "ref_id": "B1",
+      "section": [
+        "Introduction"
+      ],
+      "text": "Cytomegalovirus (CMV) infections remain a major cause of morbidity and mortality following allogeneic hematopoietic stem cell transplants (HCTs) (1–5)."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC2860339": {
+    "journal": "BMC Medicine",
+    "year": 2010,
+    "sections": 12,
+    "paragraphs": 49,
+    "references": 34,
+    "references_with_doi": 34,
+    "references_with_pmid": 34,
+    "references_with_title": 34,
+    "references_with_year": 34,
+    "bibr_markers": 42,
+    "contexts": 42,
+    "contexts_resolved": 42,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Introduction",
+      "Intent of CONSORT 2010",
+      "Background to CONSORT",
+      "Development of CONSORT 2010",
+      "Changes in CONSORT 2010",
+      "Implications and limitations",
+      "Competing interests",
+      "Authors' contributions",
+      "Appendix 1: Noteworthy general changes in CONSORT 2010 Statement",
+      "Appendix 2: Noteworthy specific changes in CONSORT 2010 Statement",
+      "Pre-publication history"
+    ],
+    "first_context": {
+      "ref_id": "B1",
+      "section": [
+        "Introduction"
+      ],
+      "text": "However, randomised trials can yield biased results if they lack methodological rigour [1]."
+    },
+    "first_reference_with_doi": {
+      "ref_id": "B1",
+      "doi": "10.1136/bmj.323.7303.42",
+      "year": 2001
+    }
+  },
+  "PMC2893951": {
+    "journal": "PLoS Biology",
+    "year": 2010,
+    "sections": 9,
+    "paragraphs": 12,
+    "references": 60,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 60,
+    "bibr_markers": 39,
+    "contexts": 39,
+    "contexts_resolved": 39,
+    "warnings": [],
+    "top_level_sections": [
+      "Good Reporting Is Essential for Peer Review and to Inform Future Research",
+      "Using Reporting Guidelines Measurably Improves the Quality of Reporting",
+      "Improving the Reporting of Animal Experiments—The ARRIVE Guidelines",
+      "Improved Reporting Will Maximise the Output of Published Research",
+      "Acknowledgments",
+      "Abbreviations",
+      "Footnotes",
+      "References"
+    ],
+    "first_context": {
+      "ref_id": "pbio.1000412-Simera1",
+      "section": [],
+      "text": "Nevertheless, a wealth of evidence shows that across many areas, the reporting of biomedical research is often inadequate, leading to the view that even if the science is sound, in many cases the publications themselves are not “fit for purpose,” meaning that incomplete reporting of relevant information effectively renders many publications of limited value as instruments to inform policy or clinical and scientific practice [1]–[21]."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC4103590": {
+    "journal": "Bioinformatics",
+    "year": 2014,
+    "sections": 24,
+    "paragraphs": 75,
+    "references": 10,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 10,
+    "bibr_markers": 12,
+    "contexts": 12,
+    "contexts_resolved": 12,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "1 INTRODUCTION",
+      "2 ALGORITHMS",
+      "3 IMPLEMENTATION",
+      "4 RESULTS",
+      "5 DISCUSSION",
+      "Supplementary Material",
+      "REFERENCES",
+      "Associated Data"
+    ],
+    "first_context": {
+      "ref_id": "btu170-B6",
+      "section": [
+        "1 INTRODUCTION"
+      ],
+      "text": "Nonetheless, it is not trivial to precisely identify such sequences, including partial adapter sequences, while leaving valid sequence data intact (Li et al., 2013)."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC4302049": {
+    "journal": "Genome Biology",
+    "year": 2014,
+    "sections": 41,
+    "paragraphs": 128,
+    "references": 66,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 61,
+    "bibr_markers": 107,
+    "contexts": 107,
+    "contexts_resolved": 107,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Background",
+      "Results and discussion",
+      "Conclusions",
+      "Materials and methods",
+      "Acknowledgements",
+      "Abbreviations",
+      null,
+      "Footnotes",
+      "Contributor Information",
+      "References"
+    ],
+    "first_context": {
+      "ref_id": "CR1",
+      "section": [
+        "Background"
+      ],
+      "text": "In high-throughput assays, this limitation can be overcome by pooling information across genes, specifically, by exploiting assumptions about the similarity of the variances of different genes measured in the same experiment [1]."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC4402510": {
+    "journal": "Nucleic Acids Research",
+    "year": 2015,
+    "sections": 43,
+    "paragraphs": 93,
+    "references": 82,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 82,
+    "bibr_markers": 113,
+    "contexts": 113,
+    "contexts_resolved": 113,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "INTRODUCTION",
+      "MATERIALS AND METHODS",
+      "RESULTS",
+      "DISCUSSION",
+      "Acknowledgments",
+      "FUNDING",
+      "REFERENCES"
+    ],
+    "first_context": {
+      "ref_id": "B1",
+      "section": [
+        "INTRODUCTION"
+      ],
+      "text": "The limma package is a core component of Bioconductor, an R-based open-source software development project in statistical genomics (1,2)."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC5335600": {
+    "journal": "Scientific Reports",
+    "year": 2017,
+    "sections": 27,
+    "paragraphs": 52,
+    "references": 77,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 77,
+    "bibr_markers": 133,
+    "contexts": 133,
+    "contexts_resolved": 133,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Submission Web page",
+      "One-panel-per-molecule Output",
+      "Graphical output",
+      "Help, saving and interoperability",
+      "Conclusions",
+      "Computational methods",
+      "Additional Information",
+      "Supplementary Material",
+      "Acknowledgments",
+      "Footnotes",
+      "References",
+      "Associated Data"
+    ],
+    "first_context": {
+      "ref_id": "b1",
+      "section": [],
+      "text": "It has been demonstrated that early estimation of ADME in the discovery phase reduces drastically the fraction of pharmacokinetics-related failure in the clinical phases1."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC5976434": {
+    "journal": "eLife",
+    "year": 2018,
+    "sections": 80,
+    "paragraphs": 91,
+    "references": 82,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 76,
+    "bibr_markers": 144,
+    "contexts": 144,
+    "contexts_resolved": 144,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Introduction",
+      "Results",
+      "Discussion",
+      "Materials and methods",
+      "Acknowledgements",
+      "Funding Statement",
+      "Contributor Information",
+      "Funding Information",
+      "Additional information",
+      "Additional files",
+      "References"
+    ],
+    "first_context": {
+      "ref_id": "bib72",
+      "section": [
+        "Introduction"
+      ],
+      "text": "The first is the continuing success of large scale genome-wide association studies (GWAS) in identifying robust genetic associations (Visscher et al., 2017)."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC6421268": {
+    "journal": "Frontiers in Immunology",
+    "year": 2019,
+    "sections": 23,
+    "paragraphs": 70,
+    "references": 151,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 151,
+    "bibr_markers": 220,
+    "contexts": 220,
+    "contexts_resolved": 220,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Introduction",
+      "Short Chain Fatty Acids (SCFAs) Bacterial Production",
+      "SCFAs Functions in the Intestinal Mucosa",
+      "Regulation of SCFA Transporters and Receptors in the Intestinal Mucosa",
+      "Microbiome Changes in CD and UC in Relation to SCFAs-producers",
+      "Therapeutic Approaches of SCFAs in IBD and Diversion Colitis",
+      "Conclusions and Future Perspectives",
+      "Author Contributions",
+      "Acknowledgments",
+      "References"
+    ],
+    "first_context": {
+      "ref_id": "B1",
+      "section": [
+        "Introduction"
+      ],
+      "text": "Thus, increasing efforts are ongoing to develop personalized therapies to induce remission of these diseases and improve the patient's quality of life (1–3)."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC6447622": {
+    "journal": "Nature Communications",
+    "year": 2019,
+    "sections": 36,
+    "paragraphs": 53,
+    "references": 59,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 59,
+    "bibr_markers": 94,
+    "contexts": 94,
+    "contexts_resolved": 94,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Introduction",
+      "Results",
+      "Discussion",
+      "Methods",
+      "Supplementary information",
+      "Acknowledgements",
+      "Author contributions",
+      "Data availability",
+      "Code availability",
+      null,
+      "Footnotes",
+      "Contributor Information",
+      "Supplementary information",
+      "References",
+      "Associated Data"
+    ],
+    "first_context": {
+      "ref_id": "CR1",
+      "section": [
+        "Introduction"
+      ],
+      "text": "Common queries include: What pathways or biochemical complexes are enriched?1; What are the functional roles of identified protein complexes?2; Which candidate proteins are secreted, contain a transmembrane domain, or are otherwise druggable?3; Or are there any chemical probes available for a rapid candidate validation4 ?"
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC6701588": {
+    "journal": "BMJ Open",
+    "year": 2019,
+    "sections": 28,
+    "paragraphs": 33,
+    "references": 19,
+    "references_with_doi": 0,
+    "references_with_pmid": 0,
+    "references_with_title": 0,
+    "references_with_year": 19,
+    "bibr_markers": 27,
+    "contexts": 27,
+    "contexts_resolved": 27,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Introduction",
+      "How this guidance was developed",
+      "Framework for intervention development",
+      "Conclusions",
+      "Supplementary Material",
+      "Acknowledgments",
+      "Footnotes",
+      "References",
+      "Associated Data"
+    ],
+    "first_context": {
+      "ref_id": "R1",
+      "section": [
+        "Introduction"
+      ],
+      "text": "Complex interventions can have a number of interacting components, require new behaviours by those delivering or receiving the intervention or have a variety of outcomes.1 An example is a multicomponent intervention to help people stand more at work, including a height adjustable workstation, posters and coaching sessions.2 Careful development of complex interventions is necessary so that new interventions have a better chance of being effective when evaluated and being adopted widely in the real world."
+    },
+    "first_reference_with_doi": null
+  },
+  "PMC8005924": {
+    "journal": "The BMJ",
+    "year": 2021,
+    "sections": 7,
+    "paragraphs": 16,
+    "references": 72,
+    "references_with_doi": 68,
+    "references_with_pmid": 67,
+    "references_with_title": 69,
+    "references_with_year": 72,
+    "bibr_markers": 91,
+    "contexts": 91,
+    "contexts_resolved": 91,
+    "warnings": [],
+    "top_level_sections": [
+      "Abstract",
+      "Development of PRISMA 2020",
+      "The PRISMA 2020 statement",
+      "Discussion"
+    ],
+    "first_context": {
+      "ref_id": "ref1",
+      "section": [],
+      "text": "Systematic reviews therefore generate various types of knowledge for different users of reviews (such as patients, healthcare providers, researchers, and policy makers).1 2 To ensure a systematic review is valuable to users, authors should prepare a transparent, complete, and accurate account of why the review was done, what they did (such as how studies were identified and selected) and what they found (such as characteristics of contributing studies and results of meta-analyses)."
+    },
+    "first_reference_with_doi": {
+      "ref_id": "ref1",
+      "doi": "10.1038/nature25753",
+      "year": 2018
+    }
+  }
+}

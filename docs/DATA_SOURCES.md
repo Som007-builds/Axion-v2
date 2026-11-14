@@ -22,7 +22,7 @@ The README notes that lists inside a field are separated by semicolons, that `Re
 ## Rules
 
 1. **Per-article licence wins.** Europe PMC's OA subset is not one uniform licence; check the article-level statement before using or redistributing full text.
-2. **No raw full text in git.** Cache raw JATS/XML/PDF locally under `data/` (gitignored); commit IDs, manifests, and derived labels only when the terms allow.
+2. **No raw full text in git.** Cache raw JATS/XML/PDF locally under `data/` (gitignored); commit IDs, manifests, and derived labels only when the terms allow. **Exception:** `tests/fixtures/jats/` holds a small set of parser fixtures that are **CC BY only**, with attribution, licence, source URL, and hashes in `tests/fixtures/jats/manifest.json`. No NC/ND or unclear-licence full text is committed.
 3. **Retraction Watch licence is unresolved.** Until the owner confirms, treat the CSV and substantial extracts as non-redistributable.
 4. **Polite clients.** Send a real contact email from local `.env`, use HTTPS, cache, throttle, and back off. Do not send API keys or other secrets to data providers.
 5. **Record changes.** If a provider publishes new terms, update this file and the verification date; do not silently rely on this snapshot.
