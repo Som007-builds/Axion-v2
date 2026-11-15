@@ -836,6 +836,9 @@ def main(argv: list[str] | None = None) -> int:
         thinking_level=thinking_level,
         temperature=temperature,
         pacer=pacer,
+        configured_model=settings.llm_large_model,
+        configured_provider=settings.llm_provider_chain[0],
+        billing=billing,
     )
     audit_summary = _maybe_export_audit(
         run,

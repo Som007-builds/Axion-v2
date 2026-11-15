@@ -286,6 +286,9 @@ def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
         papers_sha256="b" * 64,
         sample_size=1,
         seed=7,
+        configured_model="test-large",
+        configured_provider="fake",
+        billing="free_tier",
     )
 
     assert run.stopped_reason == "provider_failed"
@@ -301,6 +304,13 @@ def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
     assert failure["attempts"] == 1
     assert failure["retryable"] is True
     assert failure["detail"].startswith("all LLM providers failed")
+
+    manifest = json.loads(run.manifest_path.read_text(encoding="utf-8"))
+    assert manifest["teacher_model"] == "test-large"
+    assert manifest["provider"] == "fake"
+    assert manifest["billing"] == "free_tier"
+    assert manifest["run_id"] == "run-fail"
+    assert manifest["prompt_version"] == "claim-extraction-v1"
 
 
 def test_rate_limit_stops_the_run_at_a_checkpoint(tmp_path: Path) -> None:

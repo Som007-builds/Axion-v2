@@ -307,6 +307,9 @@ def run_extraction(
     thinking_level: str | None = None,
     temperature: float | None = None,
     pacer: RequestPacer | None = None,
+    configured_model: str | None = None,
+    configured_provider: str | None = None,
+    billing: str | None = None,
 ) -> RunReport:
     """Run every planned paper through the client; failures are kept.
 
@@ -472,9 +475,10 @@ def run_extraction(
     manifest = SilverManifest(
         run_id=run_id,
         created_at=utc_now_iso(),
-        teacher_model=model_name or "unknown",
+        teacher_model=model_name or configured_model or "unknown",
         prompt_version=prompt_version,
-        provider=provider_name,
+        provider=provider_name or configured_provider,
+        billing=billing,
         thinking_level=thinking_level,
         max_output_tokens=max_output_tokens,
         temperature=temperature,
