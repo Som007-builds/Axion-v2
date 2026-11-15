@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import os
+import unicodedata
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
@@ -46,6 +48,40 @@ ClaimType = Literal[
 ]
 Direction = Literal["increase", "decrease", "no_difference", "mixed"]
 
+# Normalization is deliberately conservative: it repairs byte-level differences
+# between a model's copied span and the parsed XML text, and never performs
+# fuzzy or paraphrase matching.
+_DASH_CHARS = "\u2010\u2011\u2012\u2013\u2014\u2015\u2212\ufe58\ufe63\uff0d"
+_QUOTE_TRANSLATION = {
+    "\u2018": "'",
+    "\u2019": "'",
+    "\u201a": "'",
+    "\u201b": "'",
+    "\u201c": '"',
+    "\u201d": '"',
+    "\u201e": '"',
+    "\u201f": '"',
+    "\u2032": "'",
+    "\u2033": '"',
+    "\u00ab": '"',
+    "\u00bb": '"',
+}
+_SIMPLE_NORMALIZATION = {
+    **{character: "-" for character in _DASH_CHARS},
+    **_QUOTE_TRANSLATION,
+}
+_ZERO_WIDTH_CHARS = frozenset(("\u00ad", "\u200b", "\u200c", "\u200d", "\ufeff"))
+
+
+@dataclass(frozen=True)
+class SpanMatch:
+    """A source-backed evidence span and whether normalization was required."""
+
+    start: int
+    end: int
+    text: str
+    normalized: bool
+
 
 class Claim(BaseModel):
     """One extracted assertion with its section and verbatim evidence span."""
@@ -80,6 +116,8 @@ class ClaimFailure(BaseModel):
     reason: str
     detail: str
     claim_text: str | None = None
+    evidence_span: str | None = None
+    category: str | None = None
 
 
 class SilverClaim(BaseModel):
@@ -114,6 +152,11 @@ class SilverManifest(BaseModel):
     forbidden_for: tuple[str, ...] = ("evaluation", "reported_quality")
     teacher_model: str
     prompt_version: str
+    provider: str | None = None
+    thinking_level: str | None = None
+    max_output_tokens: int | None = None
+    temperature: float | None = None
+    billing: str | None = None
     seed: int
     sample_size: int
     papers_processed: int
@@ -226,10 +269,119 @@ def build_baseline_document(parsed: ParsedPaper) -> BaselineDocument:
     )
 
 
+def _normalize_with_map(text: str) -> tuple[str, list[int]]:
+    """Normalize text and keep a map from normalized to original indices."""
+    chars: list[tuple[str, int]] = []
+    for index, character in enumerate(text):
+        if character in _ZERO_WIDTH_CHARS:
+            continue
+        mapped = _SIMPLE_NORMALIZATION.get(character, character)
+        for normalized_character in unicodedata.normalize("NFKC", mapped):
+            if normalized_character in _ZERO_WIDTH_CHARS:
+                continue
+            chars.append((normalized_character, index))
+
+    # Join a word split by a hyphen at a line break: "remdesi-\nvir".
+    joined: list[tuple[str, int]] = []
+    position = 0
+    while position < len(chars):
+        character, index = chars[position]
+        if character == "-" and joined and joined[-1][0].isalpha():
+            lookahead = position + 1
+            saw_break = False
+            while lookahead < len(chars) and chars[lookahead][0].isspace():
+                if chars[lookahead][0] in "\r\n":
+                    saw_break = True
+                lookahead += 1
+            if saw_break and lookahead < len(chars) and chars[lookahead][0].isalpha():
+                position = lookahead
+                continue
+        joined.append((character, index))
+        position += 1
+
+    # Collapse every whitespace run to one space. Mapping to the first original
+    # character keeps the returned source span aligned with the source text.
+    normalized_chars: list[str] = []
+    index_map: list[int] = []
+    previous_was_space = False
+    for character, index in joined:
+        if character.isspace():
+            if previous_was_space:
+                continue
+            normalized_chars.append(" ")
+            index_map.append(index)
+            previous_was_space = True
+            continue
+        normalized_chars.append(character)
+        index_map.append(index)
+        previous_was_space = False
+    return "".join(normalized_chars), index_map
+
+
+def normalize_for_match(text: str) -> str:
+    """Apply the documented normalization rules used for span matching."""
+    return _normalize_with_map(text)[0]
+
+
+def find_evidence_span(text: str, evidence_span: str) -> SpanMatch | None:
+    """Find an evidence span after normalization, returning source offsets."""
+    normalized_text, index_map = _normalize_with_map(text)
+    normalized_evidence = normalize_for_match(evidence_span)
+    if not normalized_evidence:
+        return None
+    position = normalized_text.find(normalized_evidence)
+    if position < 0:
+        return None
+    start = index_map[position]
+    end = index_map[position + len(normalized_evidence) - 1] + 1
+    source_text = text[start:end]
+    if not source_text:
+        return None
+    return SpanMatch(
+        start=start,
+        end=end,
+        text=source_text,
+        normalized=source_text != evidence_span,
+    )
+
+
+def categorize_span_reject(section_text: str, evidence_span: str) -> str:
+    """Classify a non-matching span without fuzzy matching.
+
+    Only used to explain failures; accepted claims never depend on this
+    classification.
+    """
+    if find_evidence_span(section_text, evidence_span) is not None:
+        return "normalization_only"
+    normalized_text = normalize_for_match(section_text)
+    normalized_evidence = normalize_for_match(evidence_span)
+    if normalized_evidence.casefold() in normalized_text.casefold():
+        return "case_only"
+    prefix = normalized_evidence[: min(32, len(normalized_evidence))]
+    if prefix and prefix in normalized_text:
+        return "partial_or_merged"
+    words = [word for word in normalized_evidence.split() if len(word) >= 4]
+    if words:
+        present = sum(word in normalized_text for word in words)
+        if present / len(words) >= 0.6:
+            return "paraphrase_or_reordered"
+    return "paraphrase_or_absent"
+
+
 def verify_claims(
-    extraction: ClaimExtraction, document: BaselineDocument, *, paper_id: str
+    extraction: ClaimExtraction,
+    document: BaselineDocument,
+    *,
+    paper_id: str,
+    normalize: bool = True,
 ) -> tuple[list[Claim], list[ClaimFailure]]:
-    """Keep only claims whose section exists and whose span is verbatim there."""
+    """Keep only claims whose section exists and whose span is verbatim there.
+
+    With ``normalize=True`` (the baseline), byte-level differences repaired by
+    :func:`find_evidence_span` are accepted and the stored evidence span is the
+    exact source substring. With ``normalize=False`` matching is strict; that is
+    used only to report the before/after normalization rate.
+    """
     by_label = {section.label.casefold(): section for section in document.sections}
     valid: list[Claim] = []
     failures: list[ClaimFailure] = []
@@ -243,20 +395,41 @@ def verify_claims(
                     reason="unknown_section",
                     detail=f"section {claim.section!r} is not in the baseline document",
                     claim_text=claim.claim_text,
+                    evidence_span=claim.evidence_span,
+                    category="unknown_section",
                 )
             )
             continue
-        if claim.evidence_span not in section.text:
+        if normalize:
+            match = find_evidence_span(section.text, claim.evidence_span)
+        else:
+            start = section.text.find(claim.evidence_span)
+            match = (
+                None
+                if start < 0
+                else SpanMatch(
+                    start=start,
+                    end=start + len(claim.evidence_span),
+                    text=claim.evidence_span,
+                    normalized=False,
+                )
+            )
+        if match is None:
+            category = categorize_span_reject(section.text, claim.evidence_span)
             failures.append(
                 ClaimFailure(
                     paper_id=paper_id,
                     claim_index=index,
                     reason="evidence_span_not_verbatim",
-                    detail=f"span not found verbatim in section {section.label!r}",
+                    detail=f"span not found verbatim in section {section.label!r} ({category})",
                     claim_text=claim.claim_text,
+                    evidence_span=claim.evidence_span,
+                    category=category,
                 )
             )
             continue
+        if match.text != claim.evidence_span:
+            claim = claim.model_copy(update={"evidence_span": match.text})
         valid.append(claim)
     return valid, failures
 
@@ -277,18 +450,18 @@ def audit_context(
         return "", ""
     paragraphs = section.text.split("\n")
     for index, paragraph in enumerate(paragraphs):
-        if evidence_span not in paragraph:
+        if find_evidence_span(paragraph, evidence_span) is None:
             continue
         before_parts = paragraphs[max(0, index - 1) : index + 1]
         after_parts = paragraphs[index + 1 : index + 2]
         return "\n".join(before_parts), "\n".join(after_parts)
 
     # A span may cross a paragraph boundary; fall back to a section window.
-    position = section.text.find(evidence_span)
-    if position < 0:
+    match = find_evidence_span(section.text, evidence_span)
+    if match is None:
         return "", ""
-    before_text = section.text[: position + len(evidence_span)]
-    after_text = section.text[position + len(evidence_span) :]
+    before_text = section.text[: match.end]
+    after_text = section.text[match.end :]
     before_break = before_text.rfind("\n\n")
     after_break = after_text.find("\n\n")
     if before_break >= 0:
@@ -439,11 +612,15 @@ __all__ = [
     "ClaimFailure",
     "SilverClaim",
     "SilverManifest",
+    "SpanMatch",
     "append_candidate_claims",
     "append_processed_paper",
     "append_silver_claims",
     "audit_context",
     "build_baseline_document",
+    "categorize_span_reject",
+    "find_evidence_span",
+    "normalize_for_match",
     "read_processed_paper_ids",
     "read_silver_paper_ids",
     "utc_now_iso",

@@ -1,12 +1,19 @@
 # Verified provider list prices (USD per 1,000,000 tokens).
 #
-# Source (checked 2026-11-15):
+# Groq (checked 2026-11-15):
 #   https://console.groq.com/docs/model/openai/gpt-oss-120b
 #   https://console.groq.com/docs/model/openai/gpt-oss-20b
-# The pages show input / cached input / output prices. Prices are list prices;
-# the ledger records list-price cost even when a free tier is used.
+#
+# Google Gemini (checked 2026-11-15):
+#   https://ai.google.dev/gemini-api/docs/pricing
+#   https://ai.google.dev/gemini-api/docs/models
+# Both models below are available and have a free tier ("Free of charge").
+# Gemini 3.8 Flash introductory pricing applies through 2026-12-31; the higher
+# price starts 2027-01-01. The free tier has no charge, but the ledger records
+# the list-price cost and marks billing=free_tier so reports can show both.
+# Prices are list prices; no paid billing is enabled for the P1 baseline.
 
-version: 1
+version: 2
 currency: USD
 models:
   "openai/gpt-oss-120b":
@@ -19,3 +26,25 @@ models:
     input_usd_per_mtok: "0.075"
     output_usd_per_mtok: "0.30"
     cached_input_usd_per_mtok: "0.037"
+  "gemini-3.8-flash":
+    provider: "google"
+    versions:
+      - effective_from: "2026-11-15"
+        effective_until: "2026-12-31"
+        input_usd_per_mtok: "0.75"
+        output_usd_per_mtok: "3.75"
+        cached_input_usd_per_mtok: "0.075"
+        note: "Introductory price through 2026-12-31"
+      - effective_from: "2027-01-01"
+        input_usd_per_mtok: "1.50"
+        output_usd_per_mtok: "7.50"
+        cached_input_usd_per_mtok: "0.15"
+        note: "Post-promotion price from 2027-01-01"
+  "gemini-3.5-flash-lite":
+    provider: "google"
+    versions:
+      - effective_from: "2026-11-15"
+        input_usd_per_mtok: "0.30"
+        output_usd_per_mtok: "2.50"
+        cached_input_usd_per_mtok: "0.03"
+        note: "Standard list price"

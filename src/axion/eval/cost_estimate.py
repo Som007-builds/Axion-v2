@@ -70,13 +70,13 @@ class TokenEstimate:
 def sample_papers(
     papers: Sequence[CorpusPaper], size: int, *, seed: int = DEFAULT_SEED
 ) -> list[CorpusPaper]:
-    """Uniform, seeded, paper-level sample; deterministic for a stable input."""
+    """Uniform, seeded, paper-level sample returned in seeded draw order."""
     if size < 1:
         raise ValueError("sample size must be at least 1")
     ordered = sorted(papers, key=lambda paper: paper.pmcid)
     if size >= len(ordered):
         return ordered
-    return sorted(random.Random(seed).sample(ordered, size), key=lambda paper: paper.pmcid)
+    return random.Random(seed).sample(ordered, size)
 
 
 _SENTENCE_END = re.compile(r"[.!?]+(?:\s+|$)")

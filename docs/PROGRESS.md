@@ -3,13 +3,14 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through P1-09 are `[x]`; P1-10 is offline-complete and its paid run is **stopped at a clean one-paper checkpoint** by Groq's free-tier limit; P1-11 tooling is built but the official ≥200-claim export is blocked by P1-10; P1-12 is scaffolded.
-- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample), ADR-0015 Proposed (P1 blast-radius counts conditional on included citers; expansion deferred to P3), ADR-0016 Proposed (agreement by ≥7-day self-relabel or independent 20% second-labeler overlap). PRD P1.8 and CONTEXT §4 already use the total-corpus wording.
-- **P1-10 paid pilot (2026-11-15):** Groq `openai/gpt-oss-120b`, prompt v1, seed `20261114`. One paper succeeded: **21 silver claims**, 28 extracted, **7 span-not-verbatim failures**, 0 parse failures; prompt **6,809**, completion **7,159** (reasoning **3,011**), list price **$0.005317**, latency **16,459 ms**. The next paper failed with HTTP 413 `rate_limit_exceeded`: **TPM 8000, requested 12111**. The 5-paper pilot and 100-paper sample did not run. Report: `docs/reports/P1-baseline-pilot.{md,json}`.
-- **Pricing/SDK:** `pricing.yaml` now holds the official Groq list prices checked 2026-11-15 (120b $0.15/$0.075 cached/$0.60; 20b $0.075/$0.037 cached/$0.30), with source URLs. The paid cap is $3 total in the untracked `_private/budget.md`. The only provider SDK is `groq==1.7.0` (released 2026-08-26, not within 14 days), isolated in `src/axion/llm/groq.py` behind `ProviderAdapter`.
+- **Phase:** P1 (foundation) — P1-01 through P1-09 are `[x]`; P1-10 is implemented for Gemini and its 5-paper pilot is **blocked by a transient `gemini-3.8-flash` HTTP 503**; P1-11 tooling is built but the official ≥200-claim export is blocked by P1-10; P1-12 is scaffolded.
+- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample), ADR-0015 Proposed (P1 blast-radius counts conditional on included citers; expansion deferred to P3), ADR-0016 Proposed (agreement by ≥7-day self-relabel or independent 20% second-labeler overlap), **ADR-0017 Accepted (Gemini free tier replaces Groq; `gemini-3.8-flash` large / `gemini-3.5-flash-lite` small; $0 real spend)**.
+- **P1-10 Gemini implementation (2026-11-15):** `google-genai==2.8.0` pinned; `src/axion/llm/gemini.py` uses cleaned JSON-schema structured output, validates with Pydantic, maps `candidates + thoughts` to completion and `thoughts` to reasoning; `pricing.yaml` v2 has dated list prices (3.8 Flash $0.75/$3.75 through 2026-12-31, $1.50/$7.50 from 2027-01-01; 3.5 Flash-Lite $0.30/$2.50); the ledger records billing, price version, input/output/post-promotion USD, and generation config. Free-tier calls record list price with `billing=free_tier`; real spend is $0. `src/axion/llm/pacing.py` enforces 5 RPM / 20 RPD with a 2-request margin, Pacific-day reset, and a clean `DailyQuotaError` stop.
+- **Normalization-only evidence fix:** documented in `docs/eval/EVIDENCE_SPANS.md`; accepted spans are rewritten to the exact source substring. Groq pilot rejects: 4 U+2011 hyphen variants (fixed), 2 non-contiguous merged tails (rejected), 1 case-only (rejected). Strict reject rate 25.0%; normalized 10.7%. Prompt v2 is not justified (paraphrase was 1/7).
+- **Gemini pilot status:** the first live request exposed a Developer API schema rejection (`additionalProperties`); fixed by sending `responseJsonSchema` without that key. A minimal live call confirmed `gemini-3.5-flash-lite` works. `gemini-3.8-flash` returned HTTP 503 `UNAVAILABLE` (“currently experiencing high demand”) on repeated non-tight retries. **No Gemini baseline claims/tokens/cost are measured yet.**
 - **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Blast-radius counts are **conditional on the included citer set only**; P3 owns on-demand expansion (ADR-0015 Proposed). Exact counts are in `docs/reports/P1-corpus-coverage.md`.
-- **Next action:** owner decides how to clear the Groq free-tier limit before the full P1-10 run: upgrade the Groq tier/limit, approve a different provider, or explicitly approve a sampling rule restricted to prompts that fit TPM/TPD (a scope change). Then finish the pilot, run the seeded sample, export ≥200 claims, and label. The owner should also decide whether a future ingest rebalances citers toward one per source.
-- **Last updated:** 2026-11-15 by DeepSeek V4.1 Flash Free (paid-pilot + audit-tooling session)
+- **Next action:** retry the 5-paper Gemini pilot when `gemini-3.8-flash` is available (do not silently switch the large tier). Then run the seeded 100-paper sample in seeded order across days, stop on the daily quota, export ≥200 claims once ≥250 accepted claims exist, and hand the CSV to the owner for labels. The Groq free-tier TPM/TPD blocker is historical.
+- **Last updated:** 2026-11-15 by DeepSeek V4.1 Flash Free (Gemini switch + normalization + pacing session)
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -58,7 +59,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | In progress | — | P1-01..P1-09 `[x]`; P1-10 paid pilot stopped at 1 paper by Groq TPM 8000; P1-11 tooling ready, official export blocked; P1-12 scaffolded |
+| P1 Foundation | In progress | — | P1-01..P1-09 `[x]`; P1-10 Gemini implementation done, 5-paper pilot blocked by `gemini-3.8-flash` 503; P1-11 tooling ready, official export blocked; P1-12 scaffolded |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -87,13 +88,14 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | Corpus link coverage | 285/792 sources have an incoming citer edge; 507 do not; 34/4,168 citer papers have no outgoing edge; 533 papers have no edge | `docs/reports/P1-corpus-coverage.md` |
 | Full store load (twice) | Paper 4,928; CITES 4,982; contexts 6,117; notices 792; vectors 4,928 + 6,117 | `data/corpus/infectious-disease-v1/store-load.log` (untracked); re-queried 2026-11-15 |
 | P1-10 100-paper dry-run (estimate) | 764,084 prompt tokens; mean 7,641/paper; expected 500 claims at 5/paper | `docs/reports/P1-baseline-estimate.md` |
-| P1-10 paid pilot (measured, n=1 paper) | 21 silver claims from 28 extracted; 7 span-not-verbatim; 0 parse failures; 6,809 prompt + 7,159 completion (3,011 reasoning) tokens; $0.005317 list price; 16,459 ms latency; prompt gap -10.3% vs chars/4 | `docs/reports/P1-baseline-pilot.md` |
-| P1-10 full paid run | NOT RUN — Groq free tier TPM 8000 blocked a 12,111-token request; 100 papers also exceed TPD 200,000 | `docs/reports/P1-baseline-pilot.md` |
+| P1-10 Groq pilot (historical, n=1 paper) | 21 silver claims from 28 extracted; 7 span-not-verbatim; 0 parse failures; 6,809 prompt + 7,159 completion (3,011 reasoning) tokens; $0.005317 list price; 16,459 ms latency; prompt gap -10.3% vs chars/4 | `docs/reports/P1-baseline-pilot.md` |
+| P1-10 Gemini pilot (n=5 papers) | NOT MEASURED — `gemini-3.8-flash` returned HTTP 503 `UNAVAILABLE`; `gemini-3.5-flash-lite` smoke call succeeded | `eval/silver/claims_v1/gemini_pilot/run_report.json` (partial/failed) |
+| Evidence-span normalization | Strict 7/28 (25.0%) rejects → normalized 3/28 (10.7%) on the Groq pilot; 4 hyphen variants fixed, 2 merged tails and 1 case-only remain rejected | `docs/eval/EVIDENCE_SPANS.md` |
 | P1-11 audit tooling | HTML labeler (no network), exact-column overlap export (20%), strict validator + existing metrics; **0 claims labelled** | `eval/audit/README.md` |
 
 ## Open questions for owner
 - **Push:** resolved 2026-11-15 — local `main` was fast-forwarded to `ab2dbfe`; the agent does not push. The owner pushes when ready.
-- **Groq limit:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large); prices are filled and the $3 cap is approved. The blocker is the free-tier TPM/TPD, not price. Should the owner upgrade the Groq tier, approve another provider, or approve a sampling rule that fits the limit?
+- **Gemini large model:** ADR-0017 sets `gemini-3.8-flash` as the large tier. The free tier is returning transient HTTP 503 `UNAVAILABLE` (“high demand”); `gemini-3.5-flash-lite` works. Retry later; do not silently substitute the large tier.
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
 - **Retraction Watch:** resolved 2026-11-14. Crossref’s canonical Metadata Retrieval page lists the database as CC0; owner approved use and the acquisition method (REST lookups + pinned GitLab CSV snapshot; no raw CSV committed). Recorded in `docs/DATA_SOURCES.md`.
 - **Sub-topic:** resolved 2026-11-14 — ADR-0012 accepted (`(HSC) Medicine - Infectious Disease`), with the exact-count stop condition and PMID-gap reporting. Oncology deferred to its own ADR as a held-out transfer corpus.
@@ -103,12 +105,20 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - **Provider SDK adapters:** the approved Groq adapter is `src/axion/llm/groq.py` (`groq==1.7.0`); Gemini/Anthropic remain deferred. Offline tests still use the scripted provider.
 
 ## Blocked tasks
-- P1-10: offline portion, pricing, cap, and SDK are complete; the paid run is blocked by Groq free-tier TPM/TPD (limit 8000; first failed request 12,111). Full run needs an owner-approved limit/provider or sampling change.
+- P1-10: Gemini implementation, pricing, pacing, and normalization are complete; the 5-paper pilot is blocked by transient `gemini-3.8-flash` HTTP 503. The Groq TPM/TPD blocker is historical.
 - P1-11: the official ≥200-claim export needs P1-10; tooling (HTML, overlap export, validator) is ready. Then owner labeling (~3–6 h) and a ≥7-day relabel gap (or an approved second labeler).
 - P1-12: follows from P1-11 (and the full P1-10 run).
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-15 - DeepSeek V4.1 Flash Free - Gemini switch, normalization, pacing
+- Status: **PARTIAL**; branch `p1`. Local `main` fast-forwarded to `72f2dad` and **not pushed**. Worktree contains the Gemini implementation.
+- ADR-0017 Accepted: Gemini free tier replaces Groq for P1-10. Large `gemini-3.8-flash`, small `gemini-3.5-flash-lite`; `google-genai==2.8.0` pinned; Groq adapter/tests kept unused. Real spend stays **$0**.
+- Implemented: dated list-price versions and post-promotion estimates; ledger fields for billing/price version/input-output USD/generation config; `billing=free_tier` with list price; Gemini adapter with cleaned JSON-schema structured output and thinking-token accounting; free-tier pacing with Pacific reset and clean daily stop; strict-vs-normalized span matching with source-span rewrite and failure evidence/category; seeded sample order; resumable daily runs.
+- Normalization result on the historical Groq pilot: 7/28 (25.0%) strict rejects → 3/28 (10.7%) after normalization. 4 U+2011 hyphen variants fixed; 2 non-contiguous merged tails and 1 case-only remain. Prompt v2 not justified; prompt stays v1.
+- Live Gemini attempts: first request rejected Pydantic `additionalProperties`; fixed by sending cleaned `responseJsonSchema` and validating locally. `gemini-3.5-flash-lite` minimal call succeeded. `gemini-3.8-flash` returned repeated HTTP 503 `UNAVAILABLE` (“high demand”), so the 5-paper pilot is **not measured**. No baseline claims/tokens/cost are claimed.
+- Verification: **286 passed, 2 skipped**; `ruff check`, `ruff format --check`, and strict `mypy` clean. Docs: ADR-0017, `docs/eval/EVIDENCE_SPANS.md`, TODO/PROGRESS updates.
+- Next: retry the 5-paper pilot when `gemini-3.8-flash` is available; do not silently change the large tier. Then continue the 100-paper sample in seeded order across days and export the audit once ≥250 claims exist.
 ### 2026-11-15 - DeepSeek V4.1 Flash Free - P1-10 paid pilot + P1-11 tooling
 - Status: **PARTIAL**; branch `p1`, clean tree at start (`ab2dbfe`); local `main` fast-forwarded to `ab2dbfe` and **not pushed**. The owner pushes.
 - Pricing/SDK: filled `src/axion/config/pricing.yaml` with the official Groq list prices checked 2026-11-15, recording both model URLs and the check date; set the P1-10 cap to **$3 total** in untracked `_private/budget.md`; added `groq==1.7.0` (published 2026-08-26, outside the 14-day window) and `src/axion/llm/groq.py` behind `ProviderAdapter`. The ledger now records `reasoning_tokens` (idempotent migration).

@@ -21,6 +21,7 @@ repos:
         args: [--config-file=pyproject.toml]
         pass_filenames: false
         additional_dependencies:
+          - google-genai==2.8.0
           - groq==1.7.0
           - pydantic==2.10.4
           - pydantic-settings==2.7.0

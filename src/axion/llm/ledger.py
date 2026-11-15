@@ -45,6 +45,14 @@ CREATE TABLE IF NOT EXISTS llm_calls (
     completion_tokens INTEGER,
     reasoning_tokens INTEGER,
     usd TEXT,
+    usd_post_promotion TEXT,
+    input_usd TEXT,
+    output_usd TEXT,
+    billing TEXT,
+    price_version TEXT,
+    thinking_level TEXT,
+    max_output_tokens INTEGER,
+    temperature REAL,
     latency_ms REAL,
     cache_hit INTEGER NOT NULL DEFAULT 0 CHECK (cache_hit IN (0, 1)),
     paper_id TEXT,
@@ -70,6 +78,14 @@ _LLM_CALL_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("tier", "TEXT"),
     ("parent_call_id", "INTEGER"),
     ("reasoning_tokens", "INTEGER"),
+    ("usd_post_promotion", "TEXT"),
+    ("input_usd", "TEXT"),
+    ("output_usd", "TEXT"),
+    ("billing", "TEXT"),
+    ("price_version", "TEXT"),
+    ("thinking_level", "TEXT"),
+    ("max_output_tokens", "INTEGER"),
+    ("temperature", "REAL"),
 )
 
 
@@ -90,6 +106,14 @@ class LedgerEntry:
     ts: str | None = None
     tier: str | None = None
     parent_call_id: int | None = None
+    usd_post_promotion: Decimal | None = None
+    input_usd: Decimal | None = None
+    output_usd: Decimal | None = None
+    billing: str | None = None
+    price_version: str | None = None
+    thinking_level: str | None = None
+    max_output_tokens: int | None = None
+    temperature: float | None = None
 
 
 @dataclass(frozen=True)
@@ -135,6 +159,44 @@ class CallRecord:
     cache_hit: bool
     paper_id: str | None
     error: str | None
+    usd_post_promotion: Decimal | None = None
+    input_usd: Decimal | None = None
+    output_usd: Decimal | None = None
+    billing: str | None = None
+    price_version: str | None = None
+    thinking_level: str | None = None
+    max_output_tokens: int | None = None
+    temperature: float | None = None
+
+
+def _call_record(row: sqlite3.Row) -> CallRecord:
+    return CallRecord(
+        id=int(row["id"]),
+        ts=str(row["ts"]),
+        stage=str(row["stage"]),
+        provider=None if row["provider"] is None else str(row["provider"]),
+        model=None if row["model"] is None else str(row["model"]),
+        prompt_tokens=int(row["prompt_tokens"] or 0),
+        completion_tokens=int(row["completion_tokens"] or 0),
+        reasoning_tokens=int(row["reasoning_tokens"] or 0),
+        usd=None if row["usd"] is None else Decimal(str(row["usd"])),
+        latency_ms=None if row["latency_ms"] is None else float(row["latency_ms"]),
+        cache_hit=bool(row["cache_hit"]),
+        paper_id=None if row["paper_id"] is None else str(row["paper_id"]),
+        error=None if row["error"] is None else str(row["error"]),
+        usd_post_promotion=(
+            None if row["usd_post_promotion"] is None else Decimal(str(row["usd_post_promotion"]))
+        ),
+        input_usd=None if row["input_usd"] is None else Decimal(str(row["input_usd"])),
+        output_usd=None if row["output_usd"] is None else Decimal(str(row["output_usd"])),
+        billing=None if row["billing"] is None else str(row["billing"]),
+        price_version=None if row["price_version"] is None else str(row["price_version"]),
+        thinking_level=(None if row["thinking_level"] is None else str(row["thinking_level"])),
+        max_output_tokens=(
+            None if row["max_output_tokens"] is None else int(row["max_output_tokens"])
+        ),
+        temperature=None if row["temperature"] is None else float(row["temperature"]),
+    )
 
 
 @dataclass(frozen=True)
@@ -247,14 +309,21 @@ class SQLiteLedger:
         """Append one call attempt and return its ledger row id."""
         timestamp = entry.ts or datetime.now(UTC).isoformat()
         usd_text = None if entry.usd is None else format(entry.usd, "f")
+        post_text = (
+            None if entry.usd_post_promotion is None else format(entry.usd_post_promotion, "f")
+        )
+        input_text = None if entry.input_usd is None else format(entry.input_usd, "f")
+        output_text = None if entry.output_usd is None else format(entry.output_usd, "f")
         with self._connect() as connection:
             cursor = connection.execute(
                 """
                 INSERT INTO llm_calls (
                     ts, run_id, stage, tier, provider, model, prompt_tokens,
-                    completion_tokens, reasoning_tokens, usd, latency_ms, cache_hit,
+                    completion_tokens, reasoning_tokens, usd, usd_post_promotion,
+                    input_usd, output_usd, billing, price_version, thinking_level,
+                    max_output_tokens, temperature, latency_ms, cache_hit,
                     paper_id, parent_call_id, error
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     timestamp,
@@ -267,6 +336,14 @@ class SQLiteLedger:
                     entry.completion_tokens,
                     entry.reasoning_tokens,
                     usd_text,
+                    post_text,
+                    input_text,
+                    output_text,
+                    entry.billing,
+                    entry.price_version,
+                    entry.thinking_level,
+                    entry.max_output_tokens,
+                    entry.temperature,
                     entry.latency_ms,
                     int(entry.cache_hit),
                     entry.paper_id,
@@ -336,36 +413,81 @@ class SQLiteLedger:
                 """
                 SELECT id, ts, stage, provider, model, prompt_tokens,
                        completion_tokens, reasoning_tokens, usd, latency_ms,
-                       cache_hit, paper_id, error
+                       cache_hit, paper_id, error, usd_post_promotion, input_usd,
+                       output_usd, billing, price_version, thinking_level,
+                       max_output_tokens, temperature
                 FROM llm_calls
                 WHERE run_id = ?
                 ORDER BY id
                 """,
                 (run_id,),
             ).fetchall()
-        return tuple(
-            CallRecord(
-                id=int(row["id"]),
-                ts=str(row["ts"]),
-                stage=str(row["stage"]),
-                provider=None if row["provider"] is None else str(row["provider"]),
-                model=None if row["model"] is None else str(row["model"]),
-                prompt_tokens=int(row["prompt_tokens"] or 0),
-                completion_tokens=int(row["completion_tokens"] or 0),
-                reasoning_tokens=int(row["reasoning_tokens"] or 0),
-                usd=None if row["usd"] is None else Decimal(str(row["usd"])),
-                latency_ms=None if row["latency_ms"] is None else float(row["latency_ms"]),
-                cache_hit=bool(row["cache_hit"]),
-                paper_id=None if row["paper_id"] is None else str(row["paper_id"]),
-                error=None if row["error"] is None else str(row["error"]),
-            )
-            for row in rows
-        )
+        return tuple(_call_record(row) for row in rows)
 
     def run_usd(self, run_id: str) -> Decimal:
         """Total list-price cost recorded for one run."""
         return sum(
             (call.usd for call in self.calls_for_run(run_id) if call.usd is not None),
+            Decimal("0"),
+        )
+
+    def calls_for_model(self, model: str) -> tuple[CallRecord, ...]:
+        """Return every attempt for one model, for project-wide daily pacing."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, ts, stage, provider, model, prompt_tokens,
+                       completion_tokens, reasoning_tokens, usd, latency_ms,
+                       cache_hit, paper_id, error, usd_post_promotion, input_usd,
+                       output_usd, billing, price_version, thinking_level,
+                       max_output_tokens, temperature
+                FROM llm_calls
+                WHERE model = ?
+                ORDER BY id
+                """,
+                (model,),
+            ).fetchall()
+        return tuple(_call_record(row) for row in rows)
+
+    def total_real_usd(self) -> Decimal:
+        """Actual spend across all recorded paid calls."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT usd FROM llm_calls WHERE billing = 'paid' AND usd IS NOT NULL"
+            ).fetchall()
+        return sum((Decimal(str(row["usd"])) for row in rows), Decimal("0"))
+
+    def run_post_promotion_usd(self, run_id: str) -> Decimal:
+        """List-price cost for one run at each call's latest known price."""
+        return sum(
+            (
+                call.usd_post_promotion
+                for call in self.calls_for_run(run_id)
+                if call.usd_post_promotion is not None
+            ),
+            Decimal("0"),
+        )
+
+    def run_real_usd(self, run_id: str) -> Decimal:
+        """Actual spend: list price only for calls explicitly billed as paid.
+
+        Free-tier calls are recorded with their list price, but their real
+        spend is zero. Rows from before the ``billing`` column are treated as
+        unknown, not as paid, so they cannot silently inflate real spend.
+        """
+        return sum(
+            (
+                call.usd
+                for call in self.calls_for_run(run_id)
+                if call.billing == "paid" and call.usd is not None
+            ),
+            Decimal("0"),
+        )
+
+    def run_output_usd(self, run_id: str) -> Decimal:
+        """Output-token share of recorded list-price cost for one run."""
+        return sum(
+            (call.output_usd for call in self.calls_for_run(run_id) if call.output_usd is not None),
             Decimal("0"),
         )
 

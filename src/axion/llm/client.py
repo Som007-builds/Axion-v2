@@ -6,15 +6,17 @@ import random
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Self, TypeVar
 
 from pydantic import BaseModel
 
 from axion.config.pricing import (
+    CostEstimate,
     MissingPriceError,
     PricingTable,
-    estimate_cost,
+    estimate_cost_details,
     load_pricing,
 )
 from axion.config.settings import Settings
@@ -23,6 +25,7 @@ from axion.llm.cooldown import CooldownTracker
 from axion.llm.errors import (
     AllProvidersFailedError,
     ConfigurationError,
+    DailyQuotaError,
     PermanentProviderError,
     ProviderNotConfiguredError,
     RateLimitError,
@@ -82,6 +85,7 @@ class LLMClient:
         cooldown: CooldownTracker | None = None,
         retry: RetryPolicy | None = None,
         clock: Callable[[], float] = time.perf_counter,
+        today: Callable[[], date] | None = None,
     ) -> None:
         self._settings = settings
         self._registry = registry
@@ -89,6 +93,7 @@ class LLMClient:
         self._pricing = pricing
         self._cache = cache
         self._clock = clock
+        self._today = today or (lambda: datetime.now(UTC).date())
         self._retry = retry or RetryPolicy(
             max_attempts=settings.llm_max_attempts,
             base_delay_s=settings.llm_retry_base_s,
@@ -109,6 +114,7 @@ class LLMClient:
         cooldown: CooldownTracker | None = None,
         retry: RetryPolicy | None = None,
         clock: Callable[[], float] = time.perf_counter,
+        today: Callable[[], date] | None = None,
     ) -> Self:
         """Wire a client from settings, creating the default ledger/cache."""
         ledger_path = settings.resolved_ledger_path
@@ -126,6 +132,7 @@ class LLMClient:
             cooldown=cooldown,
             retry=retry,
             clock=clock,
+            today=today,
         )
 
     def complete(
@@ -208,7 +215,9 @@ class LLMClient:
                         latency_ms=latency_ms,
                     )
                     last_error = exc
-                    retryable = isinstance(classified, RateLimitError | TransientProviderError)
+                    retryable = isinstance(
+                        classified, RateLimitError | TransientProviderError
+                    ) and not isinstance(classified, DailyQuotaError)
                     if retryable and attempt < self._retry.max_attempts:
                         self._retry.sleep(self._retry.delay(attempt))
                         continue
@@ -241,13 +250,15 @@ class LLMClient:
         response_model: type[T] | None,
     ) -> LLMResult:
         actual_model = response.model or requested_model
-        usd = estimate_cost(
+        details: CostEstimate = estimate_cost_details(
             self._pricing,
             actual_model,
             response.prompt_tokens,
             response.completion_tokens,
             dry_run=self._settings.dry_run,
+            on_date=self._today(),
         )
+        usd = details.usd
 
         parsed: BaseModel | None = None
         if response_model is not None:
@@ -263,6 +274,7 @@ class LLMClient:
                     completion_tokens=response.completion_tokens,
                     usd=usd,
                     latency_ms=latency_ms,
+                    details=details,
                 )
                 raise
 
@@ -281,6 +293,14 @@ class LLMClient:
                 run_id=request.run_id,
                 paper_id=request.paper_id,
                 parent_call_id=request.parent_call_id,
+                usd_post_promotion=details.post_promotion_usd,
+                input_usd=details.input_usd,
+                output_usd=details.output_usd,
+                billing=self._settings.llm_billing,
+                price_version=details.price_version,
+                thinking_level=request.thinking_level,
+                max_output_tokens=request.max_output_tokens,
+                temperature=request.temperature,
             )
         )
         if self._cache is not None:
@@ -303,6 +323,11 @@ class LLMClient:
             parsed=parsed,
             call_id=call_id,
             parent_call_id=request.parent_call_id,
+            usd_post_promotion=details.post_promotion_usd,
+            input_usd=details.input_usd,
+            output_usd=details.output_usd,
+            price_version=details.price_version,
+            billing=self._settings.llm_billing,
         )
 
     def _complete_from_cache(
@@ -346,6 +371,14 @@ class LLMClient:
                 run_id=request.run_id,
                 paper_id=request.paper_id,
                 parent_call_id=request.parent_call_id,
+                usd_post_promotion=Decimal("0"),
+                input_usd=Decimal("0"),
+                output_usd=Decimal("0"),
+                billing=self._settings.llm_billing,
+                price_version="cache",
+                thinking_level=request.thinking_level,
+                max_output_tokens=request.max_output_tokens,
+                temperature=request.temperature,
             )
         )
         return LLMResult(
@@ -361,6 +394,11 @@ class LLMClient:
             parsed=parsed,
             call_id=call_id,
             parent_call_id=request.parent_call_id,
+            usd_post_promotion=Decimal("0"),
+            input_usd=Decimal("0"),
+            output_usd=Decimal("0"),
+            price_version="cache",
+            billing=self._settings.llm_billing,
         )
 
     def _call_provider(
@@ -376,6 +414,8 @@ class LLMClient:
                 system=request.system,
                 temperature=request.temperature,
                 max_output_tokens=request.max_output_tokens,
+                response_schema=request.response_schema,
+                thinking_level=request.thinking_level,
             )
         )
         if not response.text.strip():
@@ -411,6 +451,7 @@ class LLMClient:
         usd: Decimal | None = None,
         latency_ms: float | None = None,
         cache_hit: bool = False,
+        details: CostEstimate | None = None,
     ) -> None:
         self._ledger.record(
             LedgerEntry(
@@ -427,6 +468,14 @@ class LLMClient:
                 run_id=request.run_id,
                 paper_id=request.paper_id,
                 parent_call_id=request.parent_call_id,
+                usd_post_promotion=None if details is None else details.post_promotion_usd,
+                input_usd=None if details is None else details.input_usd,
+                output_usd=None if details is None else details.output_usd,
+                billing=self._settings.llm_billing,
+                price_version=None if details is None else details.price_version,
+                thinking_level=request.thinking_level,
+                max_output_tokens=request.max_output_tokens,
+                temperature=request.temperature,
                 error=error[:500],
             )
         )

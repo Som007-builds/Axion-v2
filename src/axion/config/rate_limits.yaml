@@ -1,0 +1,21 @@
+# Free-tier pacing limits for the P1 baseline.
+#
+# Source: Google AI Studio rate-limit page for the owner's project, transcribed
+# by the owner on 2026-11-15. The public docs point to AI Studio for the live
+# per-project table: https://ai.google.dev/gemini-api/docs/rate-limits
+# RPD resets at midnight America/Los_Angeles. A margin keeps us below the hard
+# daily cap even if a retry or an interrupted run is counted inconsistently.
+version: 1
+checked: "2026-11-15"
+source: "Google AI Studio project rate limits (owner-supplied 2026-11-15)"
+models:
+  "gemini-3.8-flash":
+    rpm: 5
+    tpm: 250000
+    rpd: 20
+    daily_margin: 2
+  "gemini-3.5-flash-lite":
+    rpm: 15
+    tpm: 250000
+    rpd: 500
+    daily_margin: 20

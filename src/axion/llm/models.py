@@ -27,6 +27,8 @@ class LLMRequest:
     paper_id: str | None = None
     parent_call_id: int | None = None
     metadata: Mapping[str, str] = field(default_factory=dict)
+    response_schema: type[BaseModel] | None = None
+    thinking_level: str | None = None
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,8 @@ class ProviderRequest:
     system: str | None = None
     temperature: float | None = None
     max_output_tokens: int | None = None
+    response_schema: type[BaseModel] | None = None
+    thinking_level: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +79,11 @@ class LLMResult:
     parsed: BaseModel | None = None
     call_id: int | None = None
     parent_call_id: int | None = None
+    usd_post_promotion: Decimal | None = None
+    input_usd: Decimal | None = None
+    output_usd: Decimal | None = None
+    price_version: str | None = None
+    billing: str | None = None
 
     @property
     def total_tokens(self) -> int:

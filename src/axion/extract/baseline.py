@@ -40,8 +40,13 @@ from axion.extract.claims import (
 from axion.extract.prompting import render_claim_prompt
 from axion.ingest.corpus import CorpusPaper
 from axion.llm.client import LLMClient
-from axion.llm.errors import AllProvidersFailedError, StructuredOutputError
+from axion.llm.errors import (
+    AllProvidersFailedError,
+    DailyQuotaError,
+    StructuredOutputError,
+)
 from axion.llm.models import LLMRequest
+from axion.llm.pacing import RequestPacer
 from axion.parse.jats import JatsParseError, parse_jats_file
 
 CHARS_PER_TOKEN = 4.0
@@ -105,10 +110,40 @@ class RunReport:
     manifest_path: Path
     candidates_path: Path
     stopped_reason: str | None = None
+    strict_claims: int = 0
+    strict_span_failures: int = 0
+    span_failures: int = 0
+    normalization_fixes: int = 0
+    structured_output_failures: int = 0
 
 
 def _prompt_tokens(text: str) -> int:
     return math.ceil(len(text) / CHARS_PER_TOKEN)
+
+
+def _read_failures(path: Path) -> list[ClaimFailure]:
+    if not path.exists():
+        return []
+    failures: list[ClaimFailure] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            failures.append(ClaimFailure.model_validate_json(line))
+        except ValueError:
+            continue
+    return failures
+
+
+def _daily_quota_cause(exc: BaseException) -> bool:
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, DailyQuotaError):
+            return True
+        current = current.__cause__
+    return False
 
 
 def build_plan(
@@ -227,6 +262,9 @@ def run_extraction(
     prompt_version: str = PROMPT_VERSION,
     max_calls: int = DEFAULT_MAX_CALLS,
     max_output_tokens: int = 8192,
+    thinking_level: str | None = None,
+    temperature: float | None = None,
+    pacer: RequestPacer | None = None,
 ) -> RunReport:
     """Run every planned paper through the client; failures are kept.
 
@@ -243,11 +281,17 @@ def run_extraction(
     failures_path = output_dir / "failures.jsonl"
     manifest_path = output_dir / "silver_manifest.json"
     done = read_silver_paper_ids(claims_path) | read_processed_paper_ids(processed_path)
-    failures: list[ClaimFailure] = []
+    failures: list[ClaimFailure] = _read_failures(failures_path)
     processed = 0
     calls = 0
     model_name = ""
+    provider_name: str | None = None
     stopped_reason: str | None = None
+    strict_claims = 0
+    strict_span_failures = 0
+    span_failures = 0
+    normalization_fixes = 0
+    structured_output_failures = 0
 
     for plan in plans:
         paper_id = plan.paper.pmcid
@@ -264,6 +308,20 @@ def run_extraction(
             )
             stopped_reason = "max_calls_reached"
             break
+        if pacer is not None:
+            try:
+                pacer.reserve()
+            except DailyQuotaError as exc:
+                failures.append(
+                    ClaimFailure(
+                        paper_id=paper_id,
+                        claim_index=-1,
+                        reason="daily_quota_reached",
+                        detail=str(exc)[:300],
+                    )
+                )
+                stopped_reason = "daily_quota_reached"
+                break
         calls += 1
         try:
             result = client.complete(
@@ -274,10 +332,14 @@ def run_extraction(
                     run_id=run_id,
                     paper_id=paper_id,
                     max_output_tokens=max_output_tokens,
+                    temperature=temperature,
+                    thinking_level=thinking_level,
+                    response_schema=ClaimExtraction,
                 ),
                 response_model=ClaimExtraction,
             )
         except StructuredOutputError as exc:
+            structured_output_failures += 1
             failures.append(
                 ClaimFailure(
                     paper_id=paper_id,
@@ -288,18 +350,21 @@ def run_extraction(
             )
             continue
         except AllProvidersFailedError as exc:
+            daily = _daily_quota_cause(exc)
             failures.append(
                 ClaimFailure(
                     paper_id=paper_id,
                     claim_index=-1,
-                    reason="provider_failed",
+                    reason="daily_quota_reached" if daily else "provider_failed",
                     detail=str(exc)[:300],
                 )
             )
-            stopped_reason = "provider_failed"
+            stopped_reason = "daily_quota_reached" if daily else "provider_failed"
             break
         model_name = result.model
+        provider_name = result.provider
         if result.parsed is None:
+            structured_output_failures += 1
             failures.append(
                 ClaimFailure(
                     paper_id=paper_id,
@@ -311,6 +376,20 @@ def run_extraction(
             continue
         extraction = cast(ClaimExtraction, result.parsed)
         valid, rejected = verify_claims(extraction, plan.document, paper_id=paper_id)
+        strict_valid, strict_rejected = verify_claims(
+            extraction, plan.document, paper_id=paper_id, normalize=False
+        )
+        strict_span_failures += sum(
+            failure.reason == "evidence_span_not_verbatim" for failure in strict_rejected
+        )
+        rejected_spans = sum(failure.reason == "evidence_span_not_verbatim" for failure in rejected)
+        span_failures += rejected_spans
+        normalization_fixes += max(
+            0,
+            sum(failure.reason == "evidence_span_not_verbatim" for failure in strict_rejected)
+            - rejected_spans,
+        )
+        strict_claims += len(strict_valid)
         failures.extend(rejected)
         rows = [
             SilverClaim(
@@ -361,6 +440,10 @@ def run_extraction(
         created_at=utc_now_iso(),
         teacher_model=model_name or "unknown",
         prompt_version=prompt_version,
+        provider=provider_name,
+        thinking_level=thinking_level,
+        max_output_tokens=max_output_tokens,
+        temperature=temperature,
         seed=seed,
         sample_size=sample_size,
         papers_processed=len(
@@ -384,6 +467,11 @@ def run_extraction(
         manifest_path=manifest_path,
         candidates_path=candidates_path,
         stopped_reason=stopped_reason,
+        strict_claims=strict_claims,
+        strict_span_failures=strict_span_failures,
+        span_failures=span_failures,
+        normalization_fixes=normalization_fixes,
+        structured_output_failures=structured_output_failures,
     )
 
 

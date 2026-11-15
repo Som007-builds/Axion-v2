@@ -50,6 +50,15 @@ class RateLimitError(ProviderError):
     """The provider asked us to slow down."""
 
 
+class DailyQuotaError(RateLimitError):
+    """The provider's daily quota is exhausted; do not retry before reset.
+
+    This is a :class:`RateLimitError` so existing rate-limit handling sees it,
+    but the client deliberately does not retry it: a tight retry loop cannot
+    succeed before the next quota window.
+    """
+
+
 class TransientProviderError(ProviderError):
     """A temporary provider/server failure worth retrying."""
 
@@ -72,7 +81,9 @@ def classify_error(exc: Exception) -> ProviderError:
     Typed errors pass through unchanged. Untyped SDK exceptions are classified
     by message, mirroring the resilient router in V1.
     """
-    if isinstance(exc, RateLimitError | TransientProviderError | PermanentProviderError):
+    if isinstance(
+        exc, DailyQuotaError | RateLimitError | TransientProviderError | PermanentProviderError
+    ):
         return exc
 
     message = str(exc).lower()

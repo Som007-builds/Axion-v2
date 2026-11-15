@@ -33,12 +33,17 @@ class CachedResponse:
 
 def make_cache_key(request: LLMRequest, model: str) -> str:
     """Deterministic key over everything that changes model output."""
+    schema = None
+    if request.response_schema is not None:
+        schema = request.response_schema.model_json_schema()
     payload = {
         "prompt": request.prompt,
         "system": request.system,
         "model": model,
         "temperature": request.temperature,
         "max_output_tokens": request.max_output_tokens,
+        "response_schema": schema,
+        "thinking_level": request.thinking_level,
     }
     encoded = json.dumps(payload, sort_keys=True, ensure_ascii=True)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()

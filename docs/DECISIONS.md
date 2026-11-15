@@ -197,6 +197,28 @@ Either path reports raw agreement and Cohen's kappa through the existing metrics
 
 **Consequences:** The first agreement number waits at least 7 days or for a second labeler. The overlap CSV is a separate file and must not be merged back into the primary labels; it only supplies `relabel_label`. The tool stores second-labeler work under a separate browser-storage key.
 
+## ADR-0017 — P1 baseline switches from Groq to the Gemini free tier
+**Date:** 2026-11-15 — **Status:** Accepted (owner decision, 2026-11-15)
+
+**Context:** The Groq free tier (8,000 TPM / 200,000 TPD) could not complete the 5-paper pilot: after one paper, a 12,111-token request exceeded TPM and the client stopped cleanly. Raising the Groq tier would spend real money, while the P1 goal is a measured baseline at **$0 real spend**. Google AI Studio offers both chosen Gemini models on a free tier.
+
+**Decision:** Switch the P1-10 baseline provider to **Google Gemini via the official `google-genai` SDK**, using `gemini-3.8-flash` as the large tier and `gemini-3.5-flash-lite` as the small tier. Both model IDs are official. Use SDK JSON-schema structured output, still validate with Pydantic, and map `thoughts_token_count` into the existing reasoning-token accounting. Keep `groq==1.7.0`, `src/axion/llm/groq.py`, and its tests in the repo, unused. Do not enable billing; real spend remains $0. Free-tier calls record the list price in the ledger with `billing=free_tier`, and reports show both the call-date price and the post-promotion price.
+
+**Pricing:** Official Google list prices, checked 2026-11-15:
+- `gemini-3.8-flash`: $0.75 input / $3.75 output / $0.075 cached input per 1M tokens through 2026-12-31 (introductory); $1.50 / $7.50 / $0.15 from 2027-01-01.
+- `gemini-3.5-flash-lite`: $0.30 / $2.50 / $0.03 per 1M tokens.
+- Both models show “Free of charge” on the free tier.
+
+Sources: <https://ai.google.dev/gemini-api/docs/pricing>, <https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash>, <https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite>, <https://ai.google.dev/gemini-api/docs/rate-limits>, <https://ai.google.dev/gemini-api/docs/thinking>.
+
+**Rate limits and pacing:** The owner’s AI Studio snapshot (2026-11-15) gives `gemini-3.8-flash` **5 RPM / 250K TPM / 20 RPD** and `gemini-3.5-flash-lite` **15 RPM / 250K TPM / 500 RPD**. RPD resets at midnight `America/Los_Angeles`. The runner enforces a conservative RPM gap and a daily-cap margin (18/day for the 20-RPD model), stops cleanly on the first daily-quota or `RESOURCE_EXHAUSTED` error, and resumes across days without retrying tightly.
+
+**Fixed baseline generation config:** temperature **0.0**, max output tokens **8192**, thinking level **medium**. The prompt stays `claim-extraction-v1` unless the Gemini pilot shows paraphrase dominates; thinking effort is a P2 cost lever, not a P1 variable.
+
+**Alternatives considered:** upgrade Groq to a paid tier (violates $0 real spend); keep Groq and sample only prompts under 8K tokens (a scope/sampling change and still exceeds the daily cap); use a local model (not provider-hosted, different baseline); leave the SDK unpinned (reproducibility risk).
+
+**Consequences:** `google-genai==2.8.0` is pinned (outside the 14-day window and compatible with `pydantic==2.10.4`; `2.9.0` requires `pydantic>=2.12.5` and was rejected). The ledger records provider, model, prompt version, run_id, billing, price version, generation config, input/output/post-promotion cost, and reasoning tokens. The Groq adapter remains tested history. A 20-RPD limit means the 100-paper sample takes about six days at ~18 requests/day, so runs are resumable and stop at a clean daily boundary.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 DEFAULT_PRICING_PATH = Path(__file__).with_name("pricing.yaml")
+DEFAULT_RATE_LIMITS_PATH = Path(__file__).with_name("rate_limits.yaml")
 
 
 class Settings(BaseSettings):
@@ -54,6 +55,10 @@ class Settings(BaseSettings):
     llm_retry_jitter_s: float = Field(default=1.0, ge=0.0)
     llm_cooldown_s: float = Field(default=300.0, ge=0.0)
     llm_cache_enabled: bool = True
+    llm_billing: Literal["free_tier", "paid"] = "free_tier"
+    llm_thinking_level: str | None = None
+    llm_max_output_tokens: int = Field(default=8192, ge=1)
+    llm_temperature: float = Field(default=0.0, ge=0.0, le=2.0)
 
     dry_run: bool = Field(default=False, validation_alias="AXION_DRY_RUN")
     data_dir: Path | None = Field(default=None, validation_alias="AXION_DATA_DIR")
@@ -88,6 +93,7 @@ class Settings(BaseSettings):
         "europepmc_contact_email",
         "llm_small_model",
         "llm_large_model",
+        "llm_thinking_level",
         "pricing_path",
         "ledger_path",
         "europepmc_cache_dir",
