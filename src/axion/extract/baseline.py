@@ -304,6 +304,8 @@ def run_extraction(
     prompt_version: str = PROMPT_VERSION,
     max_calls: int = DEFAULT_MAX_CALLS,
     max_output_tokens: int = 8192,
+    model: str | None = None,
+    tier: Literal["small", "large"] = "small",
     thinking_level: str | None = None,
     temperature: float | None = None,
     pacer: RequestPacer | None = None,
@@ -343,14 +345,8 @@ def run_extraction(
         if paper_id in done:
             continue
         if calls >= max_calls:
-            failures.append(
-                ClaimFailure(
-                    paper_id=paper_id,
-                    claim_index=-1,
-                    reason="max_calls_reached",
-                    detail=f"stopped at max_calls={max_calls}",
-                )
-            )
+            # A planned checkpoint is not a failure; recording one would inflate
+            # the run's failure counts and persist into the resumed run.
             stopped_reason = "max_calls_reached"
             break
         calls += 1
@@ -359,7 +355,8 @@ def run_extraction(
                 LLMRequest(
                     prompt=plan.prompt,
                     stage="teacher_label",
-                    tier="large",
+                    tier=tier,
+                    model=model,
                     run_id=run_id,
                     paper_id=paper_id,
                     max_output_tokens=max_output_tokens,

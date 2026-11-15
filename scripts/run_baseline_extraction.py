@@ -71,7 +71,10 @@ DEFAULT_OUT = Path("docs/reports/P1-baseline-estimate")
 DEFAULT_SILVER_DIR = Path("eval/silver/claims_v1")
 DEFAULT_AUDIT_OUT = Path("eval/audit/claims_audit_v1.csv")
 DEFAULT_MAX_OUTPUT_TOKENS = 16384
-DEFAULT_THINKING_LEVEL = "medium"
+DEFAULT_BASELINE_MODEL = "gemini-3.5-flash-lite"
+# "default" means: record the choice, send no thinking_config, let the SDK/model
+# decide. The P1 baseline does not tune thinking (ADR-0019).
+DEFAULT_THINKING_LEVEL = "default"
 # Owner rule: at most one retry, only for network/5xx failures. A 429 or a
 # daily-quota error stops the run at a checkpoint instead of burning quota.
 DEFAULT_MAX_ATTEMPTS = 2
@@ -144,11 +147,13 @@ def _markdown(estimate: DryRunEstimate, plan: PlanReport) -> str:
             "## Owner inputs status",
             "",
             "1. Provider hosting: Google Gemini free tier via AI Studio.",
-            "2. Baseline tiers: `gemini-3.5-flash-lite` (small) and `gemini-3.8-flash` " "(large).",
+            "2. Baseline model: `gemini-3.5-flash-lite` (ADR-0019); `gemini-3.8-flash` "
+            "is a reference-only model, not the baseline.",
             "3. Prices: official Google list prices, checked 2026-11-15; free-tier calls "
             "record list price with `billing=free_tier` and real spend $0.",
-            "4. Free-tier limits: 3.8 Flash 5 RPM / 250K TPM / 20 RPD; 3.5 Flash-Lite "
-            "15 RPM / 250K TPM / 500 RPD. RPD resets at midnight Pacific.",
+            "4. Free-tier limits: 3.5 Flash-Lite 15 RPM / 250K TPM / 500 RPD "
+            "(runner cap 450/day); 3.8 Flash 5 RPM / 250K TPM / 20 RPD. "
+            "RPD resets at midnight Pacific.",
             "5. SDK: the official `google-genai==2.8.0` package is pinned and installed "
             "behind `src/axion/llm/gemini.py`.",
             "",
@@ -670,7 +675,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--budget-usd", type=Decimal, default=Decimal("3.00"))
     parser.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
-    parser.add_argument("--thinking-level", default=None)
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_BASELINE_MODEL,
+        help="baseline model id (default: gemini-3.5-flash-lite per ADR-0019)",
+    )
+    parser.add_argument(
+        "--thinking-level",
+        default=None,
+        help="thinking level, or 'default' to send no thinking_config",
+    )
     parser.add_argument("--temperature", type=float, default=None)
     parser.add_argument("--billing", choices=("free_tier", "paid"), default=None)
     parser.add_argument("--rate-limits", type=Path, default=DEFAULT_RATE_LIMITS_PATH)
@@ -689,12 +703,15 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--budget-usd must be positive")
     if args.max_output_tokens < 1:
         parser.error("--max-output-tokens must be positive")
+    if not args.model.strip():
+        parser.error("--model must not be empty")
+    baseline_model = args.model.strip()
 
     manifest = read_manifest(args.manifest)
     papers = read_papers_csv(args.manifest.parent / Path(manifest.files.papers_csv).name)
     settings = Settings()
     billing = args.billing or settings.llm_billing
-    thinking_level = args.thinking_level or settings.llm_thinking_level or DEFAULT_THINKING_LEVEL
+    thinking_level = args.thinking_level or DEFAULT_THINKING_LEVEL
     temperature = args.temperature if args.temperature is not None else settings.llm_temperature
     settings = settings.model_copy(update={"llm_billing": billing})
     cache_dir = args.cache_dir or settings.resolved_europepmc_cache_dir
@@ -755,16 +772,13 @@ def main(argv: list[str] | None = None) -> int:
     if settings.dry_run:
         print("AXION_DRY_RUN is true; set it to false for the owner-approved run", flush=True)
         return 1
-    if not settings.llm_large_model:
-        print("LLM_LARGE_MODEL is not configured", flush=True)
-        return 1
     if not settings.llm_provider_chain or settings.llm_provider_chain[0] != "gemini":
         print("LLM_PROVIDER_CHAIN must start with 'gemini' for this baseline", flush=True)
         return 1
 
     try:
         rate_table = load_rate_limits(args.rate_limits)
-        rate = rate_table.require(settings.llm_large_model)
+        rate = rate_table.require(baseline_model)
     except (PacingConfigError, ValueError) as exc:
         print(f"pacing error: {exc}", flush=True)
         return 1
@@ -775,7 +789,7 @@ def main(argv: list[str] | None = None) -> int:
     already_post_spent = sum(
         (
             call.usd_post_promotion or Decimal("0")
-            for call in ledger.calls_for_model(settings.llm_large_model)
+            for call in ledger.calls_for_model(baseline_model)
         ),
         Decimal("0"),
     )
@@ -784,7 +798,7 @@ def main(argv: list[str] | None = None) -> int:
         projection = _worst_case_projection(
             plans,
             pricing_path=settings.resolved_pricing_path,
-            model=settings.llm_large_model,
+            model=baseline_model,
             max_output_tokens=args.max_output_tokens,
             already_spent=already_spent,
             already_post_spent=already_post_spent,
@@ -812,7 +826,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"provider error: {exc}", flush=True)
         return 1
 
-    model_calls = ledger.calls_for_model(settings.llm_large_model)
+    model_calls = ledger.calls_for_model(baseline_model)
     pacer = RequestPacer.from_calls(rate, model_calls)
     print(
         f"pacing: {rate.rpm} RPM, {rate.rpd} RPD, margin {rate.daily_margin}, "
@@ -836,9 +850,11 @@ def main(argv: list[str] | None = None) -> int:
         thinking_level=thinking_level,
         temperature=temperature,
         pacer=pacer,
-        configured_model=settings.llm_large_model,
+        configured_model=baseline_model,
         configured_provider=settings.llm_provider_chain[0],
         billing=billing,
+        model=baseline_model,
+        tier="small",
     )
     audit_summary = _maybe_export_audit(
         run,
@@ -854,7 +870,7 @@ def main(argv: list[str] | None = None) -> int:
         run_id=run_id,
         estimate_prompt_tokens=estimate_prompt_tokens,
         out_dir=args.silver_dir,
-        model=settings.llm_large_model,
+        model=baseline_model,
         provider=settings.llm_provider_chain[0],
         prompt_version=args.prompt_version,
         thinking_level=thinking_level,

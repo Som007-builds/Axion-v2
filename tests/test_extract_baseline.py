@@ -195,11 +195,13 @@ def test_runner_uses_fake_provider_and_records_failures(tmp_path: Path) -> None:
         papers_sha256="b" * 64,
         sample_size=1,
         seed=7,
+        model="test-large",
     )
     assert first.calls == 1
     assert first.claims == 1
     assert first.failures == 1
     assert len(provider.calls) == 1
+    assert provider.calls[0].model == "test-large"
 
     manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
     assert manifest["label_kind"] == "silver"
@@ -217,6 +219,7 @@ def test_runner_uses_fake_provider_and_records_failures(tmp_path: Path) -> None:
         papers_sha256="b" * 64,
         sample_size=1,
         seed=7,
+        model="test-large",
     )
     assert second.calls == 0
     assert second.claims == 1
@@ -286,6 +289,7 @@ def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
         papers_sha256="b" * 64,
         sample_size=1,
         seed=7,
+        model="test-large",
         configured_model="test-large",
         configured_provider="fake",
         billing="free_tier",
@@ -363,6 +367,7 @@ def test_rate_limit_stops_the_run_at_a_checkpoint(tmp_path: Path) -> None:
         papers_sha256="b" * 64,
         sample_size=1,
         seed=7,
+        model="test-large",
     )
 
     assert run.stopped_reason == "rate_limited"
@@ -417,6 +422,7 @@ def test_daily_quota_is_a_clean_checkpoint(tmp_path: Path) -> None:
         papers_sha256="b" * 64,
         sample_size=1,
         seed=7,
+        model="test-large",
         pacer=pacer,
     )
 

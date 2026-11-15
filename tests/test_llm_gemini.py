@@ -195,6 +195,17 @@ def test_max_tokens_empty_is_permanent_and_keeps_usage() -> None:
     assert detail.retryable is False
 
 
+def test_default_thinking_sends_no_thinking_config() -> None:
+    client = _fake_client(_response())
+    adapter = GeminiAdapter("key", client=client)
+
+    adapter.complete(_request(thinking_level="default"))
+
+    config = client.models.calls[0]["config"]
+    assert config.thinking_config is None
+    assert config.max_output_tokens == 8192
+
+
 def test_api_error_detail_is_sanitized() -> None:
     error = errors.APIError(
         400,

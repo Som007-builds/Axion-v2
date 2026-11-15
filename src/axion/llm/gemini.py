@@ -143,6 +143,10 @@ class GeminiAdapter(ProviderAdapter):
             )
         if request.thinking_level is not None:
             level = request.thinking_level.strip().upper()
+            # Recording an explicit "default" keeps provenance unambiguous while
+            # sending no thinking_config at all, so the model uses its own default.
+            if level in {"DEFAULT", "PROVIDER_DEFAULT"}:
+                return types.GenerateContentConfig(**kwargs)
             if level not in {item.value for item in types.ThinkingLevel}:
                 raise ConfigurationError(
                     f"unsupported Gemini thinking level {request.thinking_level!r}"

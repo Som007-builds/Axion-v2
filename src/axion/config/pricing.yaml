@@ -4,10 +4,12 @@
 #   https://console.groq.com/docs/model/openai/gpt-oss-120b
 #   https://console.groq.com/docs/model/openai/gpt-oss-20b
 #
-# Google Gemini (checked 2026-11-15):
+# Google Gemini (checked 2026-11-15 on the official pricing page):
 #   https://ai.google.dev/gemini-api/docs/pricing
 #   https://ai.google.dev/gemini-api/docs/models
 # Both models below are available and have a free tier ("Free of charge").
+# gemini-3.5-flash-lite is the P1 baseline model per ADR-0019: $0.30 input /
+# $2.50 output / $0.03 cached input per 1M tokens, unchanged after 2026-12-31.
 # Gemini 3.8 Flash introductory pricing applies through 2026-12-31; the higher
 # price starts 2027-01-01. The free tier has no charge, but the ledger records
 # the list-price cost and marks billing=free_tier so reports can show both.

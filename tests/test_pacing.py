@@ -30,7 +30,8 @@ def test_packaged_limits_match_owner_free_tier() -> None:
 
     small = table.require("gemini-3.5-flash-lite")
     assert (small.rpm, small.tpm, small.rpd) == (15, 250_000, 500)
-    assert small.daily_cap == 480
+    # Owner cap for the P1 baseline model: 450/day with a 50-request margin.
+    assert small.daily_cap == 450
 
 
 def test_pacific_date_crosses_utc_boundary() -> None:
