@@ -96,6 +96,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | P1-10 Gemini pilot (n=5 papers) | NOT MEASURED — 10 attempts, 0 successes: 1× HTTP 400, 1× HTTP 504, 8× HTTP 503 | `docs/reports/P1-gemini-pilot-diagnosis.md` |
 | P1-10 Gemini validation (n=1 paper) | 0 claims; 2 attempts, both HTTP 504 `DEADLINE_EXCEEDED` at ~119 s; thinking medium, max output 16,384 | `eval/silver/claims_v1/gemini_pilot_v2/run_report.json` (untracked, partial) |
 | **P1-10 Flash-Lite baseline (n=100 papers)** | **100 papers, 765 claims**; 88.7% verbatim; 0 parse failures; 97 span + 11 unknown-section rejects; 697,734 prompt / 142,057 completion (0 thinking); $0.564459 list price; $0.005645/paper, $0.000738/accepted claim; output 62.9% of cost; mean 6,448 ms / p95 15,490 ms; 120 of 450 requests; prompt gap -8.7% | `eval/silver/claims_v1/baseline_flashlite/run_report.md` |
+| P1-10 3.8 Flash reference (n=5, not baseline) | 74 claims; 100% verbatim; 0 failures; 28,087 prompt / 22,073 completion (9,177 thinking); $0.103838 list ($0.001403/claim); latency mean 196,588 ms, p95 290,982 ms; 17/18 requests | `eval/reference/claims_v1/flash38/run_report.md` (see `REFERENCE_ONLY.md`) |
 | **P1-11 official audit export** | 200 claims from 45 papers (≤5/paper), seed 20261114, 22 dev / 23 test papers, labels blank | `eval/audit/claims_audit_v1.csv` (+ `.summary.json`) |
 | Evidence-span normalization | Strict 7/28 (25.0%) rejects → normalized 3/28 (10.7%) on the Groq pilot; 4 hyphen variants fixed, 2 merged tails and 1 case-only remain rejected | `docs/eval/EVIDENCE_SPANS.md` |
 | P1-11 audit tooling | HTML labeler (no network), exact-column overlap export (20%), strict validator + existing metrics; **0 claims labelled** | `eval/audit/README.md` |
@@ -126,7 +127,8 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - Audit export (ADR-0018): `eval/audit/claims_audit_v1.csv` — 200 claims from **45 papers**, max 5 per paper, seed 20261114, 22 dev / 23 test papers, every label field blank; `claims_audit_v1.summary.json` records the corpus snapshot. **No labels were created.**
 - Bug fixed while measuring: strict/normalization counters were per-invocation, so a resumed run reported a meaningless 100% strict rate; they now persist in `strict_state.json` and the final report carries recomputed cumulative values.
 - Tooling: the `secret-scan` pre-commit hook runs under the venv interpreter via a documented PATH command; `pre-commit run --all-files` passes with no `SKIP=`. Offline checks: **302 passed, 2 skipped**; ruff, ruff format, strict mypy clean.
-- Next: owner labeling for P1-11, then P1-12; optional 3.8 Flash 5-paper reference comparison is non-blocking and never silver.
+- Optional reference comparison `p1-10-ref-flash38-s20261114-n5` (first 5 seeded papers, not baseline, not silver): **74 claims, 100% verbatim, 0 failures**, 9,177 of 22,073 completion tokens were thinking, list price $0.103838 (**$0.001403/claim**, 1.9× Flash-Lite), latency mean 196.6 s / p95 291.0 s (≈30× slower), 17 of 18 daily requests.
+- Next: owner labeling for P1-11, then P1-12.
 
 ### 2026-11-15 — Freebuff / DeepSeek V4.x Flash — P1 SESSION IN PROGRESS (failure diagnosis)
 - Status: **IN PROGRESS / HANDOFF**; branch `p1`. No push; local `main` was fast-forwarded to `p1` with `--ff-only` at the end of the session.
