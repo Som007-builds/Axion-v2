@@ -13,6 +13,7 @@ from axion.extract.baseline import build_plan, dry_run_estimate, run_extraction
 from axion.extract.claims import (
     Claim,
     ClaimExtraction,
+    audit_context,
     build_baseline_document,
     verify_claims,
 )
@@ -102,6 +103,15 @@ def test_claims_require_a_verbatim_span_in_the_named_section() -> None:
         "evidence_span_not_verbatim",
         "unknown_section",
     }
+
+
+def test_audit_context_contains_the_verbatim_span_and_neighbour() -> None:
+    document = build_baseline_document(parse_jats(XML, paper_id="PMC1"))
+    span = "Drug X reduced mortality in the trial cohort."
+    before, after = audit_context(document, section_label="Results", evidence_span=span)
+    assert span in before
+    assert "consistent across sites" in before
+    assert after == ""
 
 
 def test_prompt_is_versioned_and_renders_sections() -> None:
@@ -217,7 +227,7 @@ def test_provider_adapter_is_an_interface_only() -> None:
     assert config.api_key_env == "FUTURE_API_KEY"
 
 
-def test_no_provider_sdk_is_imported() -> None:
+def test_adapter_interface_does_not_import_a_provider_sdk() -> None:
     source = Path("src/axion/llm/adapters.py").read_text(encoding="utf-8")
     assert "import openai" not in source
     assert "import groq" not in source

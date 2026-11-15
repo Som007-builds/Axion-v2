@@ -2,7 +2,8 @@
 
 **No extractor was run and no LLM call was made.** This plan parses real
 corpus text and estimates prompt tokens; the claims/paper rate is a scenario,
-not a measurement. Prices are blank, so no dollar cost is stated.
+not a measurement. Prices are verified for the paid run, but this file is
+not a cost measurement.
 
 ## Sample
 
@@ -43,12 +44,18 @@ Token counts are ceil(characters/4) over the rendered prompt (baseline sections 
 
 ## Cost
 
-not computed: pricing.yaml is blank; no paid call is authorized
-Formula once prices exist: `input_tokens * input_price_per_Mtok / 1e6 + output_tokens * output_price_per_Mtok / 1e6`.
+not computed here: this is a dry-run estimate; the paid run records actual list-price cost in the ledger
+Formula used by the paid run: `input_tokens * input_price_per_Mtok / 1e6 + output_tokens * output_price_per_Mtok / 1e6`.
 
-## Owner inputs required before the paid run
+## Owner inputs status
 
-1. Provider hosting for the chosen large tier (tier IDs are configured in `.env`).
-2. Verified input/output prices in `src/axion/config/pricing.yaml`.
-3. A paid budget cap in `_private/budget.md`.
-4. Approval to install the chosen provider SDK (no adapter ships here).
+1. Provider hosting: Groq `openai/gpt-oss-120b` (large tier).
+2. Prices: filled in `src/axion/config/pricing.yaml` from the official Groq
+   model pages, checked 2026-11-15.
+3. Budget: a $3 total P1-10 cap is recorded in the untracked private budget file.
+4. SDK: the official `groq==1.7.0` package is approved, pinned, and installed
+   behind `src/axion/llm/groq.py`.
+5. Remaining blocker: the Groq free tier allows 8,000 tokens per minute and
+   200,000 per day; this plan's mean prompt is 7,641 tokens and its p95 is
+   15,867, so the paid run cannot complete without an owner decision on the
+   limit, provider, or sampling rule.

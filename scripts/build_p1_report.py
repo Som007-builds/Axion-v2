@@ -85,8 +85,10 @@ def _ledger_section(ledger_path: Path | None) -> list[str]:
             "",
         ]
     return [
-        "## Cost ledger (measured)",
+        "## Cost ledger (all recorded calls)",
         "",
+        "- Current ledger context: see `docs/reports/P1-baseline-pilot.md` for the "
+        "partial paid run; a full P1-10 baseline has not completed.",
         f"- Calls: {report.total_calls:,}; cache hits: {report.total_cache_hits:,}; "
         f"errors: {report.total_errors:,}",
         f"- Prompt tokens: {report.total_prompt_tokens:,}; completion tokens: "

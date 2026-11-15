@@ -171,6 +171,32 @@ P1-08 ingests the Retraction Watch retracted papers in that subject plus all dis
 
 **Consequences:** P1-10 must present a dry-run cost estimate and sample plan before any paid call. The sample is drawn at the paper level so the audit split remains paper-level. The report must distinguish claims from the sampled papers and state the sampling fraction; it must not generalize precision to the full corpus without noting the sample.
 
+## ADR-0015 - P1 blast-radius counts are conditional on the included citer set
+**Date:** 2026-11-15 - **Status:** Proposed (owner instruction to record; approval pending)
+
+**Context:** P1-08 selected 4,168 citers under a ~5,000-paper total cap. Link coverage is uneven: 285 of 792 source papers have an incoming citer edge and 507 do not; 34 citer papers have no outgoing edge and 533 papers have no edge. The cap truncated 5,734 eligible citers. A count computed on this graph therefore describes the included corpus, not all literature that cites the retracted sources.
+
+**Decision:** P1 blast-radius numbers are reported **within the included citer set only**. Do not silently reinterpret a zero as "no citations exist" or a component size as a complete literature count. Expanding citers on demand is **deferred to P3**; P1 does not add a second citer-discovery pass. Reports must state the included-set denominator and the cap/truncation caveat next to each blast-radius number.
+
+**Alternatives considered:** re-ingest with one citer per source to improve source coverage (changes the sampled corpus after the P1 baseline; needs owner approval and another full ingest); expand citers on demand now (scope creep and extra cost before P3); present the counts as complete (misleading given the measured coverage gaps).
+
+**Consequences:** P1 can finish with the existing graph and a clearly bounded claim. P3 must add query-time citer expansion (or an approved re-ingest) before any statement about the full citation literature. The 507 isolated sources and 5,734 truncated citers remain recorded in `docs/reports/P1-corpus-coverage.{md,json}`.
+
+## ADR-0016 - P1-11 agreement: self-relabel or independent second labeler
+**Date:** 2026-11-15 - **Status:** Proposed (owner approval required)
+
+**Context:** P1-11 needs an agreement statistic in addition to precision and its Wilson CI. The owner is the only labeler today, and a single-labeler audit cannot measure intra- or inter-labeler agreement. Labeling a second full sample is expensive.
+
+**Decision:** Measure agreement in one of two ways, chosen before labels are inspected:
+- **Self-relabel (default):** after **at least 7 days**, the owner relabels a seeded 10% blind into `relabel_label` without looking at `label`.
+- **Independent second labeler (optional):** a second person labels a seeded 20% overlap blind. `scripts/audit_sample.py --overlap-out` exports that subset with the exact audit columns; `scripts/audit_validate.py --overlap` merges it into `relabel_label`.
+
+Either path reports raw agreement and Cohen's kappa through the existing metrics code. The overlap is selected by a seeded SHA-256 rank over `claim_id`, so it is reproducible and adds no hidden column to the audit CSV. Labels remain the owner's (or the approved second labeler's); the agent does not label.
+
+**Alternatives considered:** skip agreement and report precision only (weaker audit); have the agent label a second time (not independent and violates the blind human audit); label the whole sample twice (unnecessary cost).
+
+**Consequences:** The first agreement number waits at least 7 days or for a second labeler. The overlap CSV is a separate file and must not be merged back into the primary labels; it only supplies `relabel_label`. The tool stores second-labeler work under a separate browser-storage key.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

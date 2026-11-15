@@ -32,6 +32,7 @@ def _entry(
         model=model,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
+        reasoning_tokens=0,
         usd=usd,
         latency_ms=12.5,
         cache_hit=cache_hit,

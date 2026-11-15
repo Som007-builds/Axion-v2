@@ -151,7 +151,8 @@
     - **2026-11-14 owner approval (this session):** build the offline portion now — versioned prompt, Pydantic claim schema, verbatim evidence-span validation, LLMClient runner with a fake provider + `--dry-run`, seeded 100-paper selector, silver-label manifest writer, provider adapter interface only. **No provider SDK dependency, no real calls.** Baseline sections: every body section except references, acknowledgements, funding/COI, supplementary. If 100 papers cannot plausibly yield ≥200 claims, recommend a larger sample.
     - Blocked for the *paid* run: verified prices in `pricing.yaml`, a paid budget cap, and provider SDK approval. Tier IDs remain `openai/gpt-oss-20b` / `openai/gpt-oss-120b`.
   - 2026-11-15 offline portion done: `claim-extraction-v1.md`, `claims.py`, `prompting.py`, `baseline.py`, `scripts/run_baseline_extraction.py`, fake-provider tests. Dry run on the real 100-paper sample (seed 20261114): 764,084 prompt tokens (mean 7,641/paper), 0 missing/failed; expected claims 200/500/1,000 at 2/5/10 per paper. Full report: `docs/reports/P1-baseline-estimate.md`.
-  - done (paid run): — | blocked: prices, paid budget, SDK approval, sample-size confirmation.
+  - **2026-11-15 paid-run checkpoint:** prices filled from the official Groq model pages (checked 2026-11-15), $3 cap recorded in untracked `_private/budget.md`, `groq==1.7.0` pinned and wired through `src/axion/llm/groq.py`, ledger reasoning-token column added. Pilot (5-paper request, seed 20261114, `openai/gpt-oss-120b`) stopped after **1 paper**: 21 silver claims / 28 extracted, 7 span-not-verbatim, 0 parse failures; prompt 6,809, completion 7,159 (3,011 reasoning), list price **$0.005317**, latency 16,459 ms, prompt gap **-10.3%** vs chars/4 for that paper. Next request was **12,111 tokens vs TPM 8,000** (HTTP 413 `rate_limit_exceeded`); the client retried/cooldown then stopped at a clean checkpoint. Free tier is **8,000 TPM / 200,000 TPD**, so the 5-paper pilot and 100-paper sample cannot complete without an owner decision. Report: `docs/reports/P1-baseline-pilot.{md,json}`; run artifacts under `eval/silver/claims_v1/pilot/` (untracked).
+  - done (paid run): — | blocked: Groq free-tier TPM/TPD. Owner must choose: raise the limit/Dev tier, approve another provider, or explicitly approve a sampling rule that fits the limit. No workaround attempted.
 
 ### [!] P1-11 — Claim audit (human)
 - depends: P1-10
@@ -164,7 +165,9 @@
     - `scripts/audit_metrics.py`: precision, Wilson 95% CI, failure breakdown, per-section precision, and post-relabel raw agreement + Cohen's κ; rejects unknown labels and counts unlabelled rows.
     - `eval/audit/claims_audit_v1.template.csv` (header only) and `eval/audit/README.md` (procedure and provenance rules).
     - Blocked on the human steps only: the owner needs a claims JSONL from P1-10, ~3–6 hours to label ≥200 claims, and a ≥7-day gap to relabel 10%.
-  - done: — | blocked: 2026-11-14 | unblocks: P1-10 silver claims + owner labeling time and 7-day relabel gap.
+    - **2026-11-15 tooling update:** `eval/audit/claim_audit_tool.html` is a single-file blind labeler (no network/dependencies; keys `1`-`5`, `N`, `Z`, arrows; autosave; exact-column CSV download; span-missing warning); `scripts/audit_validate.py` enforces allowed labels/notes/no-unlabelled and calls the existing precision/Wilson/breakdown/κ metrics; `scripts/audit_sample.py --overlap-out` emits a seeded 20% second-labeler subset. The inline JS was syntax-checked with `node --check`, but **no interactive browser test was completed**; `eval/audit/tool_smoke_test.csv` is the owner smoke fixture. **No claims were labelled.**
+    - The pilot export `eval/audit/claims_audit_v1_pilot.csv` has only **21 claims**, below the 200 minimum; it is a tooling fixture, not the official audit. ADR-0016 Proposed records the agreement choice (≥7-day self-relabel or independent 20% second labeler).
+  - done: — | blocked: 2026-11-14 | unblocks: a P1-10 run that can export ≥200 claims + owner labeling time and ≥7-day relabel gap or approved second labeler.
 
 ### [~] P1-12 — Baseline report + gate review
 - depends: P1-11
@@ -174,10 +177,12 @@
   - notes:
     - 2026-11-14 owner approved offline report scaffolding. Build a regenerable report script with explicit "not yet measured" placeholders from ledger/audit/manifest inputs; no invented numbers. The gate review still waits for P1-11 labels and the paid P1-10 run.
   - 2026-11-15 scaffold done: `scripts/build_p1_report.py`, `make report`, `docs/reports/P1-baseline.md` with manifest/coverage values and NOT YET MEASURED placeholders for precision/cost/tokens/latency. Gate review remains blocked on P1-11.
-  - done: — | in progress: scaffold only.
+  - 2026-11-15: the paid pilot report is measured for **one paper** (`docs/reports/P1-baseline-pilot.{md,json}`) but is not a baseline report; precision and the full-run tokens/cost remain blocked.
+  - done: — | in progress: scaffold + one-paper pilot evidence only.
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-15 — DeepSeek V4.1 Flash Free — filled Groq prices, set $3 cap, pinned `groq==1.7.0`, added adapter + reasoning ledger; paid pilot stopped at 1 paper on TPM 8000 (request 12,111); built audit HTML/validator/overlap export, no labels — next: owner decides limit/provider/sampling, then finish pilot + seeded sample + ≥200-claim export
 - 2026-11-14 — DeepSeek V4.1 Flash Free — P1-06 closed (RW loader/linker, citations client, coverage report) and P1-07 closed (5-candidate feasibility spike, report, ADR-0012 Proposed); P1-09 rewrite decided (ADR-0011) — next: owner approves ADR-0012 or names an alternative, then resume P1-08
 - 2026-11-14 — DeepSeek V4.1 Flash Free — P1-03b/P1-04/P1-05 closed; P1-11 export+metrics tooling prepared; P1-06..P1-12 marked `[!]` with unblocks — next: owner clears Retraction Watch terms/sub-topics, then resume P1-06/P1-07
 - 2026-11-14 — DeepSeek V4.1 Flash Free — workflow switched to one phase branch `p1` (ADR-0010); historical task branches retained — next: fresh P1 thread creates `p1` from `main` and resumes P1-03

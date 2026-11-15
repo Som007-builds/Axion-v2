@@ -1,18 +1,21 @@
-# Pricing template.
+# Verified provider list prices (USD per 1,000,000 tokens).
 #
-# OWNER ACTION: fill in verified prices, then remove the "#" before each entry.
-# Prices are USD per 1,000,000 tokens. Do not guess: a blank price is treated as
-# missing. A missing price fails closed in dry-run, and warns loudly otherwise.
-#
-# Example shape (replace the placeholder key):
-#
-# models:
-#   "<provider>/<model>":
-#     provider: "<provider>"
-#     input_usd_per_mtok:
-#     output_usd_per_mtok:
-#     cached_input_usd_per_mtok:
+# Source (checked 2026-11-15):
+#   https://console.groq.com/docs/model/openai/gpt-oss-120b
+#   https://console.groq.com/docs/model/openai/gpt-oss-20b
+# The pages show input / cached input / output prices. Prices are list prices;
+# the ledger records list-price cost even when a free tier is used.
 
 version: 1
 currency: USD
-models: {}
+models:
+  "openai/gpt-oss-120b":
+    provider: "groq"
+    input_usd_per_mtok: "0.15"
+    output_usd_per_mtok: "0.60"
+    cached_input_usd_per_mtok: "0.075"
+  "openai/gpt-oss-20b":
+    provider: "groq"
+    input_usd_per_mtok: "0.075"
+    output_usd_per_mtok: "0.30"
+    cached_input_usd_per_mtok: "0.037"

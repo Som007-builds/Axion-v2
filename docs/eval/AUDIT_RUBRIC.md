@@ -50,7 +50,12 @@ Edge case: a claim that is correct but with an imprecise span → `UNSUPPORTED_S
 
 ## 7. File format
 `eval/audit/claims_audit_v1.csv` columns:
-`claim_id, paper_id, section, claim_text, evidence_span, label, note, labeler, date, rubric_version, split, relabel_label`
+`claim_id, paper_id, paper_title, section, claim_text, evidence_span, context_before, context_after, label, note, labeler, date, rubric_version, split, relabel_label`
+
+The three read-only context columns (`paper_title`, `context_before`, `context_after`)
+are exported so the blind HTML labeler can show the claim in its paragraph without
+a network lookup. `AUDIT_COLUMNS` in `src/axion/eval/audit.py` is the executable
+definition.
 
 ## Changelog
 - v1 (2026-11-09): initial rubric.

@@ -12,6 +12,10 @@ data/
 *.db
 *.jsonl.cache
 
+# silver claim text and pilot audit exports stay local; commit the ID/count manifest.
+eval/silver/**/*.jsonl
+eval/audit/claims_audit_v1_pilot*.csv
+
 # python
 __pycache__/
 *.py[cod]

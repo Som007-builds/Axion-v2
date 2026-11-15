@@ -25,9 +25,16 @@
 - Manifest wall time: 3,065.9s; peak RSS: 178.2 MiB; disk: 649.5 MiB
 - Contexts per paper: 1.24
 
-## Cost ledger
+## Cost ledger (all recorded calls)
 
-- Ledger: **NOT YET MEASURED** (no ledger file found)
+- Current ledger context: see `docs/reports/P1-baseline-pilot.md` for the partial paid run; a full P1-10 baseline has not completed.
+- Calls: 2; cache hits: 0; errors: 1
+- Prompt tokens: 6,809; completion tokens: 7,159
+- Total USD: 0.005317
+
+| Group | Calls | Tokens | USD |
+| :-- | --: | --: | --: |
+| teacher_label | 2 | 13,968 | 0.005317 |
 
 ## Claim audit
 

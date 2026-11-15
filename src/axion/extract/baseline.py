@@ -20,12 +20,17 @@ from axion.eval.cost_estimate import DEFAULT_SEED, sample_papers
 from axion.extract.claims import (
     PROMPT_VERSION,
     BaselineDocument,
+    CandidateClaim,
     ClaimExtraction,
     ClaimFailure,
     SilverClaim,
     SilverManifest,
+    append_candidate_claims,
+    append_processed_paper,
     append_silver_claims,
+    audit_context,
     build_baseline_document,
+    read_processed_paper_ids,
     read_silver_paper_ids,
     utc_now_iso,
     verify_claims,
@@ -35,7 +40,7 @@ from axion.extract.claims import (
 from axion.extract.prompting import render_claim_prompt
 from axion.ingest.corpus import CorpusPaper
 from axion.llm.client import LLMClient
-from axion.llm.errors import StructuredOutputError
+from axion.llm.errors import AllProvidersFailedError, StructuredOutputError
 from axion.llm.models import LLMRequest
 from axion.parse.jats import JatsParseError, parse_jats_file
 
@@ -98,6 +103,8 @@ class RunReport:
     claims_path: Path
     failures_path: Path
     manifest_path: Path
+    candidates_path: Path
+    stopped_reason: str | None = None
 
 
 def _prompt_tokens(text: str) -> int:
@@ -199,7 +206,10 @@ def dry_run_estimate(
             f"{OUTPUT_TOKENS_PER_CLAIM} tokens per claim. Claims/paper is a scenario, "
             "not a measurement; no extractor has run."
         ),
-        cost_status="not computed: pricing.yaml is blank; no paid call is authorized",
+        cost_status=(
+            "not computed here: this is a dry-run estimate; the paid run records "
+            "actual list-price cost in the ledger"
+        ),
     )
 
 
@@ -216,20 +226,28 @@ def run_extraction(
     seed: int,
     prompt_version: str = PROMPT_VERSION,
     max_calls: int = DEFAULT_MAX_CALLS,
+    max_output_tokens: int = 8192,
 ) -> RunReport:
-    """Run every planned paper through the client; failures are kept."""
+    """Run every planned paper through the client; failures are kept.
+
+    The run is resumable: completed papers (including zero-claim papers) are
+    skipped, silver claims and audit candidates are de-duplicated by key, and a
+    provider failure stops at a clean checkpoint instead of losing the manifest.
+    """
     if max_calls < 1:
         raise ExtractionError("max_calls must be at least 1")
     output_dir.mkdir(parents=True, exist_ok=True)
     claims_path = output_dir / "silver_claims.jsonl"
+    candidates_path = output_dir / "candidates.jsonl"
+    processed_path = output_dir / "papers_processed.jsonl"
     failures_path = output_dir / "failures.jsonl"
     manifest_path = output_dir / "silver_manifest.json"
-    done = read_silver_paper_ids(claims_path)
+    done = read_silver_paper_ids(claims_path) | read_processed_paper_ids(processed_path)
     failures: list[ClaimFailure] = []
     processed = 0
-    claim_count = 0
     calls = 0
     model_name = ""
+    stopped_reason: str | None = None
 
     for plan in plans:
         paper_id = plan.paper.pmcid
@@ -244,6 +262,7 @@ def run_extraction(
                     detail=f"stopped at max_calls={max_calls}",
                 )
             )
+            stopped_reason = "max_calls_reached"
             break
         calls += 1
         try:
@@ -254,6 +273,7 @@ def run_extraction(
                     tier="large",
                     run_id=run_id,
                     paper_id=paper_id,
+                    max_output_tokens=max_output_tokens,
                 ),
                 response_model=ClaimExtraction,
             )
@@ -267,6 +287,17 @@ def run_extraction(
                 )
             )
             continue
+        except AllProvidersFailedError as exc:
+            failures.append(
+                ClaimFailure(
+                    paper_id=paper_id,
+                    claim_index=-1,
+                    reason="provider_failed",
+                    detail=str(exc)[:300],
+                )
+            )
+            stopped_reason = "provider_failed"
+            break
         model_name = result.model
         if result.parsed is None:
             failures.append(
@@ -294,13 +325,34 @@ def run_extraction(
             )
             for index, claim in enumerate(valid)
         ]
-        claim_count += append_silver_claims(claims_path, rows)
+        candidates: list[CandidateClaim] = []
+        for index, claim in enumerate(valid):
+            before, after = audit_context(
+                plan.document, section_label=claim.section, evidence_span=claim.evidence_span
+            )
+            candidates.append(
+                CandidateClaim(
+                    claim_id=f"{paper_id}:{index}",
+                    paper_id=paper_id,
+                    claim_text=claim.claim_text,
+                    evidence_span=claim.evidence_span,
+                    section=claim.section,
+                    paper_title=plan.document.paper_title,
+                    context_before=before,
+                    context_after=after,
+                )
+            )
+        append_candidate_claims(candidates_path, candidates)
+        append_silver_claims(claims_path, rows)
+        append_processed_paper(
+            processed_path, paper_id=paper_id, claims=len(rows), failures=len(rejected)
+        )
         processed += 1
+        done.add(paper_id)
 
     write_failures(failures_path, failures)
-    # Re-count from disk so a resumed run reports the full manifest, not this run.
     claims_on_disk = (
-        sum(1 for line in claims_path.read_text(encoding="utf-8").splitlines() if line.strip())
+        len([line for line in claims_path.read_text(encoding="utf-8").splitlines() if line.strip()])
         if claims_path.exists()
         else 0
     )
@@ -311,7 +363,9 @@ def run_extraction(
         prompt_version=prompt_version,
         seed=seed,
         sample_size=sample_size,
-        papers_processed=len(done) + processed,
+        papers_processed=len(
+            read_processed_paper_ids(processed_path) | read_silver_paper_ids(claims_path)
+        ),
         claims=claims_on_disk,
         failures=len(failures),
         corpus_manifest_sha256=corpus_manifest_sha256,
@@ -321,13 +375,15 @@ def run_extraction(
     )
     write_silver_manifest(manifest_path, manifest)
     return RunReport(
-        papers_processed=len(done) + processed,
+        papers_processed=manifest.papers_processed,
         claims=claims_on_disk,
         failures=len(failures),
         calls=calls,
         claims_path=claims_path,
         failures_path=failures_path,
         manifest_path=manifest_path,
+        candidates_path=candidates_path,
+        stopped_reason=stopped_reason,
     )
 
 

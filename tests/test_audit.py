@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from pathlib import Path
 
 import pytest
 from scripts.audit_metrics import main as metrics_main
 from scripts.audit_sample import main as sample_main
+from scripts.audit_validate import main as validate_main
 
 from axion.eval.audit import (
     AUDIT_COLUMNS,
@@ -24,6 +26,7 @@ from axion.eval.audit import (
     read_audit,
     render_markdown,
     sample_claims,
+    select_overlap_rows,
     wilson_interval,
     write_export,
 )
@@ -269,3 +272,61 @@ def test_metrics_cli_writes_report(tmp_path: Path, capsys: pytest.CaptureFixture
     assert metrics_main(["--audit", str(audit_path), "--out", str(report_path), "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["overall"]["n"] == 1
     assert "Precision" in report_path.read_text(encoding="utf-8")
+
+
+def test_html_tool_columns_match_the_audit_export() -> None:
+    source = Path("eval/audit/claim_audit_tool.html").read_text(encoding="utf-8")
+    match = re.search(r"const COLUMNS = \[(.*?)\];", source, re.S)
+    assert match, "COLUMNS block not found in the audit tool"
+    columns = tuple(re.findall(r'"([^"]+)"', match.group(1)))
+    assert columns == AUDIT_COLUMNS
+
+
+def test_overlap_selection_is_seeded_and_about_twenty_percent() -> None:
+    rows = export_rows([_claim(index) for index in range(1, 101)], seed=20261114)
+    first = select_overlap_rows(rows, fraction=0.2, seed=20261114)
+    second = select_overlap_rows(list(reversed(rows)), fraction=0.2, seed=20261114)
+    assert [row["claim_id"] for row in first] == [row["claim_id"] for row in second]
+    assert len(first) == 20
+    assert {row["claim_id"] for row in first} <= {row["claim_id"] for row in rows}
+
+
+def test_audit_validate_accepts_labelled_rows_and_writes_report(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    rows = [_labelled_row("p1:1", "CORRECT"), _labelled_row("p1:2", "DISTORTED")]
+    rows[1]["note"] = "direction changed"
+    audit_path = tmp_path / "audit.csv"
+    write_export(audit_path, rows)
+    report_path = tmp_path / "validate.md"
+    assert validate_main(["--audit", str(audit_path), "--out", str(report_path)]) == 0
+    output = capsys.readouterr()
+    assert "n=2" in output.out
+    assert "Precision" in report_path.read_text(encoding="utf-8")
+
+
+def test_audit_validate_rejects_missing_note(tmp_path: Path) -> None:
+    audit_path = tmp_path / "audit.csv"
+    write_export(audit_path, [_labelled_row("p1:1", "DISTORTED")])
+    assert validate_main(["--audit", str(audit_path)]) == 2
+
+
+def test_audit_validate_requires_every_label_unless_partial(tmp_path: Path) -> None:
+    audit_path = tmp_path / "audit.csv"
+    write_export(audit_path, [_labelled_row("p1:1", "CORRECT"), _labelled_row("p1:2", "")])
+    assert validate_main(["--audit", str(audit_path)]) == 2
+    assert validate_main(["--audit", str(audit_path), "--allow-partial"]) == 0
+
+
+def test_audit_validate_merges_second_labeler_overlap(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    primary = [_labelled_row("p1:1", "CORRECT"), _labelled_row("p1:2", "CORRECT")]
+    overlap = [_labelled_row("p1:1", "NOT_A_CLAIM")]
+    overlap[0]["note"] = "background statement"
+    audit_path = tmp_path / "audit.csv"
+    overlap_path = tmp_path / "overlap.csv"
+    write_export(audit_path, primary)
+    write_export(overlap_path, overlap)
+    assert validate_main(["--audit", str(audit_path), "--overlap", str(overlap_path)]) == 0
+    assert "agreement: n=1" in capsys.readouterr().out

@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Axion claim audit</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --panel: #fffdf8;
+    --ink: #24211d;
+    --muted: #6d655c;
+    --line: #d8d0c3;
+    --accent: #1f5f4a;
+    --accent-soft: #dceee6;
+    --warn: #9b2c2c;
+    --warn-soft: #fbe3e1;
+    --mark: #ffe08a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  header, main { max-width: 1040px; margin: 0 auto; padding: 0 22px; }
+  header { padding-top: 24px; }
+  h1 { margin: 0 0 4px; font-size: 25px; letter-spacing: .01em; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 14px;
+  }
+  .bar label { color: var(--muted); font-size: 13px; }
+  input[type="text"], select, textarea {
+    font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line);
+    border-radius: 7px; padding: 7px 9px;
+  }
+  input[type="text"] { width: 14rem; }
+  button {
+    font: inherit; cursor: pointer; border: 1px solid var(--line); border-radius: 7px;
+    padding: 7px 11px; background: #fff; color: var(--ink);
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .progress { margin-left: auto; color: var(--muted); font-size: 13px; }
+  .track { height: 6px; background: #e7e0d5; border-radius: 99px; overflow: hidden; margin-bottom: 16px; }
+  .fill { height: 100%; width: 0; background: var(--accent); transition: width .15s ease; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 14px;
+  }
+  .meta { display: flex; flex-wrap: wrap; gap: 7px 18px; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  .meta b { color: var(--ink); font-weight: 600; }
+  h2 { font-size: 20px; line-height: 1.3; margin: 0 0 12px; }
+  .claim {
+    border-left: 4px solid var(--accent); background: var(--accent-soft);
+    padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 12px 0 16px;
+    font-size: 17px;
+  }
+  .context {
+    white-space: pre-wrap; font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px; line-height: 1.7; background: #fff; border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 16px; overflow-wrap: anywhere;
+  }
+  mark { background: var(--mark); padding: 1px 2px; border-radius: 2px; }
+  .warn {
+    display: none; background: var(--warn-soft); border: 1px solid #efb9b4; color: var(--warn);
+    border-radius: 8px; padding: 9px 12px; margin: 10px 0; font-size: 14px;
+  }
+  .warn.show { display: block; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; }
+  .actions button { min-width: 8.5rem; text-align: left; }
+  .actions .key { display: inline-block; min-width: 1.3rem; color: var(--muted); }
+  .note-wrap { margin-top: 10px; }
+  .note-wrap textarea { width: 100%; min-height: 64px; resize: vertical; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+  .status { min-height: 1.4em; color: var(--accent); font-size: 14px; margin-top: 8px; }
+  .footer { color: var(--muted); font-size: 12px; padding: 8px 0 28px; }
+  .pill { display: inline-block; border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; font-size: 12px; }
+  .label-current { font-weight: 600; color: var(--accent); }
+  .label-bad { font-weight: 600; color: var(--warn); }
+  @media (max-width: 620px) {
+    input[type="text"] { width: 100%; }
+    .progress { margin-left: 0; }
+    .actions button { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Axion claim audit</h1>
+  <p class="sub">Blind human labelling. One claim at a time. No model confidence is shown.</p>
+  <div class="bar">
+    <label for="file">Audit CSV</label>
+    <input id="file" type="file" accept=".csv,text/csv">
+    <label for="role">Role</label>
+    <select id="role">
+      <option value="primary">Primary labeler</option>
+      <option value="second">Second labeler (overlap)</option>
+    </select>
+    <label for="labeler">Labeler</label>
+    <input id="labeler" type="text" value="owner" autocomplete="off">
+    <span class="progress" id="progress">No file loaded</span>
+  </div>
+  <div class="track"><div class="fill" id="fill"></div></div>
+</header>
+<main>
+  <section id="empty" class="card">
+    <h2>Load the audit export</h2>
+    <p>Choose the CSV produced by <code>python scripts/audit_sample.py</code>. For an
+      independent second labeler, choose the seeded overlap CSV produced with
+      <code>--overlap-out</code> and switch Role to “Second labeler (overlap)”.</p>
+    <p class="hint">Everything is local: no network, no dependencies. Labels autosave in
+      this browser. Use “Download CSV” when finished.</p>
+  </section>
+
+  <section id="work" class="card" hidden>
+    <div class="meta" id="meta"></div>
+    <h2 id="title"></h2>
+    <div class="claim" id="claim"></div>
+    <div class="warn" id="span-warning">Evidence span is not found verbatim in the supplied context.</div>
+    <div class="context" id="context"></div>
+    <div class="actions">
+      <button data-label="CORRECT"><span class="key">1</span> CORRECT</button>
+      <button data-label="NOT_A_CLAIM"><span class="key">2</span> NOT_A_CLAIM</button>
+      <button data-label="DISTORTED"><span class="key">3</span> DISTORTED</button>
+      <button data-label="UNSUPPORTED_SPAN"><span class="key">4</span> UNSUPPORTED_SPAN</button>
+      <button data-label="DUPLICATE"><span class="key">5</span> DUPLICATE</button>
+      <button id="note-button"><span class="key">N</span> Note</button>
+      <button id="undo-button"><span class="key">Z</span> Undo</button>
+    </div>
+    <div class="note-wrap">
+      <label for="note" class="hint">Note (required for every non-CORRECT label)</label>
+      <textarea id="note" placeholder="One line: why this label?"></textarea>
+      <p class="hint">Enter saves the note. Shift+Enter adds a new line.</p>
+    </div>
+    <div class="status" id="status"></div>
+    <p class="hint">Arrows navigate. Current label: <span id="current-label" class="label-current">unlabelled</span>.
+      <span id="saved" class="pill">not saved yet</span></p>
+  </section>
+
+  <div class="bar">
+    <button id="download" class="primary" disabled>Download CSV</button>
+    <button id="prev" disabled>← Previous</button>
+    <button id="next" disabled>Next →</button>
+    <button id="clear">Clear saved labels</button>
+    <span class="progress" id="footer-progress"></span>
+  </div>
+  <p class="footer">Gold procedure: <code>docs/eval/AUDIT_RUBRIC.md</code>. Silver candidates are
+    never labelled here. The download keeps the exact audit CSV columns.</p>
+</main>
+
+<script>
+"use strict";
+
+const COLUMNS = [
+  "claim_id", "paper_id", "paper_title", "section", "claim_text",
+  "evidence_span", "context_before", "context_after", "label", "note",
+  "labeler", "date", "rubric_version", "split", "relabel_label"
+];
+const LABELS = ["CORRECT", "NOT_A_CLAIM", "DISTORTED", "UNSUPPORTED_SPAN", "DUPLICATE"];
+const STORE_PREFIX = "axion-claim-audit-v1";
+
+let rows = [];
+let header = [];
+let index = 0;
+let labels = {};
+let undoStack = [];
+let storageKey = "";
+let sourceName = "";
+
+const $ = (id) => document.getElementById(id);
+const today = () => new Date().toISOString().slice(0, 10);
+
+function csvEscape(value) {
+  const text = value == null ? "" : String(value);
+  return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+}
+
+function parseCsv(text) {
+  const records = [];
+  let record = [];
+  let field = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') { quoted = false; }
+      else { field += c; }
+    } else if (c === '"') {
+      quoted = true;
+    } else if (c === ",") {
+      record.push(field); field = "";
+    } else if (c === "\n") {
+      record.push(field); records.push(record); record = []; field = "";
+    } else if (c === "\r") {
+      if (text[i + 1] === "\n") i++;
+      record.push(field); records.push(record); record = []; field = "";
+    } else {
+      field += c;
+    }
+  }
+  if (field.length || record.length) { record.push(field); records.push(record); }
+  return records.filter((r) => r.some((v) => v !== ""));
+}
+
+function storageGet(key) {
+  try { return localStorage.getItem(key); } catch (err) { return null; }
+}
+
+function storageSet(key, value) {
+  try { localStorage.setItem(key, value); return true; } catch (err) { return false; }
+}
+
+function storageRemove(key) {
+  try { localStorage.removeItem(key); } catch (err) { /* storage unavailable */ }
+}
+
+function loadText(name, text) {
+  text = text.replace(/^\uFEFF/, "");
+  const records = parseCsv(text);
+  if (!records.length) { alert("The CSV is empty."); return; }
+  header = records[0].map((v) => v.trim());
+  const missing = COLUMNS.filter((c) => !header.includes(c));
+  if (missing.length) {
+    alert("This is not an audit CSV; missing columns: " + missing.join(", "));
+    return;
+  }
+  rows = records.slice(1).map((values) => {
+    const row = {};
+    header.forEach((name, i) => { row[name] = values[i] == null ? "" : values[i]; });
+    return row;
+  });
+  sourceName = name;
+  storageKey = STORE_PREFIX + ":" + sourceName + ":" + rows.length + ":" +
+    (rows[0] ? rows[0].claim_id : "");
+  labels = {};
+  undoStack = [];
+  index = 0;
+  const saved = storageGet(storageKey);
+  if (saved && confirm("Found saved labels for this file in this browser. Resume them?")) {
+    try {
+      const data = JSON.parse(saved);
+      labels = data.labels || {};
+      index = Math.min(Number(data.index) || 0, rows.length - 1);
+      if (data.labeler) $("labeler").value = data.labeler;
+    } catch (err) {
+      labels = {};
+    }
+  } else if (saved) {
+    storageRemove(storageKey);
+  }
+  $("empty").hidden = true;
+  $("work").hidden = false;
+  for (const id of ["download", "prev", "next"]) $(id).disabled = false;
+  render();
+}
+
+function rowKey() { return rows[index] ? rows[index].claim_id : ""; }
+
+function rowState(row) {
+  const s = labels[row.claim_id] || {};
+  return { label: s.label || "", note: s.note || "" };
+}
+
+function saveState(message) {
+  if (!storageKey) return;
+  const ok = storageSet(storageKey, JSON.stringify({
+    labels, index, labeler: $("labeler").value, savedAt: new Date().toISOString()
+  }));
+  $("saved").textContent = ok
+    ? "saved " + new Date().toLocaleTimeString()
+    : "autosave unavailable (download before closing)";
+  if (message) $("status").textContent = message;
+}
+
+function renderProgress() {
+  $("footer-progress").textContent = countLabelled() + " / " + rows.length + " labelled";
+  $("fill").style.width = (100 * countLabelled() / Math.max(1, rows.length)) + "%";
+}
+
+function pushUndo() {
+  undoStack.push({ index, labels: JSON.parse(JSON.stringify(labels)) });
+  if (undoStack.length > 80) undoStack.shift();
+}
+
+function render() {
+  const row = rows[index];
+  if (!row) return;
+  const state = rowState(row);
+  $("progress").textContent = "Claim " + (index + 1) + " / " + rows.length;
+  renderProgress();
+
+  $("meta").innerHTML = "";
+  const meta = [
+    ["Paper", row.paper_id],
+    ["Section", row.section || "(none)"],
+    ["Claim ID", row.claim_id],
+    ["Split", row.split || ""],
+  ];
+  for (const [name, value] of meta) {
+    const span = document.createElement("span");
+    const b = document.createElement("b");
+    b.textContent = name + ": ";
+    span.appendChild(b);
+    span.appendChild(document.createTextNode(value || "—"));
+    $("meta").appendChild(span);
+  }
+
+  $("title").textContent = row.paper_title || "(paper title unavailable)";
+  $("claim").textContent = row.claim_text || "";
+  $("note").value = state.note;
+  $("current-label").textContent = state.label || "unlabelled";
+  $("current-label").className = state.label && state.label !== "CORRECT" ? "label-bad" : "label-current";
+
+  const before = row.context_before || "";
+  const after = row.context_after || "";
+  const separator = before && after ? "\n" : "";
+  const full = before + separator + after;
+  const span = row.evidence_span || "";
+  const at = span ? full.indexOf(span) : -1;
+  $("span-warning").classList.toggle("show", !span || at < 0);
+
+  const context = $("context");
+  context.textContent = "";
+  if (!span || at < 0) {
+    context.textContent = full || "(no context supplied)";
+    if (span) {
+      const separate = document.createElement("div");
+      separate.style.marginTop = "12px";
+      const label = document.createElement("div");
+      label.className = "hint";
+      label.textContent = "Evidence span supplied in the CSV:";
+      const mark = document.createElement("mark");
+      mark.textContent = span;
+      separate.appendChild(label);
+      separate.appendChild(mark);
+      context.appendChild(separate);
+    }
+  } else {
+    context.appendChild(document.createTextNode(full.slice(0, at)));
+    const mark = document.createElement("mark");
+    mark.textContent = span;
+    context.appendChild(mark);
+    context.appendChild(document.createTextNode(full.slice(at + span.length)));
+  }
+
+  $("prev").disabled = index <= 0;
+  $("next").disabled = index >= rows.length - 1;
+  $("status").textContent = "";
+}
+
+function countLabelled() {
+  return Object.values(labels).filter((s) => (s.label || "").trim()).length;
+}
+
+function setLabel(label) {
+  if (!rows[index]) return;
+  const state = rowState(rows[index]);
+  const note = $("note").value.trim();
+  pushUndo();
+  labels[rows[index].claim_id] = { label, note };
+  if (label !== "CORRECT" && !note) {
+    saveState("Add a note, then press Enter to continue.");
+    $("note").focus();
+    renderKeepNote(label);
+    return;
+  }
+  saveState("Saved " + label + ".");
+  render();
+  if (index < rows.length - 1) setTimeout(() => { index++; render(); }, 120);
+}
+
+function renderKeepNote(label) {
+  const row = rows[index];
+  const state = rowState(row);
+  $("current-label").textContent = label;
+  $("current-label").className = "label-bad";
+  $("note").value = state.note;
+  $("progress").textContent = "Claim " + (index + 1) + " / " + rows.length;
+  renderProgress();
+}
+
+function currentIncomplete() {
+  const row = rows[index];
+  if (!row) return false;
+  const state = rowState(row);
+  return Boolean(state.label && state.label !== "CORRECT" && !state.note.trim());
+}
+
+function saveNote() {
+  if (!rows[index]) return;
+  const note = $("note").value.trim();
+  const state = rowState(rows[index]);
+  pushUndo();
+  labels[rows[index].claim_id] = { label: state.label, note };
+  saveState("Note saved.");
+  if (state.label && state.label !== "CORRECT" && note) {
+    render();
+    if (index < rows.length - 1) setTimeout(() => { index++; render(); }, 120);
+  } else {
+    render();
+  }
+}
+
+function move(delta) {
+  if (delta > 0 && currentIncomplete()) {
+    $("status").textContent = "Add a note before leaving this non-CORRECT label.";
+    $("note").focus();
+    return;
+  }
+  const next = index + delta;
+  if (next < 0 || next >= rows.length) return;
+  index = next;
+  render();
+}
+
+function undo() {
+  const previous = undoStack.pop();
+  if (!previous) { $("status").textContent = "Nothing to undo."; return; }
+  index = previous.index;
+  labels = previous.labels;
+  saveState("Undid the last change.");
+  render();
+}
+
+function download() {
+  const outputHeader = header.length ? header : COLUMNS;
+  const lines = [outputHeader.map(csvEscape).join(",")];
+  for (const row of rows) {
+    const state = rowState(row);
+    const out = {};
+    for (const column of outputHeader) out[column] = row[column] || "";
+    out.label = state.label;
+    out.note = state.note;
+    out.labeler = $("labeler").value.trim() || "owner";
+    out.date = today();
+    out.rubric_version = row.rubric_version || "v2";
+    if (out.relabel_label === undefined) out.relabel_label = "";
+    lines.push(outputHeader.map((column) => csvEscape(out[column])).join(","));
+  }
+  const blob = new Blob([lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = sourceName.replace(/\.csv$/i, "") + "_labelled.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  saveState("Downloaded the labelled CSV.");
+}
+
+function clearSaved() {
+  if (!storageKey) return;
+  if (!confirm("Clear labels saved in this browser for this file? The loaded CSV is unchanged.")) return;
+  storageRemove(storageKey);
+  labels = {};
+  undoStack = [];
+  index = 0;
+  render();
+  saveState("Cleared browser-saved labels.");
+}
+
+$("file").addEventListener("change", (event) => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => loadText(file.name, String(reader.result || ""));
+  reader.readAsText(file, "utf-8");
+});
+
+for (const button of document.querySelectorAll("[data-label]")) {
+  button.addEventListener("click", () => setLabel(button.dataset.label));
+}
+$("note-button").addEventListener("click", () => $("note").focus());
+$("undo-button").addEventListener("click", undo);
+$("prev").addEventListener("click", () => move(-1));
+$("next").addEventListener("click", () => move(1));
+$("download").addEventListener("click", download);
+$("clear").addEventListener("click", clearSaved);
+
+document.addEventListener("keydown", (event) => {
+  const target = event.target;
+  const typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT");
+  if (event.key === "Escape" && target === $("note")) { target.blur(); return; }
+  if (event.key === "Enter" && target === $("note") && !event.shiftKey) {
+    event.preventDefault(); saveNote(); return;
+  }
+  if (typing) return;
+  if (event.key === "1") { event.preventDefault(); setLabel("CORRECT"); }
+  else if (event.key === "2") { event.preventDefault(); setLabel("NOT_A_CLAIM"); }
+  else if (event.key === "3") { event.preventDefault(); setLabel("DISTORTED"); }
+  else if (event.key === "4") { event.preventDefault(); setLabel("UNSUPPORTED_SPAN"); }
+  else if (event.key === "5") { event.preventDefault(); setLabel("DUPLICATE"); }
+  else if (event.key === "n" || event.key === "N") { event.preventDefault(); $("note").focus(); }
+  else if (event.key === "z" || event.key === "Z") { event.preventDefault(); undo(); }
+  else if (event.key === "ArrowLeft") { event.preventDefault(); move(-1); }
+  else if (event.key === "ArrowRight") { event.preventDefault(); move(1); }
+});
+</script>
+</body>
+</html>

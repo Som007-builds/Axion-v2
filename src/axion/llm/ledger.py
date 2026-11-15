@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS llm_calls (
     model TEXT,
     prompt_tokens INTEGER,
     completion_tokens INTEGER,
+    reasoning_tokens INTEGER,
     usd TEXT,
     latency_ms REAL,
     cache_hit INTEGER NOT NULL DEFAULT 0 CHECK (cache_hit IN (0, 1)),
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS training_runs (
 _LLM_CALL_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("tier", "TEXT"),
     ("parent_call_id", "INTEGER"),
+    ("reasoning_tokens", "INTEGER"),
 )
 
 
@@ -78,6 +80,7 @@ class LedgerEntry:
     model: str | None
     prompt_tokens: int | None
     completion_tokens: int | None
+    reasoning_tokens: int | None
     usd: Decimal | None
     latency_ms: float | None
     cache_hit: bool = False
@@ -116,6 +119,25 @@ class TrainingRun:
 
 
 @dataclass(frozen=True)
+class CallRecord:
+    """One ledger row, for run-level reporting and budget checks."""
+
+    id: int
+    ts: str
+    stage: str
+    provider: str | None
+    model: str | None
+    prompt_tokens: int
+    completion_tokens: int
+    reasoning_tokens: int
+    usd: Decimal | None
+    latency_ms: float | None
+    cache_hit: bool
+    paper_id: str | None
+    error: str | None
+
+
+@dataclass(frozen=True)
 class LedgerRow:
     key: str
     calls: int
@@ -125,6 +147,7 @@ class LedgerRow:
     escalated_calls: int
     prompt_tokens: int
     completion_tokens: int
+    reasoning_tokens: int
     usd: Decimal
 
     def to_dict(self) -> dict[str, object]:
@@ -137,6 +160,7 @@ class LedgerRow:
             "escalated_calls": self.escalated_calls,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
+            "reasoning_tokens": self.reasoning_tokens,
             "usd": format(self.usd, "f"),
         }
 
@@ -152,6 +176,7 @@ class LedgerReport:
     total_escalated_calls: int
     total_prompt_tokens: int
     total_completion_tokens: int
+    total_reasoning_tokens: int
     total_usd: Decimal
 
     def to_dict(self) -> dict[str, object]:
@@ -166,6 +191,7 @@ class LedgerReport:
                 "escalated_calls": self.total_escalated_calls,
                 "prompt_tokens": self.total_prompt_tokens,
                 "completion_tokens": self.total_completion_tokens,
+                "reasoning_tokens": self.total_reasoning_tokens,
                 "usd": format(self.total_usd, "f"),
             },
         }
@@ -180,6 +206,7 @@ class _Bucket:
     escalated_calls: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    reasoning_tokens: int = 0
     usd: Decimal = Decimal("0")
 
 
@@ -225,9 +252,9 @@ class SQLiteLedger:
                 """
                 INSERT INTO llm_calls (
                     ts, run_id, stage, tier, provider, model, prompt_tokens,
-                    completion_tokens, usd, latency_ms, cache_hit, paper_id,
-                    parent_call_id, error
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    completion_tokens, reasoning_tokens, usd, latency_ms, cache_hit,
+                    paper_id, parent_call_id, error
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     timestamp,
@@ -238,6 +265,7 @@ class SQLiteLedger:
                     entry.model,
                     entry.prompt_tokens,
                     entry.completion_tokens,
+                    entry.reasoning_tokens,
                     usd_text,
                     entry.latency_ms,
                     int(entry.cache_hit),
@@ -301,6 +329,46 @@ class SQLiteLedger:
     def total_training_usd(self) -> Decimal:
         return sum((run.estimated_usd for run in self.training_runs()), Decimal("0"))
 
+    def calls_for_run(self, run_id: str) -> tuple[CallRecord, ...]:
+        """Return every attempt recorded for one run, in insertion order."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, ts, stage, provider, model, prompt_tokens,
+                       completion_tokens, reasoning_tokens, usd, latency_ms,
+                       cache_hit, paper_id, error
+                FROM llm_calls
+                WHERE run_id = ?
+                ORDER BY id
+                """,
+                (run_id,),
+            ).fetchall()
+        return tuple(
+            CallRecord(
+                id=int(row["id"]),
+                ts=str(row["ts"]),
+                stage=str(row["stage"]),
+                provider=None if row["provider"] is None else str(row["provider"]),
+                model=None if row["model"] is None else str(row["model"]),
+                prompt_tokens=int(row["prompt_tokens"] or 0),
+                completion_tokens=int(row["completion_tokens"] or 0),
+                reasoning_tokens=int(row["reasoning_tokens"] or 0),
+                usd=None if row["usd"] is None else Decimal(str(row["usd"])),
+                latency_ms=None if row["latency_ms"] is None else float(row["latency_ms"]),
+                cache_hit=bool(row["cache_hit"]),
+                paper_id=None if row["paper_id"] is None else str(row["paper_id"]),
+                error=None if row["error"] is None else str(row["error"]),
+            )
+            for row in rows
+        )
+
+    def run_usd(self, run_id: str) -> Decimal:
+        """Total list-price cost recorded for one run."""
+        return sum(
+            (call.usd for call in self.calls_for_run(run_id) if call.usd is not None),
+            Decimal("0"),
+        )
+
     def report(self, group_by: GroupBy = "stage") -> LedgerReport:
         try:
             column = _GROUP_COLUMNS[group_by]
@@ -311,7 +379,7 @@ class SQLiteLedger:
             rows = connection.execute(
                 f"""
                 SELECT {column} AS group_key, prompt_tokens, completion_tokens,
-                       usd, cache_hit, parent_call_id, error
+                       reasoning_tokens, usd, cache_hit, parent_call_id, error
                 FROM llm_calls
                 """
             ).fetchall()
@@ -330,6 +398,7 @@ class SQLiteLedger:
                 bucket.escalated_calls += 1
             bucket.prompt_tokens += int(row["prompt_tokens"] or 0)
             bucket.completion_tokens += int(row["completion_tokens"] or 0)
+            bucket.reasoning_tokens += int(row["reasoning_tokens"] or 0)
             usd_raw = row["usd"]
             if usd_raw is None:
                 # Failed attempts have no cost by definition; only a successful
@@ -349,6 +418,7 @@ class SQLiteLedger:
                 escalated_calls=bucket.escalated_calls,
                 prompt_tokens=bucket.prompt_tokens,
                 completion_tokens=bucket.completion_tokens,
+                reasoning_tokens=bucket.reasoning_tokens,
                 usd=bucket.usd,
             )
             for key, bucket in sorted(buckets.items())
@@ -363,5 +433,6 @@ class SQLiteLedger:
             total_escalated_calls=sum(row.escalated_calls for row in report_rows),
             total_prompt_tokens=sum(row.prompt_tokens for row in report_rows),
             total_completion_tokens=sum(row.completion_tokens for row in report_rows),
+            total_reasoning_tokens=sum(row.reasoning_tokens for row in report_rows),
             total_usd=sum((row.usd for row in report_rows), Decimal("0")),
         )

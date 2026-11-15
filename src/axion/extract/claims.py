@@ -125,6 +125,26 @@ class SilverManifest(BaseModel):
     failures_file: str
 
 
+class CandidateClaim(BaseModel):
+    """One silver claim in the audit-tool input shape.
+
+    This is still a **silver candidate**, never a gold label. The context fields
+    contain the paragraph before and after the evidence span so the audit tool
+    can show a blind human the surrounding prose.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    claim_id: str
+    paper_id: str
+    claim_text: str
+    evidence_span: str
+    section: str
+    paper_title: str = ""
+    context_before: str = ""
+    context_after: str = ""
+
+
 class BaselineSection(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -137,6 +157,7 @@ class BaselineDocument(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     paper_id: str
+    paper_title: str = ""
     sections: tuple[BaselineSection, ...]
 
     @property
@@ -199,7 +220,9 @@ def build_baseline_document(parsed: ParsedPaper) -> BaselineDocument:
             BaselineSection(label=path[-1] if path else "Body", path=path, text="\n".join(texts))
         )
     return BaselineDocument(
-        paper_id=parsed.pmcid or parsed.paper_id or "", sections=tuple(sections)
+        paper_id=parsed.pmcid or parsed.paper_id or "",
+        paper_title=parsed.title or "",
+        sections=tuple(sections),
     )
 
 
@@ -238,22 +261,133 @@ def verify_claims(
     return valid, failures
 
 
+def audit_context(
+    document: BaselineDocument, *, section_label: str, evidence_span: str
+) -> tuple[str, str]:
+    """Return the paragraph window containing a verbatim span.
+
+    ``before`` is the previous paragraph plus the full paragraph containing the
+    span; ``after`` is the next paragraph. The evidence span therefore appears
+    verbatim inside ``before``, so a CSV-only viewer can both highlight it and
+    flag a missing span without needing the source XML.
+    """
+    by_label = {section.label.casefold(): section for section in document.sections}
+    section = by_label.get(section_label.casefold())
+    if section is None:
+        return "", ""
+    paragraphs = section.text.split("\n")
+    for index, paragraph in enumerate(paragraphs):
+        if evidence_span not in paragraph:
+            continue
+        before_parts = paragraphs[max(0, index - 1) : index + 1]
+        after_parts = paragraphs[index + 1 : index + 2]
+        return "\n".join(before_parts), "\n".join(after_parts)
+
+    # A span may cross a paragraph boundary; fall back to a section window.
+    position = section.text.find(evidence_span)
+    if position < 0:
+        return "", ""
+    before_text = section.text[: position + len(evidence_span)]
+    after_text = section.text[position + len(evidence_span) :]
+    before_break = before_text.rfind("\n\n")
+    after_break = after_text.find("\n\n")
+    if before_break >= 0:
+        before_text = before_text[before_break + 2 :]
+    if after_break >= 0:
+        after_text = after_text[:after_break]
+    return before_text, after_text
+
+
 def utc_now_iso() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
+def _jsonl_rows(path: Path) -> list[dict[str, object]]:
+    if not path.exists():
+        return []
+    rows: list[dict[str, object]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            raw = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(raw, dict):
+            rows.append(raw)
+    return rows
+
+
+def _as_int(value: object, default: int = -1) -> int:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, int):
+        return value
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return default
+
+
 def append_silver_claims(path: Path, claims: Sequence[SilverClaim]) -> int:
-    """Append claims and fsync, so an interrupted run keeps finished papers."""
+    """Append new claims and fsync, so an interrupted run keeps finished papers.
+
+    Re-appending the same ``(paper_id, claim_index)`` pair is a no-op. That makes
+    a resumed run idempotent even if it stopped between two appends.
+    """
     if not claims:
+        return 0
+    existing = {
+        (str(row.get("paper_id")), _as_int(row.get("claim_index"))) for row in _jsonl_rows(path)
+    }
+    fresh = [claim for claim in claims if (claim.paper_id, claim.claim_index) not in existing]
+    if not fresh:
         return 0
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8", newline="\n") as handle:
-        for claim in claims:
+        for claim in fresh:
             handle.write(json.dumps(claim.model_dump(mode="json"), sort_keys=True))
             handle.write("\n")
         handle.flush()
         os.fsync(handle.fileno())
-    return len(claims)
+    return len(fresh)
+
+
+def append_candidate_claims(path: Path, claims: Sequence[CandidateClaim]) -> int:
+    """Append audit-tool candidates once each, keyed by ``claim_id``."""
+    if not claims:
+        return 0
+    existing = {str(row.get("claim_id")) for row in _jsonl_rows(path)}
+    fresh = [claim for claim in claims if claim.claim_id not in existing]
+    if not fresh:
+        return 0
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        for claim in fresh:
+            handle.write(json.dumps(claim.model_dump(mode="json"), sort_keys=True))
+            handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    return len(fresh)
+
+
+def append_processed_paper(path: Path, *, paper_id: str, claims: int, failures: int) -> None:
+    """Mark a paper complete even when extraction returned zero claims."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    row = {"paper_id": paper_id, "claims": claims, "failures": failures, "at": utc_now_iso()}
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(row, sort_keys=True))
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def read_processed_paper_ids(path: Path) -> set[str]:
+    return {
+        str(row["paper_id"])
+        for row in _jsonl_rows(path)
+        if isinstance(row.get("paper_id"), str) and row["paper_id"]
+    }
 
 
 def read_silver_paper_ids(path: Path) -> set[str]:
@@ -299,13 +433,18 @@ __all__ = [
     "PROMPT_VERSION",
     "BaselineDocument",
     "BaselineSection",
+    "CandidateClaim",
     "Claim",
     "ClaimExtraction",
     "ClaimFailure",
     "SilverClaim",
     "SilverManifest",
+    "append_candidate_claims",
+    "append_processed_paper",
     "append_silver_claims",
+    "audit_context",
     "build_baseline_document",
+    "read_processed_paper_ids",
     "read_silver_paper_ids",
     "utc_now_iso",
     "verify_claims",

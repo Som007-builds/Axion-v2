@@ -1,0 +1,4 @@
+claim_id,paper_id,paper_title,section,claim_text,evidence_span,context_before,context_after,label,note,labeler,date,rubric_version,split,relabel_label
+SMOKE:0,SMOKE,Smoke test paper (not a real claim),Results,Drug X reduced mortality.,Drug X reduced mortality.,"Previous paragraph.
+Drug X reduced mortality. The effect was consistent.",Next paragraph.,,,,,v2,test,
+SMOKE:1,SMOKE,Smoke test paper (not a real claim),Results,A second claim.,A second claim,A second claim was observed.,,,,,,v2,test,

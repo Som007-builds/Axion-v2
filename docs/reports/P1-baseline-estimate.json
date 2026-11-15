@@ -6,7 +6,7 @@
       "5": 5.0
     },
     "clears_200_claims_at_5_per_paper": true,
-    "cost_status": "not computed: pricing.yaml is blank; no paid call is authorized",
+    "cost_status": "not computed here: this is a dry-run estimate; the paid run records actual list-price cost in the ledger",
     "estimated_calls": 100,
     "expected_claims_by_scenario": {
       "10": 1000.0,

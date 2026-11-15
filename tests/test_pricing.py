@@ -44,12 +44,16 @@ models:
 """
 
 
-def test_packaged_template_loads_with_blank_prices() -> None:
+def test_packaged_pricing_has_verified_groq_list_prices() -> None:
     pricing = load_pricing(DEFAULT_PRICING_PATH)
 
     assert pricing.version == 1
     assert pricing.currency == "USD"
-    assert pricing.models == {}
+    assert set(pricing.models) == {"openai/gpt-oss-120b", "openai/gpt-oss-20b"}
+    large = pricing.require_priced("openai/gpt-oss-120b")
+    assert large.input_usd_per_mtok == Decimal("0.15")
+    assert large.output_usd_per_mtok == Decimal("0.60")
+    assert large.cached_input_usd_per_mtok == Decimal("0.075")
 
 
 def test_cost_is_computed_from_per_million_prices(tmp_path: Path) -> None:

@@ -35,6 +35,7 @@ RUBRIC_VERSION = "v2"
 DEFAULT_SEED = 20261114
 MIN_SAMPLE = 200
 DEV_FRACTION = 0.5
+OVERLAP_FRACTION = 0.2
 
 LABELS = (
     "CORRECT",
@@ -179,6 +180,32 @@ def export_rows(claims: Sequence[ClaimRecord], seed: int = DEFAULT_SEED) -> list
             }
         )
     return rows
+
+
+def select_overlap_rows(
+    rows: Sequence[dict[str, str]],
+    *,
+    fraction: float = OVERLAP_FRACTION,
+    seed: int = DEFAULT_SEED,
+) -> list[dict[str, str]]:
+    """Select a deterministic seeded subset for an independent second labeler.
+
+    The subset is chosen by a seeded SHA-256 rank over ``claim_id``, so the same
+    export always yields the same overlap without exporting a hidden column.
+    """
+    if not 0.0 < fraction <= 1.0:
+        raise AuditError("overlap fraction must be in (0, 1]")
+    if not rows:
+        return []
+    ranked = sorted(
+        rows,
+        key=lambda row: (
+            hashlib.sha256(f"{seed}:{row['claim_id']}".encode()).hexdigest(),
+            row["claim_id"],
+        ),
+    )
+    count = max(1, round(len(ranked) * fraction))
+    return ranked[:count]
 
 
 def write_export(path: Path, rows: Sequence[dict[str, str]]) -> None:

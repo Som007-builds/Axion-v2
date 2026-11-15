@@ -52,6 +52,7 @@ class ProviderResponse:
     prompt_tokens: int
     completion_tokens: int
     model: str | None = None
+    reasoning_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,7 @@ class LLMResult:
     usd: Decimal | None
     latency_ms: float
     cache_hit: bool
+    reasoning_tokens: int | None = None
     parsed: BaseModel | None = None
     call_id: int | None = None
     parent_call_id: int | None = None

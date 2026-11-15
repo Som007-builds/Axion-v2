@@ -3,11 +3,13 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through P1-09 are `[x]`; P1-10 is offline-complete but blocked for the paid run; P1-11 is blocked on owner labels; P1-12 is scaffolded and blocked on measured values.
-- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample). PRD P1.8 and CONTEXT §4 already use the total-corpus wording.
-- **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Exact counts are in `docs/reports/P1-corpus-coverage.md`.
-- **Next action:** owner supplies verified prices, a paid cap, SDK approval, and confirms the 100-paper sample; then run the paid P1-10 baseline and the P1-11 audit. The owner should also decide whether a future ingest should rebalance citer selection toward one citer per source.
-- **Last updated:** 2026-11-15 by DeepSeek V4.1 Flash Free (verification pass)
+- **Phase:** P1 (foundation) — P1-01 through P1-09 are `[x]`; P1-10 is offline-complete and its paid run is **stopped at a clean one-paper checkpoint** by Groq's free-tier limit; P1-11 tooling is built but the official ≥200-claim export is blocked by P1-10; P1-12 is scaffolded.
+- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample), ADR-0015 Proposed (P1 blast-radius counts conditional on included citers; expansion deferred to P3), ADR-0016 Proposed (agreement by ≥7-day self-relabel or independent 20% second-labeler overlap). PRD P1.8 and CONTEXT §4 already use the total-corpus wording.
+- **P1-10 paid pilot (2026-11-15):** Groq `openai/gpt-oss-120b`, prompt v1, seed `20261114`. One paper succeeded: **21 silver claims**, 28 extracted, **7 span-not-verbatim failures**, 0 parse failures; prompt **6,809**, completion **7,159** (reasoning **3,011**), list price **$0.005317**, latency **16,459 ms**. The next paper failed with HTTP 413 `rate_limit_exceeded`: **TPM 8000, requested 12111**. The 5-paper pilot and 100-paper sample did not run. Report: `docs/reports/P1-baseline-pilot.{md,json}`.
+- **Pricing/SDK:** `pricing.yaml` now holds the official Groq list prices checked 2026-11-15 (120b $0.15/$0.075 cached/$0.60; 20b $0.075/$0.037 cached/$0.30), with source URLs. The paid cap is $3 total in the untracked `_private/budget.md`. The only provider SDK is `groq==1.7.0` (released 2026-08-26, not within 14 days), isolated in `src/axion/llm/groq.py` behind `ProviderAdapter`.
+- **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Blast-radius counts are **conditional on the included citer set only**; P3 owns on-demand expansion (ADR-0015 Proposed). Exact counts are in `docs/reports/P1-corpus-coverage.md`.
+- **Next action:** owner decides how to clear the Groq free-tier limit before the full P1-10 run: upgrade the Groq tier/limit, approve a different provider, or explicitly approve a sampling rule restricted to prompts that fit TPM/TPD (a scope change). Then finish the pilot, run the seeded sample, export ≥200 claims, and label. The owner should also decide whether a future ingest rebalances citers toward one per source.
+- **Last updated:** 2026-11-15 by DeepSeek V4.1 Flash Free (paid-pilot + audit-tooling session)
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -41,7 +43,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 **Owner/local blockers**
 - ✅ Push: `p1` is pushed at `a8d6d85` (same as `origin/p1`); local `main` is 11 commits ahead of `origin/main` and was not merged or pushed. CI status is not available locally (`gh` is not installed).
 - ✅ Contact emails, Groq key, Neo4j password, and V2 Neo4j are configured locally; no secret values are tracked.
-- ⛔ P1-10: tier IDs are chosen (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`) and public prices are known, but `pricing.yaml` is blank and paid-budget approval is pending.
+- ⛔ P1-10: prices, the $3 cap, and the Groq SDK are now in place. The paid run is blocked by the Groq free-tier limit (TPM 8000 / TPD 200,000): the sample contains prompts above 8,000 tokens and the daily budget cannot cover 100 papers. Owner decision required before any workaround.
 - ✅ P1-06: Retraction Watch CC0 verified on Crossref’s Metadata Retrieval page and owner-approved; loader/linker and coverage report committed.
 - ✅ P1-08/P1-09: closed with exact counts and a full store load; the remaining coverage caveat is recorded above and in `docs/reports/P1-corpus-coverage.md`.
 - ⛔ P1-11/P3-03: owner labeling time (P1-11 also needs a 7-day relabel gap).
@@ -56,7 +58,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | In progress | — | P1-01..P1-09 `[x]`; P1-10 offline-complete (paid run blocked on prices/budget/SDK); P1-11 blocked on owner labels; P1-12 scaffolded |
+| P1 Foundation | In progress | — | P1-01..P1-09 `[x]`; P1-10 paid pilot stopped at 1 paper by Groq TPM 8000; P1-11 tooling ready, official export blocked; P1-12 scaffolded |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -85,25 +87,38 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | Corpus link coverage | 285/792 sources have an incoming citer edge; 507 do not; 34/4,168 citer papers have no outgoing edge; 533 papers have no edge | `docs/reports/P1-corpus-coverage.md` |
 | Full store load (twice) | Paper 4,928; CITES 4,982; contexts 6,117; notices 792; vectors 4,928 + 6,117 | `data/corpus/infectious-disease-v1/store-load.log` (untracked); re-queried 2026-11-15 |
 | P1-10 100-paper dry-run (estimate) | 764,084 prompt tokens; mean 7,641/paper; expected 500 claims at 5/paper | `docs/reports/P1-baseline-estimate.md` |
+| P1-10 paid pilot (measured, n=1 paper) | 21 silver claims from 28 extracted; 7 span-not-verbatim; 0 parse failures; 6,809 prompt + 7,159 completion (3,011 reasoning) tokens; $0.005317 list price; 16,459 ms latency; prompt gap -10.3% vs chars/4 | `docs/reports/P1-baseline-pilot.md` |
+| P1-10 full paid run | NOT RUN — Groq free tier TPM 8000 blocked a 12,111-token request; 100 papers also exceed TPD 200,000 | `docs/reports/P1-baseline-pilot.md` |
+| P1-11 audit tooling | HTML labeler (no network), exact-column overlap export (20%), strict validator + existing metrics; **0 claims labelled** | `eval/audit/README.md` |
 
 ## Open questions for owner
-- **Push:** `p1` is pushed. Should local `main` be fast-forwarded to `p1` now, or only at the P1 gate as ADR-0010 requires?
-- **Provider/prices:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large) on Groq; enter their published prices in `pricing.yaml` only when the owner approves a paid budget.
+- **Push:** resolved 2026-11-15 — local `main` was fast-forwarded to `ab2dbfe`; the agent does not push. The owner pushes when ready.
+- **Groq limit:** tier IDs are `openai/gpt-oss-20b` (small) and `openai/gpt-oss-120b` (large); prices are filled and the $3 cap is approved. The blocker is the free-tier TPM/TPD, not price. Should the owner upgrade the Groq tier, approve another provider, or approve a sampling rule that fits the limit?
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
 - **Retraction Watch:** resolved 2026-11-14. Crossref’s canonical Metadata Retrieval page lists the database as CC0; owner approved use and the acquisition method (REST lookups + pinned GitLab CSV snapshot; no raw CSV committed). Recorded in `docs/DATA_SOURCES.md`.
 - **Sub-topic:** resolved 2026-11-14 — ADR-0012 accepted (`(HSC) Medicine - Infectious Disease`), with the exact-count stop condition and PMID-gap reporting. Oncology deferred to its own ADR as a held-out transfer corpus.
 - **Labeling:** when can the owner block ~3–6 hours for P1-11 and ~3–6 hours for P3-03, including the P1-11 7-day relabel gap?
 - **ADR renumbering:** confirm ADR-0008 (scale) and ADR-0009 (Day-0) are the intended final numbers.
 - **Local tooling:** no GNU `make` on this host; equivalent Python commands are used. Pre-commit under the 3.11 venv fails to create hook envs because its base Python is at `D:\`; the hooks pass under Python 3.12, and CI will use Ubuntu 3.11.
-- **Provider SDK adapters:** real Groq/Gemini/Anthropic adapters are deferred until packages are approved/installed. P1-03 is offline and uses a scripted provider.
+- **Provider SDK adapters:** the approved Groq adapter is `src/axion/llm/groq.py` (`groq==1.7.0`); Gemini/Anthropic remain deferred. Offline tests still use the scripted provider.
 
 ## Blocked tasks
-- P1-10: offline portion complete; the paid run needs verified prices in `pricing.yaml`, a paid-budget cap, the provider SDK dependency, and owner confirmation of the seeded-sample size (dry-run estimate prepared).
-- P1-11: owner labeling time (~3–6 h for ≥200 claims) and a ≥7-day relabel gap; tooling is ready.
-- P1-12: follows from P1-11 (and the P1-10 run).
+- P1-10: offline portion, pricing, cap, and SDK are complete; the paid run is blocked by Groq free-tier TPM/TPD (limit 8000; first failed request 12,111). Full run needs an owner-approved limit/provider or sampling change.
+- P1-11: the official ≥200-claim export needs P1-10; tooling (HTML, overlap export, validator) is ready. Then owner labeling (~3–6 h) and a ≥7-day relabel gap (or an approved second labeler).
+- P1-12: follows from P1-11 (and the full P1-10 run).
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-15 - DeepSeek V4.1 Flash Free - P1-10 paid pilot + P1-11 tooling
+- Status: **PARTIAL**; branch `p1`, clean tree at start (`ab2dbfe`); local `main` fast-forwarded to `ab2dbfe` and **not pushed**. The owner pushes.
+- Pricing/SDK: filled `src/axion/config/pricing.yaml` with the official Groq list prices checked 2026-11-15, recording both model URLs and the check date; set the P1-10 cap to **$3 total** in untracked `_private/budget.md`; added `groq==1.7.0` (published 2026-08-26, outside the 14-day window) and `src/axion/llm/groq.py` behind `ProviderAdapter`. The ledger now records `reasoning_tokens` (idempotent migration).
+- Pilot: first paper succeeded (**21 claims / 28 extracted**; 7 verbatim-span rejects; 0 parse failures; prompt 6,809; completion 7,159 incl. 3,011 reasoning; list price **$0.005317**; 16,459 ms). The second paper's request was **12,111 tokens against a TPM limit of 8,000**; Groq returned HTTP 413 `rate_limit_exceeded`. After the existing retry/cooldown, the run stopped at a clean one-paper checkpoint. No workaround was attempted.
+- Why the full run did not start: the free tier is **8,000 TPM and 200,000 TPD**; the 100-paper sample's mean prompt alone is 7,641 tokens (p95 15,867) and 100 papers exceed the daily cap. The 5-paper pilot cannot complete on this tier. Owner decision required (raise the limit, approve another provider, or approve a different sampling rule).
+- Audit tooling: `eval/audit/claim_audit_tool.html` (single file, no network/dependencies, blind, keyboard, autosave, undo, exact CSV download, span-missing warning); `scripts/audit_validate.py` (strict labels/notes, `--allow-partial`, overlap merge, existing precision/Wilson/failure/κ metrics); `--overlap-out` seeded 20% export; `eval/audit/tool_smoke_test.csv`; README 5-line procedure. **No claims were labelled.**
+- Honesty note: the HTML inline JS was syntax-checked with `node --check`; an interactive browser test was **not** completed. The owner should smoke-test with `eval/audit/tool_smoke_test.csv`.
+- Pilot audit export: `eval/audit/claims_audit_v1_pilot.csv` has **21 claims**, below the 200 minimum. It exists only to exercise tooling; it is not the official audit sample.
+- Verification: full suite **257 passed, 2 skipped**; `ruff check`, `ruff format --check`, and strict `mypy` clean. (The count includes the new Groq adapter/413/500 tests, audit-validator, overlap, HTML-column, and context tests.)
+- Next: owner decides on the Groq limit/provider/sampling; then finish the 5-paper pilot, run the seeded 100-paper sample (extend if claim yield <250), export ≥200 claims, and label. P1-12 stays blocked on measured audit values.
 ### 2026-11-15 - DeepSeek V4.1 Flash Free - P1 verification pass
 - Status: **VERIFIED** on branch `p1`; clean tree at `a8d6d85`; `origin/p1` is the same commit. No corpus ingest, store reload, LLM call, label, or paid call was performed.
 - Re-ran: **245 passed, 2 skipped**; `ruff check` and `ruff format --check` clean (79 files); strict `mypy` clean (42 source files).

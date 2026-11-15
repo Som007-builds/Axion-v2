@@ -20,12 +20,14 @@ from pathlib import Path
 from axion.eval.audit import (
     DEFAULT_SEED,
     MIN_SAMPLE,
+    OVERLAP_FRACTION,
     AuditError,
     assign_paper_splits,
     corpus_snapshot_id,
     export_rows,
     load_claims,
     sample_claims,
+    select_overlap_rows,
     write_export,
 )
 
@@ -43,6 +45,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="allow a sample below the rubric minimum (dry runs only)",
     )
+    parser.add_argument(
+        "--overlap-out",
+        type=Path,
+        default=None,
+        help="optional second-labeler CSV with a seeded overlap subset",
+    )
+    parser.add_argument(
+        "--overlap-fraction",
+        type=float,
+        default=OVERLAP_FRACTION,
+        help="second-labeler overlap share (default 0.20)",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -55,6 +69,9 @@ def main(argv: list[str] | None = None) -> int:
         sample = sample_claims(claims, args.sample_size, seed=args.seed)
         rows = export_rows(sample, seed=args.seed)
         write_export(args.out, rows)
+        overlap_rows = select_overlap_rows(rows, fraction=args.overlap_fraction, seed=args.seed)
+        if args.overlap_out is not None:
+            write_export(args.overlap_out, overlap_rows)
         snapshot = corpus_snapshot_id(claims)
         splits = assign_paper_splits((claim.paper_id for claim in sample), seed=args.seed)
     except AuditError as exc:
@@ -71,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
         "papers": len(splits),
         "splits": dict(split_counts),
         "rubric_version": rows[0]["rubric_version"] if rows else "",
+        "overlap_claims": len(overlap_rows),
+        "overlap_out": str(args.overlap_out) if args.overlap_out else None,
     }
     print(json.dumps(summary, indent=2))
     return 0
