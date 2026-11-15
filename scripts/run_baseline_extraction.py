@@ -24,16 +24,17 @@ from pathlib import Path
 
 from axion.config.pricing import estimate_cost_details, load_pricing
 from axion.config.settings import DEFAULT_RATE_LIMITS_PATH, Settings
+from axion.eval.audit import DEFAULT_SEED as AUDIT_SEED
 from axion.eval.audit import (
-    DEFAULT_SEED as AUDIT_SEED,
-)
-from axion.eval.audit import (
+    MAX_CLAIMS_PER_PAPER,
+    MIN_PAPERS,
     MIN_SAMPLE,
+    AuditError,
     assign_paper_splits,
     corpus_snapshot_id,
     export_rows,
     load_claims,
-    sample_claims,
+    sample_claims_by_paper,
     write_export,
 )
 from axion.extract.baseline import (
@@ -50,7 +51,7 @@ from axion.extract.baseline import (
 from axion.extract.claims import PROMPT_VERSION
 from axion.extract.prompting import PromptError
 from axion.ingest.corpus import read_manifest, read_papers_csv
-from axion.llm.client import LLMClient
+from axion.llm.client import LLMClient, RetryPolicy
 from axion.llm.gemini import GeminiAdapter
 from axion.llm.ledger import SQLiteLedger
 from axion.llm.pacing import (
@@ -69,8 +70,13 @@ DEFAULT_MANIFEST = Path("docs/reports/P1-corpus-manifest.json")
 DEFAULT_OUT = Path("docs/reports/P1-baseline-estimate")
 DEFAULT_SILVER_DIR = Path("eval/silver/claims_v1")
 DEFAULT_AUDIT_OUT = Path("eval/audit/claims_audit_v1.csv")
-DEFAULT_MAX_OUTPUT_TOKENS = 8192
-AUDIT_MIN_ACCEPTED_CLAIMS = 250
+DEFAULT_MAX_OUTPUT_TOKENS = 16384
+DEFAULT_THINKING_LEVEL = "medium"
+# Owner rule: at most one retry, only for network/5xx failures. A 429 or a
+# daily-quota error stops the run at a checkpoint instead of burning quota.
+DEFAULT_MAX_ATTEMPTS = 2
+AUDIT_MIN_ACCEPTED_CLAIMS = 200
+AUDIT_MIN_PAPERS = MIN_PAPERS
 
 
 def _markdown(estimate: DryRunEstimate, plan: PlanReport) -> str:
@@ -184,11 +190,19 @@ def _build_client(settings: Settings, *, max_output_tokens: int) -> LLMClient:
     registry.register(
         GeminiAdapter(
             settings.gemini_api_key,
-            timeout_s=120.0,
+            # 504 DEADLINE_EXCEEDED was observed at ~119 s with thinking=medium on
+            # a ~7.6K-token prompt; 300 s gives the server room to finish.
+            timeout_s=300.0,
             max_output_tokens=max_output_tokens,
         )
     )
-    return LLMClient.from_settings(settings, registry)
+    retry = RetryPolicy(
+        max_attempts=DEFAULT_MAX_ATTEMPTS,
+        base_delay_s=settings.llm_retry_base_s,
+        max_delay_s=settings.llm_retry_max_s,
+        jitter_s=settings.llm_retry_jitter_s,
+    )
+    return LLMClient.from_settings(settings, registry, retry=retry)
 
 
 @dataclass(frozen=True)
@@ -239,16 +253,45 @@ def _maybe_export_audit(
     run: RunReport,
     *,
     out_path: Path,
-    sample_size: int = MIN_SAMPLE,
+    target_claims: int = MIN_SAMPLE,
+    max_per_paper: int = MAX_CLAIMS_PER_PAPER,
+    min_papers: int = AUDIT_MIN_PAPERS,
     seed: int = AUDIT_SEED,
 ) -> dict[str, object] | None:
-    """Create the audit CSV once >=250 accepted claims exist; never overwrite."""
-    if run.claims < AUDIT_MIN_ACCEPTED_CLAIMS:
+    """Create the >=200-claim, >=40-paper audit CSV; never overwrite.
+
+    The sample is capped at ``max_per_paper`` claims per paper and must cover
+    at least ``min_papers`` distinct papers. Claims from one paper are not
+    independent, so a handful of papers cannot support a 200-claim audit.
+    """
+    if not run.candidates_path.exists():
         return None
+    try:
+        claims = load_claims(run.candidates_path)
+    except AuditError as exc:
+        return {"status": "not_ready", "reason": str(exc)}
+    papers_available = len({claim.paper_id for claim in claims})
+    required_claims = max(target_claims, AUDIT_MIN_ACCEPTED_CLAIMS)
+    readiness: dict[str, object] = {
+        "claims_available": len(claims),
+        "papers_available": papers_available,
+        "required_claims": required_claims,
+        "required_papers": min_papers,
+    }
+    if len(claims) < required_claims or papers_available < min_papers:
+        return {"status": "not_ready", **readiness}
     if out_path.exists():
-        return {"path": str(out_path), "status": "already_exists"}
-    claims = load_claims(run.candidates_path)
-    sample = sample_claims(claims, sample_size, seed=seed)
+        return {"path": str(out_path), "status": "already_exists", **readiness}
+    try:
+        sample = sample_claims_by_paper(
+            claims,
+            target_claims=required_claims,
+            max_per_paper=max_per_paper,
+            min_papers=min_papers,
+            seed=seed,
+        )
+    except AuditError as exc:
+        return {"status": "not_ready", "reason": str(exc), **readiness}
     rows = export_rows(sample, seed=seed)
     write_export(out_path, rows)
     paper_ids = sorted({claim.paper_id for claim in sample})
@@ -257,8 +300,11 @@ def _maybe_export_audit(
     summary: dict[str, object] = {
         "path": str(out_path),
         "status": "written",
+        "sampler": "seeded_by_paper_max_cap",
         "claims": len(sample),
         "papers": len(paper_ids),
+        "max_claims_per_paper": max_per_paper,
+        "max_observed_per_paper": max(Counter(claim.paper_id for claim in sample).values()),
         "papers_dev": split_counts.get("dev", 0),
         "papers_test": split_counts.get("test", 0),
         "seed": seed,
@@ -290,6 +336,7 @@ def _write_run_report(
     rate: RateLimit,
     rate_table: RateLimitTable,
     audit_summary: dict[str, object] | None,
+    retry_max_attempts: int = DEFAULT_MAX_ATTEMPTS,
 ) -> Path:
     processed_path = run.claims_path.parent / "papers_processed.jsonl"
     processed_ids = set()
@@ -359,8 +406,16 @@ def _write_run_report(
                 failures.append(json.loads(line))
     parse_failures = sum(1 for row in failures if row.get("reason") == "structured_output")
     span_failures = sum(1 for row in failures if row.get("reason") == "evidence_span_not_verbatim")
+    provider_failure_rows = [
+        row
+        for row in failures
+        if row.get("reason") in {"provider_failed", "rate_limited", "daily_quota_reached"}
+    ]
+    provider_failure = provider_failure_rows[-1] if provider_failure_rows else None
     ledger_errors = [call.error for call in calls if call.error]
     error_detail = _error_summary(ledger_errors[-1] if ledger_errors else None)
+    if provider_failure is not None and provider_failure.get("error_message"):
+        error_detail = str(provider_failure["error_message"])
     extracted = run.claims + span_failures
     verbatim_rate = (run.claims / extracted) if extracted else 1.0
     strict_extracted = run.strict_claims + run.strict_span_failures
@@ -462,6 +517,7 @@ def _write_run_report(
             "temperature": temperature,
             "max_output_tokens": max_output_tokens,
             "billing": billing,
+            "retry_max_attempts": retry_max_attempts,
             "price_versions": price_versions,
         },
         "rate_limits": {
@@ -479,12 +535,31 @@ def _write_run_report(
         "daily_cap": rate.daily_cap,
         "resume_after": next_midnight_pacific(today),
         "stopped_reason": run.stopped_reason,
+        "provider_failure": provider_failure,
         "provider_failure_detail": error_detail,
+        "papers_with_claims": len(per_paper),
         "candidates_path": str(run.candidates_path),
         "claims_path": str(run.claims_path),
         "manifest_path": str(run.manifest_path),
         "audit_export": audit_summary,
     }
+    failure_lines: list[str] = []
+    if provider_failure is not None:
+        failure_lines = [
+            "",
+            "## Provider failure root cause",
+            "",
+            f"- Error class: `{provider_failure.get('error_class')}`",
+            f"- HTTP status: `{provider_failure.get('http_status')}`; provider status: "
+            f"`{provider_failure.get('provider_status')}`",
+            f"- Finish reason: `{provider_failure.get('finish_reason')}`",
+            f"- Attempts made: {provider_failure.get('attempts')}",
+            f"- Tokens: prompt {provider_failure.get('prompt_tokens')}, completion "
+            f"{provider_failure.get('completion_tokens')} (thinking "
+            f"{provider_failure.get('reasoning_tokens')})",
+            f"- Message: `{provider_failure.get('error_message')}`",
+            "",
+        ]
     out_dir.mkdir(parents=True, exist_ok=True)
     json_path = out_dir / "run_report.json"
     json_path.write_text(
@@ -553,18 +628,21 @@ def _write_run_report(
         f"p95 **{report['latency_ms']['p95']:.0f} ms**.",
         "",
         f"Stopped reason: **{run.stopped_reason or 'completed'}**.",
+        *failure_lines,
         *(
             [f"Provider detail: `{report['provider_failure_detail']}`", ""]
-            if report["provider_failure_detail"]
+            if report["provider_failure_detail"] and provider_failure is None
             else []
         ),
         *(
             [
                 "Audit export: "
-                f"`{report['audit_export']['path']}` "
-                f"({report['audit_export']['status']}; "
-                f"{report['audit_export'].get('claims', '?')} claims, "
-                f"{report['audit_export'].get('papers', '?')} papers).",
+                f"`{report['audit_export'].get('path', '-')}` "
+                f"(status `{report['audit_export']['status']}`; "
+                f"{report['audit_export'].get('claims', '-')} claims, "
+                f"{report['audit_export'].get('papers', '-')} papers; available "
+                f"{report['audit_export'].get('claims_available', '-')} claims / "
+                f"{report['audit_export'].get('papers_available', '-')} papers).",
                 "",
             ]
             if report["audit_export"]
@@ -616,7 +694,7 @@ def main(argv: list[str] | None = None) -> int:
     papers = read_papers_csv(args.manifest.parent / Path(manifest.files.papers_csv).name)
     settings = Settings()
     billing = args.billing or settings.llm_billing
-    thinking_level = args.thinking_level or settings.llm_thinking_level
+    thinking_level = args.thinking_level or settings.llm_thinking_level or DEFAULT_THINKING_LEVEL
     temperature = args.temperature if args.temperature is not None else settings.llm_temperature
     settings = settings.model_copy(update={"llm_billing": billing})
     cache_dir = args.cache_dir or settings.resolved_europepmc_cache_dir
@@ -759,7 +837,13 @@ def main(argv: list[str] | None = None) -> int:
         temperature=temperature,
         pacer=pacer,
     )
-    audit_summary = _maybe_export_audit(run, out_path=args.audit_out)
+    audit_summary = _maybe_export_audit(
+        run,
+        out_path=args.audit_out,
+        target_claims=MIN_SAMPLE,
+        max_per_paper=MAX_CLAIMS_PER_PAPER,
+        min_papers=AUDIT_MIN_PAPERS,
+    )
     report_path = _write_run_report(
         run=run,
         plans=plans,
@@ -777,6 +861,7 @@ def main(argv: list[str] | None = None) -> int:
         rate=rate,
         rate_table=rate_table,
         audit_summary=audit_summary,
+        retry_max_attempts=DEFAULT_MAX_ATTEMPTS,
     )
     total_list = ledger.report("stage").total_usd
     total_real = ledger.total_real_usd()
@@ -791,7 +876,14 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
     if audit_summary:
-        print(f"audit export: {audit_summary['path']} ({audit_summary['status']})", flush=True)
+        print(
+            f"audit export: {audit_summary.get('path', '-')} "
+            f"({audit_summary['status']}; available "
+            f"{audit_summary.get('claims_available', '-')} claims / "
+            f"{audit_summary.get('papers_available', '-')} papers)",
+            flush=True,
+        )
+    if audit_summary and audit_summary["status"] == "written":
         print("open the labeling tool:", flush=True)
         print(
             '  start "" "D:\\Axion-v2\\axion-v2\\eval\\audit\\claim_audit_tool.html"',
