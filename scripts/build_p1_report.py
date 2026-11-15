@@ -8,18 +8,37 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
+from collections import Counter
+from decimal import Decimal
 from pathlib import Path
 
-from axion.config.settings import Settings
 from axion.eval.audit import AuditError, compute_metrics, read_audit
 from axion.ingest.corpus import read_manifest
-from axion.llm.ledger import SQLiteLedger
 
 DEFAULT_MANIFEST = Path("docs/reports/P1-corpus-manifest.json")
 DEFAULT_AUDIT = Path("eval/audit/claims_audit_v1.csv")
+DEFAULT_RUN_REPORT = Path("eval/silver/claims_v1/baseline_flashlite/run_report.json")
 DEFAULT_OUT = Path("docs/reports/P1-baseline.md")
 NOT_MEASURED = "NOT YET MEASURED"
+GATE_PRECISION_FLOOR = 0.90
+
+
+def _money(value: object) -> str:
+    return f"${Decimal(str(value)):.6f}"
+
+
+def _pct(value: object) -> str:
+    return f"{Decimal(str(value)) * 100:.1f}%"
+
+
+def _load_run_report(path: Path) -> dict[str, object] | None:
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def _corpus_section(manifest_path: Path) -> list[str]:
@@ -45,6 +64,18 @@ def _corpus_section(manifest_path: Path) -> list[str]:
         if coverage is not None
         else "- All-paper parse coverage: see `scripts/corpus_coverage.py`"
     )
+    link_lines: list[str] = []
+    if coverage is not None and "source_papers_with_incoming_edge" in coverage:
+        link_lines = [
+            f"- Retracted sources with ≥1 incoming citer edge: "
+            f"{coverage['source_papers_with_incoming_edge']:,} of "
+            f"{counts.sources_total:,} "
+            f"({coverage['source_papers_without_incoming_edge']:,} have none)",
+            f"- Citer papers without an outgoing edge: "
+            f"{coverage['citer_papers_without_outgoing_edge']:,} of "
+            f"{counts.citers_included:,}; papers with no edge at all: "
+            f"{coverage['papers_without_any_edge']:,}",
+        ]
     return [
         "## Corpus (ID-only manifest)",
         "",
@@ -56,6 +87,7 @@ def _corpus_section(manifest_path: Path) -> list[str]:
         f"- Papers parsed during the context stage: {counts.papers_parsed:,}; "
         f"parse failures: {counts.parse_failures:,}",
         coverage_line,
+        *link_lines,
         f"- Papers without PMID: {counts.papers_without_pmid:,} "
         f"({counts.papers_without_pmid_sources:,} sources)",
         f"- Manifest wall time: {resources.wall_time_s:,.1f}s; peak RSS: "
@@ -65,43 +97,82 @@ def _corpus_section(manifest_path: Path) -> list[str]:
     ]
 
 
-def _ledger_section(ledger_path: Path | None) -> list[str]:
-    if ledger_path is None or not ledger_path.exists():
+def _run_sections(run: dict[str, object] | None) -> list[str]:
+    if run is None:
         return [
-            "## Cost ledger",
+            "## Baseline run",
             "",
-            f"- Ledger: **{NOT_MEASURED}** (no ledger file found)",
+            f"- Extraction run report: **{NOT_MEASURED}** (no run report found)",
+            f"- Cost per paper: **{NOT_MEASURED}**",
+            f"- Tokens per paper: **{NOT_MEASURED}**",
+            f"- p95 latency: **{NOT_MEASURED}**",
             "",
         ]
-    try:
-        report = SQLiteLedger(ledger_path).report()
-    except sqlite3.Error as exc:
-        return ["## Cost ledger", "", f"- Ledger unreadable: `{exc}`", ""]
-    if report.total_calls == 0:
-        return [
-            "## Cost ledger",
-            "",
-            "- No LLM calls recorded. Cost, tokens, and latency are " f"**{NOT_MEASURED}**.",
-            "",
-        ]
+    config = run.get("config") or {}
+    assert isinstance(config, dict)
+    latency = run.get("latency_ms") or {}
+    assert isinstance(latency, dict)
+    papers = int(run.get("papers_processed") or 0)
+    claims = int(run.get("accepted_claims") or 0)
+    total_tokens = int(run.get("total_tokens") or 0)
+    cost = Decimal(str(run.get("list_price_usd") or 0))
+    other_rejections = (
+        int(run.get("failures") or 0)
+        - int(run.get("evidence_span_failures") or 0)
+        - int(run.get("parse_failures") or 0)
+    )
+    requests_by_day = run.get("requests_by_day") or {}
+    assert isinstance(requests_by_day, dict)
     return [
-        "## Cost ledger (all recorded calls)",
+        "## Baseline run and provenance",
         "",
-        "- Current ledger context: see `docs/reports/P1-baseline-pilot.md` for the "
-        "partial paid run; a full P1-10 baseline has not completed.",
-        f"- Calls: {report.total_calls:,}; cache hits: {report.total_cache_hits:,}; "
-        f"errors: {report.total_errors:,}",
-        f"- Prompt tokens: {report.total_prompt_tokens:,}; completion tokens: "
-        f"{report.total_completion_tokens:,}",
-        f"- Total USD: {report.total_usd}",
+        f"- Run id: `{run.get('run_id')}`",
+        f"- Provider / model: `{config.get('provider')}` / `{config.get('model')}`",
+        f"- Prompt: `{config.get('prompt_version')}`; thinking "
+        f"`{config.get('thinking_level')}`; temperature {config.get('temperature')}; "
+        f"max output {config.get('max_output_tokens')}",
+        f"- Billing: `{config.get('billing')}`; real spend "
+        f"{_money(run.get('real_spend_usd') or 0)}; retry attempts "
+        f"{config.get('retry_max_attempts')}",
+        f"- Papers processed: **{papers:,}**; accepted silver claims: **{claims:,}**; "
+        f"claims per paper: {claims / max(papers, 1):.2f}",
+        "- Requests by day: "
+        + ", ".join(f"{day}: {count}" for day, count in sorted(requests_by_day.items())),
+        f"- Daily cap: {run.get('daily_cap')} (rate limits checked "
+        f"{(run.get('rate_limits') or {}).get('checked')})",
         "",
-        "| Group | Calls | Tokens | USD |",
-        "| :-- | --: | --: | --: |",
-        *[
-            f"| {row.key} | {row.calls:,} | "
-            f"{row.prompt_tokens + row.completion_tokens:,} | {row.usd} |"
-            for row in report.rows
-        ],
+        "## Extraction quality",
+        "",
+        f"- Evidence-span verbatim rate: **{_pct(run.get('evidence_span_verbatim_rate') or 0)}** "
+        f"({run.get('evidence_span_failures')} spans rejected)",
+        f"- Strict pre-normalization rate: "
+        f"**{_pct(run.get('strict_evidence_span_verbatim_rate') or 0)}** "
+        f"({run.get('normalization_fixes')} fixed by normalization)",
+        f"- Parse / structured-output failures: **{run.get('parse_failures')}**; "
+        f"other rejected claims: {other_rejections}",
+        f"- Total failures recorded: **{run.get('failures')}**; failed calls: "
+        f"**{run.get('failed_calls')}** of {run.get('calls')}",
+        f"- Prompt-token estimate vs real: **{_pct(run.get('prompt_token_gap_fraction') or 0)}** "
+        f"({int(run.get('estimate_prompt_tokens') or 0):,} estimated)",
+        "",
+        "## Tokens and cost (list price; real spend is recorded separately)",
+        "",
+        f"- Prompt tokens: {int(run.get('prompt_tokens') or 0):,}; completion tokens: "
+        f"{int(run.get('completion_tokens') or 0):,}; thinking tokens: "
+        f"{int(run.get('reasoning_tokens') or 0):,}",
+        f"- Tokens per paper: **{total_tokens / max(papers, 1):,.1f}** "
+        f"(total {total_tokens:,})",
+        f"- Cost per paper: **{_money(cost / max(papers, 1))}**; cost per accepted "
+        f"claim: **{_money(run.get('cost_per_accepted_claim_usd') or 0)}**",
+        f"- Total list price: **{_money(cost)}**; post-promotion: "
+        f"{_money(run.get('post_promotion_usd') or cost)}",
+        f"- Output (incl. thinking) share of cost: "
+        f"**{_pct(run.get('output_cost_share') or 0)}**",
+        "",
+        "## Latency",
+        "",
+        f"- Mean: {int(float(latency.get('mean') or 0)):,} ms; p95: "
+        f"**{int(float(latency.get('p95') or 0)):,} ms**",
         "",
     ]
 
@@ -117,20 +188,82 @@ def _audit_section(audit_path: Path) -> list[str]:
             "",
         ]
     try:
-        metrics = compute_metrics(read_audit(audit_path))
+        rows = read_audit(audit_path)
+        metrics = compute_metrics(rows)
     except AuditError as exc:
         return ["## Claim audit", "", f"- Audit not usable yet: {exc}", ""]
     overall = metrics["overall"]
     assert isinstance(overall, dict)
-    return [
+    breakdown = metrics["breakdown"]
+    assert isinstance(breakdown, dict)
+    splits = Counter((row.get("split") or "(none)").strip() for row in rows)
+    labelers = Counter((row.get("labeler") or "(none)").strip() for row in rows)
+    papers = len({(row.get("paper_id") or "").strip() for row in rows})
+    relabelled = sum(1 for row in rows if (row.get("relabel_label") or "").strip())
+    lines = [
         "## Claim audit (measured)",
         "",
-        f"- Labelled: {overall['n']}; correct: {overall['correct']}; "
-        f"precision: {overall['precision'] * 100:.1f}% "
-        f"(Wilson 95% {overall['ci_low'] * 100:.1f}-{overall['ci_high'] * 100:.1f}%)",
-        f"- Unlabelled rows: {metrics['unlabelled']}",
-        "",
+        f"- Labelled claims: **{overall['n']}** from {papers} papers; correct: "
+        f"**{overall['correct']}**",
+        f"- **Precision: {_pct(overall['precision'])}** "
+        f"(Wilson 95% CI {_pct(overall['ci_low'])} to {_pct(overall['ci_high'])})",
+        f"- Unlabelled rows: {metrics['unlabelled']}; labeler(s): "
+        f"{', '.join(sorted(labelers))}; splits: "
+        f"{', '.join(f'{name} {count}' for name, count in sorted(splits.items()))}",
+        "- Failure breakdown: "
+        + ", ".join(f"`{label}` {count}" for label, count in breakdown.items()),
     ]
+    cluster = metrics.get("cluster_bootstrap")
+    if isinstance(cluster, dict):
+        lines.append(
+            f"- Paper-level cluster bootstrap: {_pct(cluster['ci_low'])} to "
+            f"{_pct(cluster['ci_high'])} ({cluster['clusters']} papers, "
+            f"{cluster['resamples']} resamples)"
+        )
+    agreement = metrics.get("agreement")
+    if isinstance(agreement, dict):
+        lines.append(
+            f"- Self-agreement: raw {_pct(agreement['raw_agreement'])}, "
+            f"Cohen's κ {float(agreement['kappa']):.3f} (n={agreement['n']})"
+        )
+    else:
+        lines.append(
+            "- Self-agreement: **pending** — "
+            f"{relabelled} relabel rows filled; the blind 10% relabel is due ≥7 days "
+            "after labeling."
+        )
+    lines.append("")
+    return lines
+
+
+def _gate_section(metrics: dict[str, object] | None) -> list[str]:
+    if metrics is None:
+        return [
+            "## Gate decision",
+            "",
+            f"- **Open** — audited precision is **{NOT_MEASURED}**.",
+            "",
+        ]
+    overall = metrics["overall"]
+    assert isinstance(overall, dict)
+    precision = float(overall["precision"])
+    agreement = metrics.get("agreement")
+    verdict = "PASS" if precision >= GATE_PRECISION_FLOOR else "FAIL"
+    action = "proceed to P2" if precision >= GATE_PRECISION_FLOOR else "fix extraction before P2"
+    lines = [
+        "## Gate decision",
+        "",
+        f"- **{verdict}** — audited precision {_pct(precision)} vs the "
+        f"{_pct(GATE_PRECISION_FLOOR)} floor ({action}).",
+        f"- Interval: Wilson {_pct(overall['ci_low'])} to {_pct(overall['ci_high'])}.",
+    ]
+    if not isinstance(agreement, dict):
+        lines.append(
+            "- Caveat: self-consistency agreement is still pending (blind relabel "
+            "due ≥7 days after labeling), so the figure is single-labeler."
+        )
+    lines.append("")
+    return lines
 
 
 def build_report(
@@ -139,33 +272,80 @@ def build_report(
     audit_path: Path,
     ledger_path: Path | None,
     out_path: Path,
+    run_report_path: Path | None = DEFAULT_RUN_REPORT,
 ) -> str:
+    run = _load_run_report(run_report_path) if run_report_path else None
+    metrics: dict[str, object] | None = None
+    if audit_path.exists():
+        try:
+            metrics = compute_metrics(read_audit(audit_path))
+        except AuditError:
+            metrics = None
     corpus = read_manifest(manifest_path).counts if manifest_path.exists() else None
+
+    precision_value = NOT_MEASURED
+    precision_interval = NOT_MEASURED
+    if metrics is not None:
+        overall = metrics["overall"]
+        assert isinstance(overall, dict)
+        precision_value = _pct(overall["precision"])
+        precision_interval = f"{_pct(overall['ci_low'])}-{_pct(overall['ci_high'])}"
+
+    cost_per_paper = NOT_MEASURED
+    tokens_per_paper = NOT_MEASURED
+    p95_latency = NOT_MEASURED
+    if run is not None:
+        papers = max(int(run.get("papers_processed") or 0), 1)
+        cost_per_paper = _money(Decimal(str(run.get("list_price_usd") or 0)) / papers)
+        tokens_per_paper = f"{int(run.get('total_tokens') or 0) / papers:,.1f}"
+        latency = run.get("latency_ms") or {}
+        assert isinstance(latency, dict)
+        p95_latency = f"{int(float(latency.get('p95') or 0)):,} ms"
+
     lines = [
         "# P1 baseline report",
         "",
         "> Generated by `python scripts/build_p1_report.py` (`make report`).",
-        "> Values are read from the corpus manifest, cost ledger, and audit file.",
+        "> Values are read from the run report, corpus manifest, and audit file.",
         f"> Anything not produced yet is marked **{NOT_MEASURED}**.",
         "",
+        *_gate_section(metrics),
         "## Headline metrics",
         "",
         "| Metric | Value | Source |",
         "| :-- | :-- | :-- |",
-        f"| Claim extraction precision (±95% CI) | {NOT_MEASURED} | audit |",
-        f"| Cost per paper | {NOT_MEASURED} | ledger + manifest |",
-        f"| Tokens per paper | {NOT_MEASURED} | ledger + manifest |",
-        f"| p95 latency | {NOT_MEASURED} | ledger |",
+        f"| Claim extraction precision (Wilson 95% CI) | **{precision_value}** "
+        f"({precision_interval}) | audit |",
+        f"| Cost per paper | {cost_per_paper} | run report |",
+        f"| Tokens per paper | {tokens_per_paper} | run report |",
+        f"| p95 latency | {p95_latency} | run report |",
         f"| Corpus claim coverage | "
         f"{'see corpus section' if corpus else NOT_MEASURED} | manifest |",
         "",
-        *_corpus_section(manifest_path),
-        *_ledger_section(ledger_path),
+        *_run_sections(run),
         *_audit_section(audit_path),
-        "## Regeneration",
+        *_corpus_section(manifest_path),
+        "## Limitations",
+        "",
+        "- Single labeler until the blind relabel lands; agreement is reported by "
+        "`scripts/audit_validate.py`.",
+        "- The audit covers 200 claims from a seeded paper sample; claims within a "
+        "paper are not independent, hence the paper-level cluster bootstrap.",
+        "- Silver labels are teacher output and are never used for evaluation; gold "
+        "labels live only in `eval/audit/`.",
+        "- Generation config is fixed by ADR-0019 and not tuned against this audit.",
+        "",
+        "## Reproduction",
         "",
         "```",
         "python scripts/build_p1_report.py",
+        "python scripts/run_baseline_extraction.py --sample 100 --execute "
+        "--model gemini-3.5-flash-lite "
+        "--out eval/silver/claims_v1/baseline_flashlite/estimate "
+        "--silver-dir eval/silver/claims_v1/baseline_flashlite "
+        "--run-id p1-10-flashlite-s20261114-n100",
+        "python scripts/audit_validate.py --audit eval/audit/claims_audit_v1.csv "
+        "--out docs/reports/P1-audit.md",
         "```",
         "",
     ]
@@ -179,20 +359,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--audit", type=Path, default=DEFAULT_AUDIT)
+    parser.add_argument("--run-report", type=Path, default=DEFAULT_RUN_REPORT)
     parser.add_argument("--ledger", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = parser.parse_args(argv)
-    ledger_path = args.ledger
-    if ledger_path is None:
-        try:
-            ledger_path = Settings().resolved_ledger_path
-        except ValueError:
-            ledger_path = None
     build_report(
         manifest_path=args.manifest,
         audit_path=args.audit,
-        ledger_path=ledger_path,
+        ledger_path=args.ledger,
         out_path=args.out,
+        run_report_path=args.run_report,
     )
     print(f"report: {args.out}", flush=True)
     return 0

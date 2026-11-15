@@ -475,6 +475,9 @@ def render_markdown(metrics: dict[str, object], *, source: str) -> str:
         "| Label | Count |",
         "| :-- | --: |",
     ]
+    for label in LABELS:
+        lines.append(f"| `{label}` | {breakdown[label]} |")
+
     cluster = metrics.get("cluster_bootstrap")
     if isinstance(cluster, dict):
         lines += [
@@ -489,9 +492,6 @@ def render_markdown(metrics: dict[str, object], *, source: str) -> str:
             f"- Precision CI: **{_percent(float(cluster['ci_low']))} to "
             f"{_percent(float(cluster['ci_high']))}**",
         ]
-
-    for label in LABELS:
-        lines.append(f"| `{label}` | {breakdown[label]} |")
 
     by_section = metrics["by_section"]
     assert isinstance(by_section, dict)

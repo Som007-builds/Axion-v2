@@ -3,7 +3,8 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through **P1-10** are `[x]`. The baseline is measured on `gemini-3.5-flash-lite` (**100 papers, 765 silver claims**, $0 real spend) and the official audit export exists (**200 claims from 45 papers**). P1-11 is blocked only on owner labeling; P1-12 is scaffolded.
+- **Phase:** P1 (foundation) — P1-01 through **P1-10** are `[x]`. The baseline is measured on `gemini-3.5-flash-lite` (**100 papers, 765 silver claims**, $0 real spend) and the official audit export exists (**200 claims from 45 papers**). **P1 gate PASSED (2026-11-15): audited precision 96.5%** ≥ the 90% floor. P1-11 needs only the blind relabel (due ≥7 days later); P1-12 is done (regenerable report).
+- **P1-11 audit (2026-11-15, owner-labelled):** 200 claims / 45 papers, **193 CORRECT, 7 NOT_A_CLAIM** (0 distorted, unsupported, duplicate) → **precision 96.5%**, Wilson 95% **93.0–98.3%**, paper-level cluster bootstrap **94.0–98.6%** (45 clusters, 2,000 resamples, seed 20261114). Single labeler; self-agreement pending the blind relabel. Report: `docs/reports/P1-audit.md`.
 - **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample), ADR-0015 Proposed (P1 blast-radius counts conditional on included citers; expansion deferred to P3), ADR-0016 Proposed (agreement by ≥7-day self-relabel or independent 20% second-labeler overlap), **ADR-0017 Accepted (Gemini free tier replaces Groq; $0 real spend)**, **ADR-0018 Accepted (audit export: ≥40 papers, ≤5 claims/paper, paper-level split, cluster bootstrap CI)**, **ADR-0019 Accepted (P1 baseline model = `gemini-3.5-flash-lite`; `gemini-3.8-flash` is the large/reference model only; P2 small tier + bulk labeler Proposed, not decided)**.
 - **P1-10 Gemini implementation (2026-11-15):** `google-genai==2.8.0` pinned; `src/axion/llm/gemini.py` uses cleaned JSON-schema structured output, validates with Pydantic, maps `candidates + thoughts` to completion and `thoughts` to reasoning; `pricing.yaml` v2 has dated list prices (3.8 Flash $0.75/$3.75 through 2026-12-31, $1.50/$7.50 from 2027-01-01; 3.5 Flash-Lite $0.30/$2.50); the ledger records billing, price version, input/output/post-promotion USD, and generation config. Free-tier calls record list price with `billing=free_tier`; real spend is $0. `src/axion/llm/pacing.py` enforces 5 RPM / 20 RPD with a 2-request margin, Pacific-day reset, and a clean `DailyQuotaError` stop.
 - **P1-10 baseline measured (2026-11-15, `p1-10-flashlite-s20261114-n100`):** 100/100 seeded papers, **765 accepted silver claims**, 0 parse failures, 108 recorded failures (97 span-not-verbatim, 11 unknown section). Verbatim **88.7%**, strict identical (0 normalization fixes). Tokens **697,734 prompt / 142,057 completion / 0 thinking** (839,791 total); list price **$0.564459** = **$0.005645/paper** and **$0.000738/accepted claim**; output **62.9%** of cost; latency mean 6,448 ms, p95 15,490 ms; prompt-gap **-8.7%**; **120 of 450** daily requests. Config: thinking `default` (no `thinking_config`), temperature 0.0, max output 16,384, prompt v1. Report: `eval/silver/claims_v1/baseline_flashlite/run_report.md`.
@@ -14,7 +15,7 @@
 - **Gemini validation (2026-11-15, 2 requests):** the fixed request was accepted (no schema error) but `gemini-3.8-flash` returned **HTTP 504 `DEADLINE_EXCEEDED` twice**, each after ~119 s, with `thinking=medium` and `max_output_tokens=16384` on a 7,589-token prompt. **No claims/tokens/cost measured.** The adapter timeout is now 300 s; that change is unverified. Daily quota used: **12 of 20** (cap 18).
 - **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Blast-radius counts are **conditional on the included citer set only**; P3 owns on-demand expansion (ADR-0015 Proposed). Exact counts are in `docs/reports/P1-corpus-coverage.md`.
 - **Next action:** P1-11 needs **owner labeling** — open `eval/audit/claim_audit_tool.html`, load `eval/audit/claims_audit_v1.csv`, label the 200 claims, export the CSV back to the same path, then run the validator/metrics. No further model work is required for the baseline; the optional `gemini-3.8-flash` 5-paper reference comparison never becomes silver.
-- **Last updated:** 2026-11-15 by Freebuff / DeepSeek V4.x Flash (P1-10 Flash-Lite baseline session)
+- **Last updated:** 2026-11-15 by Freebuff / DeepSeek V4.x Flash (P1-11 audit + gate session)
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -63,7 +64,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | In progress | — | P1-01..P1-10 `[x]`; baseline measured (100 papers / 765 claims); audit export ready; P1-11 blocked on owner labeling; P1-12 scaffolded |
+| P1 Foundation | **Gate passed** | precision 96.5% ≥ 90% (Wilson 93.0–98.3%) | P1-01..P1-10, P1-12 `[x]`; P1-11 labels done, relabel due 2026-11-22 |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -98,7 +99,8 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | **P1-10 Flash-Lite baseline (n=100 papers)** | **100 papers, 765 claims**; 88.7% verbatim; 0 parse failures; 97 span + 11 unknown-section rejects; 697,734 prompt / 142,057 completion (0 thinking); $0.564459 list price; $0.005645/paper, $0.000738/accepted claim; output 62.9% of cost; mean 6,448 ms / p95 15,490 ms; 120 of 450 requests; prompt gap -8.7% | `eval/silver/claims_v1/baseline_flashlite/run_report.md` |
 | P1-10 3.8 Flash reference (n=5, not baseline) | 74 claims; 100% verbatim; 0 failures; 28,087 prompt / 22,073 completion (9,177 thinking); $0.103838 list ($0.001403/claim); latency mean 196,588 ms, p95 290,982 ms; 17/18 requests | `eval/reference/claims_v1/flash38/run_report.md` (see `REFERENCE_ONLY.md`) |
 | **P1 baseline report (PRD gate)** | `docs/reports/P1-baseline.md` — measured extraction, cost, latency, corpus/retraction coverage; audited precision pending owner labels | `docs/reports/P1-baseline.md` |
-| **P1-11 official audit export** | 200 claims from 45 papers (≤5/paper), seed 20261114, 22 dev / 23 test papers, labels blank | `eval/audit/claims_audit_v1.csv` (+ `.summary.json`) |
+| **P1-11 official audit export** | 200 claims from 45 papers (≤5/paper), seed 20261114, 22 dev / 23 test | `eval/audit/claims_audit_v1.csv` (+ `.summary.json`) |
+| **P1-11 audited precision (gold)** | **96.5%** (Wilson 93.0–98.3%; cluster bootstrap 94.0–98.6%); 193 CORRECT, 7 NOT_A_CLAIM, 0 distorted/unsupported/duplicate; single labeler | `docs/reports/P1-audit.md` |
 | Evidence-span normalization | Strict 7/28 (25.0%) rejects → normalized 3/28 (10.7%) on the Groq pilot; 4 hyphen variants fixed, 2 merged tails and 1 case-only remain rejected | `docs/eval/EVIDENCE_SPANS.md` |
 | P1-11 audit tooling | HTML labeler (no network), exact-column overlap export (20%), strict validator + existing metrics; **0 claims labelled** | `eval/audit/README.md` |
 
@@ -115,11 +117,20 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 
 ## Blocked tasks
 - ✅ P1-10: closed 2026-11-15 — measured baseline 100 papers / 765 claims on `gemini-3.5-flash-lite`, $0 real spend.
-- P1-11: export is ready (200 claims / 45 papers, labels blank). Blocked on owner labeling (~3–6 h) and a ≥7-day relabel gap (or an approved second labeler).
+- P1-11: labels are in and precision is computed (96.5%). Remaining: the blind 10% relabel **due ≥7 days after 2026-11-15 (2026-11-22)** or a second labeler on `claims_audit_v1_overlap.csv`; then `audit_validate.py --overlap` reports κ.
 - P1-12: follows from P1-11 (and the full P1-10 run).
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-15 — Freebuff / DeepSeek V4.x Flash — P1 audit labelled, gate passed
+- Status: **P1 gate PASSED**; branch `p1`; nothing pushed by this session's agent-owned steps until the owner asked (then `p1` + `main` were pushed together).
+- Owner labelled all 200 audit claims: 193 `CORRECT`, 7 `NOT_A_CLAIM` (each with a note), labeler `owner`, rubric v2. The agent created no labels.
+- Measured: **precision 96.5%** (Wilson 95% 93.0–98.3%), paper-level cluster bootstrap **94.0–98.6%** (45 papers, 2,000 resamples, seed 20261114), 0 distorted/unsupported/duplicate. Report `docs/reports/P1-audit.md` (195 lines of per-section detail, agreement pending).
+- `scripts/build_p1_report.py` now regenerates the gate report from the run report, audit, and corpus manifest: headline table plus gate decision. **P1-12 done** — `make report` reproduces `docs/reports/P1-baseline.md` byte-for-byte with no invented values; missing inputs still print NOT YET MEASURED.
+- Fixed a rendering bug in `render_markdown`: the failure-breakdown rows were emitted after the cluster-bootstrap section, breaking the table.
+- Verification: **304 passed, 2 skipped**; ruff, ruff format, strict mypy, pre-commit clean.
+- Next: blind 10% relabel on 2026-11-22 (or second labeler on the overlap file) to close P1-11; P2 can start on the measured 96.5% baseline.
+
 ### 2026-11-15 — Freebuff / DeepSeek V4.x Flash — P1-10 Flash-Lite baseline completed
 - Status: **P1-10 done**; branch `p1`; local `main` fast-forwarded to `p1`; nothing pushed (the owner pushes).
 - Model switch (ADR-0019 Accepted, amends ADR-0017): baseline `gemini-3.5-flash-lite` at 15 RPM / 250K TPM / 500 RPD with a 450/day runner cap and 50-request margin; `gemini-3.8-flash` demoted to the large/escalation reference for small subsets; P2 small tier + bulk labeler stay **Proposed** (`gemini-3.1-flash-lite`, Gemma 4 26B/31B — structured output, 16K TPM, and pricing untested). Config fixed at thinking `default`, temperature 0.0, max output 16,384, prompt v1; the runner records the literal `default` and sends no `thinking_config`.
