@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ from axion.eval.audit import (
     AuditError,
     ClaimRecord,
     assign_paper_splits,
+    cluster_bootstrap_interval,
     cohen_kappa,
     compute_metrics,
     corpus_snapshot_id,
@@ -26,6 +28,7 @@ from axion.eval.audit import (
     read_audit,
     render_markdown,
     sample_claims,
+    sample_claims_by_paper,
     select_overlap_rows,
     wilson_interval,
     write_export,
@@ -330,3 +333,52 @@ def test_audit_validate_merges_second_labeler_overlap(
     write_export(overlap_path, overlap)
     assert validate_main(["--audit", str(audit_path), "--overlap", str(overlap_path)]) == 0
     assert "agreement: n=1" in capsys.readouterr().out
+
+
+def test_paper_capped_sample_spreads_across_papers() -> None:
+    claims = [_claim(index, paper=f"PMC{index // 8}") for index in range(400)]
+    sample = sample_claims_by_paper(
+        claims, target_claims=200, max_per_paper=5, min_papers=40, seed=11
+    )
+    counts = Counter(claim.paper_id for claim in sample)
+    assert len(sample) >= 200
+    assert len(counts) >= 40
+    assert max(counts.values()) <= 5
+
+    again = sample_claims_by_paper(
+        claims, target_claims=200, max_per_paper=5, min_papers=40, seed=11
+    )
+    assert [claim.claim_id for claim in sample] == [claim.claim_id for claim in again]
+
+
+def test_paper_capped_sample_refuses_too_few_papers() -> None:
+    claims = [_claim(index, paper=f"PMC{index // 10}") for index in range(100)]
+    with pytest.raises(AuditError, match="at least 40 papers"):
+        sample_claims_by_paper(claims, target_claims=50, max_per_paper=5, min_papers=40)
+
+
+def test_cluster_bootstrap_is_deterministic_and_paper_level() -> None:
+    rows = [
+        _labelled_row(f"PMC{paper}:{index}", "CORRECT" if paper % 2 else "DISTORTED")
+        for paper in range(20)
+        for index in range(5)
+    ]
+    first = cluster_bootstrap_interval(rows, resamples=500, seed=7)
+    second = cluster_bootstrap_interval(rows, resamples=500, seed=7)
+    assert first == second
+    assert first["clusters"] == 20
+    assert first["resamples"] == 500
+    assert 0.0 <= float(first["ci_low"]) <= float(first["ci_high"]) <= 1.0
+
+
+def test_metrics_include_the_cluster_interval_and_limitation() -> None:
+    rows = [
+        _labelled_row(f"PMC{paper}:{index}", "CORRECT" if paper % 2 else "DISTORTED")
+        for paper in range(10)
+        for index in range(4)
+    ]
+    metrics = compute_metrics(rows)
+    assert isinstance(metrics["cluster_bootstrap"], dict)
+    rendered = render_markdown(metrics, source="audit.csv")
+    assert "Paper-level cluster bootstrap" in rendered
+    assert "not independent" in rendered

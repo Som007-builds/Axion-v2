@@ -34,6 +34,9 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 RUBRIC_VERSION = "v2"
 DEFAULT_SEED = 20261114
 MIN_SAMPLE = 200
+MIN_PAPERS = 40
+MAX_CLAIMS_PER_PAPER = 5
+BOOTSTRAP_RESAMPLES = 2000
 DEV_FRACTION = 0.5
 OVERLAP_FRACTION = 0.2
 
@@ -129,6 +132,50 @@ def sample_claims(
     ordered = sorted(claims, key=lambda claim: claim.claim_id)
     sample = random.Random(seed).sample(ordered, size)
     return sorted(sample, key=lambda claim: claim.claim_id)
+
+
+def sample_claims_by_paper(
+    claims: Sequence[ClaimRecord],
+    *,
+    target_claims: int = MIN_SAMPLE,
+    max_per_paper: int = MAX_CLAIMS_PER_PAPER,
+    min_papers: int = MIN_PAPERS,
+    seed: int = DEFAULT_SEED,
+) -> list[ClaimRecord]:
+    """Draw a seeded audit sample capped at ``max_per_paper`` claims per paper.
+
+    Claims within a paper are not independent, so an audit of 200 claims from
+    five papers overstates its evidence. This sampler draws up to
+    ``max_per_paper`` claims from each paper and keeps adding papers (in a
+    seeded order) until both ``target_claims`` and ``min_papers`` are met.
+    """
+    if target_claims <= 0 or max_per_paper <= 0 or min_papers <= 0:
+        raise AuditError("target claims, per-paper cap, and paper minimum must be positive")
+    by_paper: dict[str, list[ClaimRecord]] = {}
+    for claim in sorted(claims, key=lambda item: item.claim_id):
+        by_paper.setdefault(claim.paper_id, []).append(claim)
+    if len(by_paper) < min_papers:
+        raise AuditError(
+            f"audit needs at least {min_papers} papers with accepted claims; "
+            f"got {len(by_paper)}"
+        )
+    if len(claims) < target_claims:
+        raise AuditError(f"audit needs at least {target_claims} accepted claims; got {len(claims)}")
+
+    papers = sorted(by_paper)
+    random.Random(seed).shuffle(papers)
+    chosen: list[ClaimRecord] = []
+    papers_used = 0
+    for paper in papers:
+        pool = by_paper[paper]
+        take = min(max_per_paper, len(pool))
+        chosen.extend(random.Random(f"{seed}:{paper}").sample(pool, take))
+        papers_used += 1
+        if len(chosen) >= target_claims and papers_used >= min_papers:
+            break
+    if len(chosen) < target_claims or papers_used < min_papers:
+        raise AuditError("could not reach the claim and paper minimums with the per-paper cap")
+    return sorted(chosen, key=lambda claim: claim.claim_id)
 
 
 def assign_paper_splits(
@@ -246,6 +293,57 @@ def wilson_interval(
     return (max(0.0, centre - margin), min(1.0, centre + margin))
 
 
+def cluster_bootstrap_interval(
+    rows: Sequence[dict[str, str]],
+    *,
+    cluster_key: str = "paper_id",
+    resamples: int = BOOTSTRAP_RESAMPLES,
+    seed: int = DEFAULT_SEED,
+    confidence: float = 0.95,
+) -> dict[str, object]:
+    """Percentile interval from resampling whole papers, not claims.
+
+    Claims from one paper share a source and a context, so a claim-level
+    Wilson interval is too narrow. This resamples papers with replacement and
+    recomputes precision on the pooled claims of each resampled paper.
+    """
+    if not rows:
+        raise AuditError("cluster bootstrap needs at least one row")
+    if resamples < 100:
+        raise AuditError("cluster bootstrap needs at least 100 resamples")
+    if not 0.0 < confidence < 1.0:
+        raise AuditError("confidence must be strictly between 0 and 1")
+
+    clusters: dict[str, list[int]] = {}
+    for row in rows:
+        key = (row.get(cluster_key) or "").strip() or "(none)"
+        clusters.setdefault(key, []).append(1 if row.get("label") == "CORRECT" else 0)
+    keys = sorted(clusters)
+    if len(keys) < 2:
+        raise AuditError("cluster bootstrap needs at least two papers")
+
+    generator = random.Random(seed)
+    estimates: list[float] = []
+    for _ in range(resamples):
+        picked = [keys[generator.randrange(len(keys))] for _ in keys]
+        outcomes = [value for key in picked for value in clusters[key]]
+        estimates.append(sum(outcomes) / len(outcomes))
+    estimates.sort()
+    tail = (1.0 - confidence) / 2.0
+    low_index = int(math.floor(tail * resamples))
+    high_index = min(resamples - 1, int(math.ceil((1.0 - tail) * resamples)) - 1)
+    return {
+        "method": "paper-level cluster bootstrap (percentile)",
+        "cluster_key": cluster_key,
+        "clusters": len(keys),
+        "resamples": resamples,
+        "seed": seed,
+        "confidence": confidence,
+        "ci_low": estimates[low_index],
+        "ci_high": estimates[high_index],
+    }
+
+
 def cohen_kappa(first: Sequence[str], second: Sequence[str]) -> float:
     """Cohen's kappa for two paired label sequences."""
     if len(first) != len(second):
@@ -314,6 +412,11 @@ def compute_metrics(rows: Sequence[dict[str, str]]) -> dict[str, object]:
         subset = [row for row in labelled if (row.get("paper_id") or "(none)") == paper]
         by_paper[paper] = _precision(subset)
 
+    try:
+        cluster = cluster_bootstrap_interval(labelled, seed=DEFAULT_SEED)
+    except AuditError:
+        cluster = None
+
     relabelled = [
         row
         for row in labelled
@@ -337,6 +440,7 @@ def compute_metrics(rows: Sequence[dict[str, str]]) -> dict[str, object]:
         "breakdown": {label: breakdown.get(label, 0) for label in LABELS},
         "by_section": by_section,
         "by_paper": by_paper,
+        "cluster_bootstrap": cluster,
         "agreement": agreement,
         "unlabelled": unlabelled,
     }
@@ -371,6 +475,21 @@ def render_markdown(metrics: dict[str, object], *, source: str) -> str:
         "| Label | Count |",
         "| :-- | --: |",
     ]
+    cluster = metrics.get("cluster_bootstrap")
+    if isinstance(cluster, dict):
+        lines += [
+            "",
+            "## Paper-level cluster bootstrap",
+            "",
+            "Claims within a paper are not independent. This interval resamples",
+            "whole papers with replacement.",
+            "",
+            f"- Clusters (papers): **{cluster['clusters']}**",
+            f"- Resamples: **{cluster['resamples']}** (seed {cluster['seed']})",
+            f"- Precision CI: **{_percent(float(cluster['ci_low']))} to "
+            f"{_percent(float(cluster['ci_high']))}**",
+        ]
+
     for label in LABELS:
         lines.append(f"| `{label}` | {breakdown[label]} |")
 
@@ -406,6 +525,9 @@ def render_markdown(metrics: dict[str, object], *, source: str) -> str:
         "",
         "- Single labeler; agreement is self-agreement, not inter-annotator agreement.",
         "- Precision only: no recall is measurable without an exhaustive gold set.",
+        "- Claims within a paper are not independent: the Wilson interval treats them",
+        "  as independent and is therefore too narrow. Report the paper-level cluster",
+        "  bootstrap alongside it; it is still limited by the number of papers audited.",
         "- See `docs/eval/AUDIT_RUBRIC.md` for label definitions and sampling rules.",
         "",
     ]
