@@ -7,6 +7,7 @@ any call, so it fails closed while prices are blank.
 
 from __future__ import annotations
 
+import json
 import math
 import statistics
 from collections.abc import Sequence
@@ -124,6 +125,39 @@ class RunReport:
 
 def _prompt_tokens(text: str) -> int:
     return math.ceil(len(text) / CHARS_PER_TOKEN)
+
+
+STRICT_STATE_FILENAME = "strict_state.json"
+
+
+def _read_strict_state(path: Path) -> tuple[int, int, int]:
+    """Restore cumulative strict/normalization counters after a resume.
+
+    The counters describe claims already on disk, so a resumed invocation must
+    add to them instead of reporting only the papers it processed itself.
+    """
+    if not path.exists():
+        return 0, 0, 0
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return 0, 0, 0
+    return (
+        int(data.get("strict_claims", 0)),
+        int(data.get("strict_span_failures", 0)),
+        int(data.get("normalization_fixes", 0)),
+    )
+
+
+def _write_strict_state(
+    path: Path, *, strict_claims: int, strict_span_failures: int, normalization_fixes: int
+) -> None:
+    payload = {
+        "strict_claims": strict_claims,
+        "strict_span_failures": strict_span_failures,
+        "normalization_fixes": normalization_fixes,
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _read_failures(path: Path) -> list[ClaimFailure]:
@@ -337,10 +371,9 @@ def run_extraction(
     model_name = ""
     provider_name: str | None = None
     stopped_reason: str | None = None
-    strict_claims = 0
-    strict_span_failures = 0
+    strict_state_path = output_dir / STRICT_STATE_FILENAME
+    strict_claims, strict_span_failures, normalization_fixes = _read_strict_state(strict_state_path)
     span_failures = 0
-    normalization_fixes = 0
     structured_output_failures = 0
     consecutive_provider_failures = 0
 
@@ -477,6 +510,12 @@ def run_extraction(
         done.add(paper_id)
 
     write_failures(failures_path, failures)
+    _write_strict_state(
+        strict_state_path,
+        strict_claims=strict_claims,
+        strict_span_failures=strict_span_failures,
+        normalization_fixes=normalization_fixes,
+    )
     claims_on_disk = (
         len([line for line in claims_path.read_text(encoding="utf-8").splitlines() if line.strip()])
         if claims_path.exists()

@@ -319,6 +319,62 @@ def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
     assert manifest["prompt_version"] == "claim-extraction-v1"
 
 
+def test_strict_counters_persist_across_resumes(tmp_path: Path) -> None:
+    """A resumed run reports cumulative strict/normalization counters."""
+    out = tmp_path / "silver-resume"
+    out.mkdir()
+    (out / "strict_state.json").write_text(
+        json.dumps({"strict_claims": 7, "strict_span_failures": 3, "normalization_fixes": 1}),
+        encoding="utf-8",
+    )
+    settings = Settings(
+        _env_file=None,
+        llm_large_model="test-large",
+        llm_provider_chain=["fake"],
+        llm_cache_enabled=False,
+        dry_run=False,
+    )
+    registry = ProviderRegistry()
+    registry.register(ScriptedProvider(name="fake", outcomes=[]))
+    client = LLMClient(
+        settings,
+        registry,
+        SQLiteLedger(tmp_path / "ledger.sqlite3"),
+        PricingTable(
+            version=1,
+            models={
+                "test-large": {
+                    "provider": "fake",
+                    "input_usd_per_mtok": "1",
+                    "output_usd_per_mtok": "2",
+                }
+            },
+        ),
+    )
+
+    run = run_extraction(
+        client,
+        [],
+        run_id="run-resume",
+        output_dir=out,
+        corpus_manifest_sha256="a" * 64,
+        papers_file="papers.csv",
+        papers_sha256="b" * 64,
+        sample_size=1,
+        seed=7,
+        model="test-large",
+    )
+
+    assert run.strict_claims == 7
+    assert run.strict_span_failures == 3
+    assert run.normalization_fixes == 1
+    assert json.loads((out / "strict_state.json").read_text(encoding="utf-8")) == {
+        "strict_claims": 7,
+        "strict_span_failures": 3,
+        "normalization_fixes": 1,
+    }
+
+
 def test_three_consecutive_provider_failures_stop_the_run(tmp_path: Path) -> None:
     ids = ["PMC1", "PMC2", "PMC3"]
     cache = tmp_path / "cache"
