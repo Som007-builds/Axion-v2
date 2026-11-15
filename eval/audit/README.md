@@ -102,6 +102,7 @@ after at least 7 days. ADR-0016 is the Proposed decision; the owner approves.
 The paid P1-10 pilot produced **21 candidate claims from one paper** before
 Groq's free-tier tokens-per-minute limit stopped the run (`TPM 8000`,
 request `12111`). That pilot export is **below the 200-claim minimum** and is
-not the official audit set. `claims_audit_v1_pilot.csv` exists only to exercise
-the tooling; the official `claims_audit_v1.csv` waits for a run that can clear
-the limit. Do not label the pilot file as if it were the official sample.
+not the official audit set. The local, git-ignored `claims_audit_v1_pilot.csv`
+exists only to exercise the tooling; the official `claims_audit_v1.csv` waits
+for a run that can clear the limit. Do not label the pilot file as if it were
+the official sample.
