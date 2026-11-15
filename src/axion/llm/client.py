@@ -25,13 +25,15 @@ from axion.llm.cooldown import CooldownTracker
 from axion.llm.errors import (
     AllProvidersFailedError,
     ConfigurationError,
-    DailyQuotaError,
+    EmptyResponseError,
+    FailureDetail,
     PermanentProviderError,
     ProviderNotConfiguredError,
-    RateLimitError,
     StructuredOutputError,
     TransientProviderError,
     classify_error,
+    failure_detail,
+    sanitize_error_text,
 )
 from axion.llm.ledger import LedgerEntry, SQLiteLedger
 from axion.llm.models import LLMRequest, LLMResult, ProviderRequest, ProviderResponse
@@ -140,8 +142,15 @@ class LLMClient:
         request: LLMRequest,
         *,
         response_model: type[T] | None = None,
+        attempt_gate: Callable[[], None] | None = None,
     ) -> LLMResult:
-        """Run one logical LLM call and record it in the ledger."""
+        """Run one logical LLM call and record it in the ledger.
+
+        ``attempt_gate`` runs before every provider request, including retries.
+        The baseline runner passes its free-tier pacer here so a retry cannot
+        spend quota unnoticed; a gate refusal (for example ``DailyQuotaError``)
+        propagates to the caller untouched.
+        """
         try:
             model = self._resolve_model(request)
         except ConfigurationError as exc:
@@ -187,6 +196,7 @@ class LLMClient:
             active_chain = chain
 
         last_error: Exception | None = None
+        attempts_made = 0
         for provider_name in active_chain:
             try:
                 provider = self._registry.get(provider_name)
@@ -197,28 +207,44 @@ class LLMClient:
                     model=model,
                     error=f"provider: {exc}",
                 )
-                last_error = exc
+                # A missing provider must not mask the real root cause of an
+                # earlier provider attempt in the same chain.
+                if last_error is None:
+                    last_error = exc
                 continue
 
             for attempt in range(1, self._retry.max_attempts + 1):
+                if attempt_gate is not None:
+                    # Reservations happen before the request is sent, so every
+                    # retry is counted against the free-tier day.
+                    attempt_gate()
+                attempts_made += 1
                 started = self._clock()
                 try:
                     response = self._call_provider(provider, request, model)
                 except Exception as exc:
                     latency_ms = self._elapsed_ms(started)
                     classified = classify_error(exc)
+                    detail = failure_detail(exc)
                     self._record_error(
                         request,
                         provider=provider_name,
                         model=model,
-                        error=f"{type(classified).__name__}: {classified}",
+                        error=(
+                            f"{type(classified).__name__}: "
+                            f"{sanitize_error_text(str(classified))}"
+                        ),
                         latency_ms=latency_ms,
+                        detail=detail,
                     )
                     last_error = exc
-                    retryable = isinstance(
-                        classified, RateLimitError | TransientProviderError
-                    ) and not isinstance(classified, DailyQuotaError)
-                    if retryable and attempt < self._retry.max_attempts:
+                    # Retry only network/5xx failures, at most once. A 429 or
+                    # RESOURCE_EXHAUSTED is deterministic for today's window:
+                    # retrying it spends quota and still fails.
+                    if (
+                        isinstance(classified, TransientProviderError)
+                        and attempt < self._retry.max_attempts
+                    ):
                         self._retry.sleep(self._retry.delay(attempt))
                         continue
                     self._cooldown.mark_failed(provider_name)
@@ -234,8 +260,12 @@ class LLMClient:
                     response_model=response_model,
                 )
 
+        last_detail = failure_detail(last_error) if last_error is not None else None
+        message = f"all LLM providers failed; chain={active_chain}"
+        if last_detail is not None:
+            message += f"; last_error={last_detail.error_class}: {last_detail.message[:300]}"
         raise AllProvidersFailedError(
-            f"all LLM providers failed; chain={active_chain}"
+            message, attempts=attempts_made, detail=last_detail
         ) from last_error
 
     def _complete_success(
@@ -419,7 +449,14 @@ class LLMClient:
             )
         )
         if not response.text.strip():
-            raise TransientProviderError(f"[{provider.name}] returned an empty response")
+            raise EmptyResponseError(
+                f"[{provider.name}] returned an empty response",
+                detail=FailureDetail(
+                    error_class="EmptyResponseError",
+                    message=f"[{provider.name}] returned an empty response",
+                    retryable=False,
+                ),
+            )
         if response.prompt_tokens < 0 or response.completion_tokens < 0:
             raise PermanentProviderError(f"[{provider.name}] returned negative token usage")
         return response
@@ -452,6 +489,7 @@ class LLMClient:
         latency_ms: float | None = None,
         cache_hit: bool = False,
         details: CostEstimate | None = None,
+        detail: FailureDetail | None = None,
     ) -> None:
         self._ledger.record(
             LedgerEntry(
@@ -459,9 +497,17 @@ class LLMClient:
                 tier=request.tier,
                 provider=provider,
                 model=model,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                reasoning_tokens=0,
+                prompt_tokens=(
+                    prompt_tokens
+                    if prompt_tokens is not None
+                    else (detail.prompt_tokens if detail is not None else None)
+                ),
+                completion_tokens=(
+                    completion_tokens
+                    if completion_tokens is not None
+                    else (detail.completion_tokens if detail is not None else None)
+                ),
+                reasoning_tokens=(detail.reasoning_tokens if detail is not None else 0) or 0,
                 usd=usd,
                 latency_ms=latency_ms,
                 cache_hit=cache_hit,
@@ -477,5 +523,9 @@ class LLMClient:
                 max_output_tokens=request.max_output_tokens,
                 temperature=request.temperature,
                 error=error[:500],
+                error_class=None if detail is None else detail.error_class,
+                error_status=None if detail is None else detail.provider_status,
+                http_status=None if detail is None else detail.http_status,
+                finish_reason=None if detail is None else detail.finish_reason,
             )
         )

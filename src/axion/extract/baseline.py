@@ -43,7 +43,9 @@ from axion.llm.client import LLMClient
 from axion.llm.errors import (
     AllProvidersFailedError,
     DailyQuotaError,
+    FailureDetail,
     StructuredOutputError,
+    failure_detail,
 )
 from axion.llm.models import LLMRequest
 from axion.llm.pacing import RequestPacer
@@ -144,6 +146,46 @@ def _daily_quota_cause(exc: BaseException) -> bool:
             return True
         current = current.__cause__
     return False
+
+
+def _provider_failure_reason(exc: AllProvidersFailedError, detail: FailureDetail) -> str:
+    """Map a provider failure to the run's stop reason.
+
+    A daily quota and a 429/RESOURCE_EXHAUSTED both stop the run cleanly; they
+    must never be reported as a generic provider failure that invites a retry.
+    """
+    if _daily_quota_cause(exc) or detail.error_class == "DailyQuotaError":
+        return "daily_quota_reached"
+    if detail.error_class == "RateLimitError":
+        return "rate_limited"
+    return "provider_failed"
+
+
+def _provider_failure(
+    paper_id: str,
+    exc: BaseException,
+    *,
+    reason: str,
+    detail: FailureDetail,
+) -> ClaimFailure:
+    """Build a failure record carrying the sanitized root cause."""
+    attempts = getattr(exc, "attempts", None) if isinstance(exc, BaseException) else None
+    return ClaimFailure(
+        paper_id=paper_id,
+        claim_index=-1,
+        reason=reason,
+        detail=str(exc)[:300],
+        error_class=detail.error_class,
+        error_message=detail.message,
+        http_status=detail.http_status,
+        provider_status=detail.provider_status,
+        finish_reason=detail.finish_reason,
+        prompt_tokens=detail.prompt_tokens,
+        completion_tokens=detail.completion_tokens,
+        reasoning_tokens=detail.reasoning_tokens,
+        attempts=attempts if isinstance(attempts, int) else None,
+        retryable=detail.retryable,
+    )
 
 
 def build_plan(
@@ -308,20 +350,6 @@ def run_extraction(
             )
             stopped_reason = "max_calls_reached"
             break
-        if pacer is not None:
-            try:
-                pacer.reserve()
-            except DailyQuotaError as exc:
-                failures.append(
-                    ClaimFailure(
-                        paper_id=paper_id,
-                        claim_index=-1,
-                        reason="daily_quota_reached",
-                        detail=str(exc)[:300],
-                    )
-                )
-                stopped_reason = "daily_quota_reached"
-                break
         calls += 1
         try:
             result = client.complete(
@@ -337,7 +365,19 @@ def run_extraction(
                     response_schema=ClaimExtraction,
                 ),
                 response_model=ClaimExtraction,
+                attempt_gate=None if pacer is None else pacer.reserve,
             )
+        except DailyQuotaError as exc:
+            failures.append(
+                _provider_failure(
+                    paper_id,
+                    exc,
+                    reason="daily_quota_reached",
+                    detail=failure_detail(exc),
+                )
+            )
+            stopped_reason = "daily_quota_reached"
+            break
         except StructuredOutputError as exc:
             structured_output_failures += 1
             failures.append(
@@ -350,16 +390,10 @@ def run_extraction(
             )
             continue
         except AllProvidersFailedError as exc:
-            daily = _daily_quota_cause(exc)
-            failures.append(
-                ClaimFailure(
-                    paper_id=paper_id,
-                    claim_index=-1,
-                    reason="daily_quota_reached" if daily else "provider_failed",
-                    detail=str(exc)[:300],
-                )
-            )
-            stopped_reason = "daily_quota_reached" if daily else "provider_failed"
+            detail = exc.detail or failure_detail(exc)
+            reason = _provider_failure_reason(exc, detail)
+            failures.append(_provider_failure(paper_id, exc, reason=reason, detail=detail))
+            stopped_reason = reason
             break
         model_name = result.model
         provider_name = result.provider

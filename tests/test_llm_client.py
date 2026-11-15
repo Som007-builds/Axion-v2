@@ -17,6 +17,9 @@ from axion.llm.cooldown import CooldownTracker
 from axion.llm.errors import (
     AllProvidersFailedError,
     ConfigurationError,
+    DailyQuotaError,
+    FailureDetail,
+    OutputTokenExhaustedError,
     PermanentProviderError,
     RateLimitError,
     StructuredOutputError,
@@ -241,10 +244,11 @@ def test_rate_limit_exhaustion_cools_down_and_falls_back(tmp_path: Path) -> None
 
     assert first.provider == "secondary"
     assert second.provider == "secondary"
-    assert len(primary.calls) == 2
+    # A 429 is deterministic for the current window: one attempt, then fallback.
+    assert len(primary.calls) == 1
     assert len(secondary.calls) == 2
     report = ledger.report("provider")
-    assert report.total_errors == 2
+    assert report.total_errors == 1
 
 
 def test_permanent_error_skips_retries(tmp_path: Path) -> None:
@@ -363,17 +367,20 @@ def test_empty_provider_chain_is_a_configuration_error(tmp_path: Path) -> None:
     assert ledger.report("stage").total_errors == 1
 
 
-def test_empty_response_is_retried(tmp_path: Path) -> None:
+def test_empty_response_is_not_retried(tmp_path: Path) -> None:
     provider = ScriptedProvider("primary", [_response("   "), _response("ok")])
     settings = _settings(llm_max_attempts=2)
     sleeps: list[float] = []
     client, _ = _client(tmp_path, settings, [provider], sleep=sleeps.append)
 
-    result = client.complete(_request())
+    with pytest.raises(AllProvidersFailedError) as info:
+        client.complete(_request())
 
-    assert result.text == "ok"
-    assert len(provider.calls) == 2
-    assert len(sleeps) == 1
+    # An empty body is deterministic; retrying it only spends quota.
+    assert len(provider.calls) == 1
+    assert sleeps == []
+    assert info.value.detail is not None
+    assert info.value.detail.error_class == "EmptyResponseError"
 
 
 def test_unknown_provider_is_skipped(tmp_path: Path) -> None:
@@ -385,6 +392,66 @@ def test_unknown_provider_is_skipped(tmp_path: Path) -> None:
 
     assert result.provider == "primary"
     assert ledger.report("provider").total_errors == 1
+
+
+def test_attempt_gate_counts_every_retry(tmp_path: Path) -> None:
+    gates: list[int] = []
+    provider = ScriptedProvider("primary", [TransientProviderError("503 unavailable"), _response()])
+    client, _ = _client(tmp_path, _settings(llm_max_attempts=2), [provider])
+
+    result = client.complete(_request(), attempt_gate=lambda: gates.append(1))
+
+    assert result.text == "ok"
+    assert len(gates) == 2
+    assert len(provider.calls) == 2
+
+
+def test_attempt_gate_quota_stop_propagates_without_a_call(tmp_path: Path) -> None:
+    provider = ScriptedProvider("primary", [_response()])
+    client, _ = _client(tmp_path, _settings(), [provider])
+
+    def gate() -> None:
+        raise DailyQuotaError("daily request cap reached")
+
+    with pytest.raises(DailyQuotaError):
+        client.complete(_request(), attempt_gate=gate)
+
+    assert provider.calls == []
+
+
+def test_provider_failure_ledger_records_the_root_cause(tmp_path: Path) -> None:
+    detail = FailureDetail(
+        error_class="OutputTokenExhaustedError",
+        message="output budget exhausted",
+        provider_status="MAX_TOKENS",
+        finish_reason="MAX_TOKENS",
+        prompt_tokens=7_641,
+        completion_tokens=16_384,
+        reasoning_tokens=16_000,
+        retryable=False,
+    )
+    provider = ScriptedProvider(
+        "primary", [OutputTokenExhaustedError("output budget exhausted", detail=detail)]
+    )
+    client, ledger = _client(
+        tmp_path,
+        _settings(llm_max_attempts=3, llm_provider_chain=["primary"]),
+        [provider],
+    )
+
+    with pytest.raises(AllProvidersFailedError) as info:
+        client.complete(_request(run_id="run-detail"))
+
+    assert len(provider.calls) == 1
+    assert info.value.attempts == 1
+    assert info.value.detail == detail
+    rows = ledger.calls_for_run("run-detail")
+    assert len(rows) == 1
+    assert rows[0].error_class == "OutputTokenExhaustedError"
+    assert rows[0].error_status == "MAX_TOKENS"
+    assert rows[0].finish_reason == "MAX_TOKENS"
+    assert rows[0].prompt_tokens == 7_641
+    assert rows[0].reasoning_tokens == 16_000
 
 
 def test_retry_delay_is_capped() -> None:

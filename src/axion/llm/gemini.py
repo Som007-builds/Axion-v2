@@ -2,14 +2,24 @@
 
 The official ``google-genai`` SDK is pinned in ``pyproject.toml`` and isolated
 behind :class:`axion.llm.adapters.ProviderAdapter`. The adapter translates SDK
-failures into the project's retry taxonomy; it never writes the ledger, cache,
-or cost estimate itself.
+failures into the project's retry taxonomy and attaches a sanitized
+:class:`~axion.llm.errors.FailureDetail` so the ledger and run report can show
+the root cause instead of a generic "all providers failed".
 
 Gemini's usage metadata reports ``candidates_token_count`` separately from
 ``thoughts_token_count``. Output price includes both, so the adapter returns
 ``completion_tokens = candidates + thoughts`` and ``reasoning_tokens =
 thoughts``; that keeps thinking-token accounting consistent with the existing
 Groq adapter.
+
+Empty responses are classified, never retried blindly:
+
+* ``finish_reason=MAX_TOKENS`` with no text means thinking (or the answer) used
+  the whole output budget. That is ``OutputTokenExhaustedError``: permanent
+  **with unchanged parameters**, because a retry would spend quota and fail the
+  same way.
+* A safety/recitation block is permanent.
+* Any other empty body is ``EmptyResponseError``, also permanent.
 """
 
 from __future__ import annotations
@@ -26,20 +36,25 @@ from axion.llm.adapters import ProviderAdapter, ProviderAdapterConfig
 from axion.llm.errors import (
     ConfigurationError,
     DailyQuotaError,
+    EmptyResponseError,
+    FailureDetail,
+    OutputTokenExhaustedError,
     PermanentProviderError,
+    ProviderError,
     RateLimitError,
     TransientProviderError,
+    sanitize_error_text,
 )
 from axion.llm.models import ProviderRequest, ProviderResponse
 
 _DAILY_MARKERS = ("perday", "per day", "daily", "requestsperday")
 _BLOCKING_FINISH_REASONS = {
-    types.FinishReason.SAFETY,
-    types.FinishReason.BLOCKLIST,
-    types.FinishReason.PROHIBITED_CONTENT,
-    types.FinishReason.RECITATION,
-    types.FinishReason.SPII,
-    types.FinishReason.LANGUAGE,
+    "SAFETY",
+    "BLOCKLIST",
+    "PROHIBITED_CONTENT",
+    "RECITATION",
+    "SPII",
+    "LANGUAGE",
 }
 
 
@@ -89,17 +104,37 @@ class GeminiAdapter(ProviderAdapter):
             raise _map_api_error(exc) from exc
         except Exception as exc:
             message = str(exc).lower()
+            sanitized = sanitize_error_text(f"{type(exc).__name__}: {exc}")
             if any(marker in message for marker in ("timeout", "timed out", "connection", "503")):
-                raise TransientProviderError(f"Gemini transport error: {exc}") from exc
-            raise PermanentProviderError(f"Gemini request failed: {exc}") from exc
+                raise TransientProviderError(
+                    f"Gemini transport error: {sanitized}",
+                    detail=FailureDetail(
+                        error_class=type(exc).__name__,
+                        message=sanitized,
+                        retryable=True,
+                    ),
+                ) from exc
+            raise PermanentProviderError(
+                f"Gemini request failed: {sanitized}",
+                detail=FailureDetail(
+                    error_class=type(exc).__name__,
+                    message=sanitized,
+                    retryable=False,
+                ),
+            ) from exc
 
-        return _response_from_sdk(response, requested_model=request.model)
+        return _response_from_sdk(
+            response,
+            requested_model=request.model,
+            max_output_tokens=config.max_output_tokens or 0,
+        )
 
     def _generation_config(self, request: ProviderRequest) -> types.GenerateContentConfig:
+        max_output_tokens = request.max_output_tokens or self._config.max_output_tokens
         kwargs: dict[str, Any] = {
             "system_instruction": request.system,
             "temperature": request.temperature,
-            "max_output_tokens": request.max_output_tokens or self._config.max_output_tokens,
+            "max_output_tokens": max_output_tokens,
         }
         if request.response_schema is not None:
             kwargs["response_mime_type"] = "application/json"
@@ -123,7 +158,8 @@ def _json_schema_without_additional_properties(
 
     The Gemini Developer API rejects ``additionalProperties`` even when it is
     ``false``. Pydantic emits it for models with ``extra="forbid"``; validation
-    still happens locally after the response is parsed.
+    still happens locally after the response is parsed. Both spellings are
+    stripped because the SDK has been observed to forward snake_case keys.
     """
     schema: dict[str, Any] = deepcopy(response_model.model_json_schema())
     _strip_additional_properties(schema)
@@ -133,6 +169,7 @@ def _json_schema_without_additional_properties(
 def _strip_additional_properties(value: Any) -> None:
     if isinstance(value, dict):
         value.pop("additionalProperties", None)
+        value.pop("additional_properties", None)
         for child in value.values():
             _strip_additional_properties(child)
     elif isinstance(value, list):
@@ -140,31 +177,128 @@ def _strip_additional_properties(value: Any) -> None:
             _strip_additional_properties(child)
 
 
-def _response_from_sdk(response: Any, *, requested_model: str) -> ProviderResponse:
-    finish_reason = _finish_reason(response)
-    text = getattr(response, "text", None)
-    if text is None or not str(text).strip():
-        if finish_reason in _BLOCKING_FINISH_REASONS:
-            raise PermanentProviderError(
-                f"Gemini blocked the response (finish_reason={finish_reason})"
-            )
-        if finish_reason == types.FinishReason.MAX_TOKENS:
-            raise PermanentProviderError("Gemini stopped at max_output_tokens with no text")
-        raise TransientProviderError(
-            f"Gemini returned an empty response (finish_reason={finish_reason})"
-        )
+def _response_text(response: Any) -> str | None:
+    """Read response text without letting the SDK's empty-body ValueError escape."""
+    try:
+        text = response.text
+    except (ValueError, AttributeError):
+        return None
+    if text is None:
+        return None
+    return str(text)
 
+
+def _usage_tokens(response: Any) -> tuple[int, int, int]:
     usage = getattr(response, "usage_metadata", None)
     if usage is None:
-        raise TransientProviderError("Gemini response has no usage_metadata")
-    prompt_tokens = int(getattr(usage, "prompt_token_count", 0) or 0)
-    candidates_tokens = int(getattr(usage, "candidates_token_count", 0) or 0)
-    thoughts_tokens = int(getattr(usage, "thoughts_token_count", 0) or 0)
+        return (0, 0, 0)
+    return (
+        int(getattr(usage, "prompt_token_count", 0) or 0),
+        int(getattr(usage, "candidates_token_count", 0) or 0),
+        int(getattr(usage, "thoughts_token_count", 0) or 0),
+    )
+
+
+def _empty_response_error(
+    *,
+    finish_reason: str | None,
+    max_output_tokens: int,
+    prompt_tokens: int,
+    candidates_tokens: int,
+    thoughts_tokens: int,
+) -> ProviderError:
+    prompt_or_none = prompt_tokens or None
+    completion_or_none = (candidates_tokens + thoughts_tokens) or None
+    thinking_or_none = thoughts_tokens or None
+    if finish_reason == "MAX_TOKENS":
+        message = (
+            "Gemini returned no text: the output budget was exhausted "
+            f"(finish_reason=MAX_TOKENS, max_output_tokens={max_output_tokens}, "
+            f"thoughts_tokens={thoughts_tokens}); non-retryable with unchanged parameters"
+        )
+        return OutputTokenExhaustedError(
+            message,
+            detail=FailureDetail(
+                error_class="OutputTokenExhaustedError",
+                message=message,
+                provider_status="MAX_TOKENS",
+                finish_reason="MAX_TOKENS",
+                prompt_tokens=prompt_or_none,
+                completion_tokens=completion_or_none,
+                reasoning_tokens=thinking_or_none,
+                retryable=False,
+            ),
+        )
+    if finish_reason in _BLOCKING_FINISH_REASONS:
+        message = f"Gemini blocked the response (finish_reason={finish_reason})"
+        return PermanentProviderError(
+            message,
+            detail=FailureDetail(
+                error_class="PermanentProviderError",
+                message=message,
+                provider_status=finish_reason,
+                finish_reason=finish_reason,
+                prompt_tokens=prompt_or_none,
+                completion_tokens=completion_or_none,
+                reasoning_tokens=thinking_or_none,
+                retryable=False,
+            ),
+        )
+    message = f"Gemini returned an empty response (finish_reason={finish_reason})"
+    return EmptyResponseError(
+        message,
+        detail=FailureDetail(
+            error_class="EmptyResponseError",
+            message=message,
+            provider_status=finish_reason,
+            finish_reason=finish_reason,
+            prompt_tokens=prompt_or_none,
+            completion_tokens=completion_or_none,
+            reasoning_tokens=thinking_or_none,
+            retryable=False,
+        ),
+    )
+
+
+def _response_from_sdk(
+    response: Any,
+    *,
+    requested_model: str,
+    max_output_tokens: int,
+) -> ProviderResponse:
+    finish_reason = _finish_reason_name(_finish_reason(response))
+    prompt_tokens, candidates_tokens, thoughts_tokens = _usage_tokens(response)
     if prompt_tokens < 0 or candidates_tokens < 0 or thoughts_tokens < 0:
-        raise PermanentProviderError("Gemini returned negative token usage")
+        raise PermanentProviderError(
+            "Gemini returned negative token usage",
+            detail=FailureDetail(
+                error_class="PermanentProviderError",
+                message="Gemini returned negative token usage",
+            ),
+        )
+
+    text = _response_text(response)
+    if text is None or not text.strip():
+        raise _empty_response_error(
+            finish_reason=finish_reason,
+            max_output_tokens=max_output_tokens,
+            prompt_tokens=prompt_tokens,
+            candidates_tokens=candidates_tokens,
+            thoughts_tokens=thoughts_tokens,
+        )
+
+    if getattr(response, "usage_metadata", None) is None:
+        raise TransientProviderError(
+            "Gemini response has no usage_metadata",
+            detail=FailureDetail(
+                error_class="TransientProviderError",
+                message="Gemini response has no usage_metadata",
+                retryable=True,
+            ),
+        )
 
     return ProviderResponse(
-        text=str(text),
+        text=text,
         prompt_tokens=prompt_tokens,
         completion_tokens=candidates_tokens + thoughts_tokens,
         reasoning_tokens=thoughts_tokens,
@@ -172,17 +306,23 @@ def _response_from_sdk(response: Any, *, requested_model: str) -> ProviderRespon
     )
 
 
-def _finish_reason(response: Any) -> types.FinishReason | None:
+def _finish_reason(response: Any) -> Any:
     candidates = getattr(response, "candidates", None) or []
     if not candidates:
         return None
     return getattr(candidates[0], "finish_reason", None)
 
 
-def _map_api_error(exc: errors.APIError) -> Exception:
+def _finish_reason_name(reason: Any) -> str | None:
+    if reason is None:
+        return None
+    return str(getattr(reason, "name", reason))
+
+
+def _map_api_error(exc: errors.APIError) -> ProviderError:
     code = int(getattr(exc, "code", 0) or 0)
     status = str(getattr(exc, "status", "") or "")
-    details = _details_text(exc)
+    details = sanitize_error_text(_details_text(exc))
     compact = details.lower().replace("_", "").replace("-", "")
     is_quota = (
         code == 429
@@ -192,11 +332,51 @@ def _map_api_error(exc: errors.APIError) -> Exception:
     )
     if is_quota:
         if any(marker.replace("_", "") in compact for marker in _DAILY_MARKERS):
-            return DailyQuotaError(f"Gemini daily quota exhausted: {details[:500]}")
-        return RateLimitError(f"Gemini rate limit: {details[:500]}")
+            message = f"Gemini daily quota exhausted: {details}"
+            return DailyQuotaError(
+                message,
+                detail=FailureDetail(
+                    error_class="DailyQuotaError",
+                    message=message,
+                    http_status=code,
+                    provider_status=status or "RESOURCE_EXHAUSTED",
+                    retryable=False,
+                ),
+            )
+        message = f"Gemini rate limit: {details}"
+        return RateLimitError(
+            message,
+            detail=FailureDetail(
+                error_class="RateLimitError",
+                message=message,
+                http_status=code,
+                provider_status=status or "RESOURCE_EXHAUSTED",
+                retryable=False,
+            ),
+        )
     if code >= 500:
-        return TransientProviderError(f"Gemini server error ({code}): {details[:500]}")
-    return PermanentProviderError(f"Gemini API error ({code}/{status}): {details[:500]}")
+        message = f"Gemini server error ({code}): {details}"
+        return TransientProviderError(
+            message,
+            detail=FailureDetail(
+                error_class="TransientProviderError",
+                message=message,
+                http_status=code,
+                provider_status=status or None,
+                retryable=True,
+            ),
+        )
+    message = f"Gemini API error ({code}/{status}): {details}"
+    return PermanentProviderError(
+        message,
+        detail=FailureDetail(
+            error_class="PermanentProviderError",
+            message=message,
+            http_status=code,
+            provider_status=status or None,
+            retryable=False,
+        ),
+    )
 
 
 def _details_text(exc: errors.APIError) -> str:

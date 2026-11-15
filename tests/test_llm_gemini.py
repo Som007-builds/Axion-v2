@@ -13,6 +13,7 @@ from axion.extract.claims import ClaimExtraction
 from axion.llm.errors import (
     ConfigurationError,
     DailyQuotaError,
+    OutputTokenExhaustedError,
     PermanentProviderError,
     RateLimitError,
     TransientProviderError,
@@ -170,6 +171,51 @@ def test_missing_usage_is_transient() -> None:
 
     with pytest.raises(TransientProviderError):
         adapter.complete(_request())
+
+
+def test_max_tokens_empty_is_permanent_and_keeps_usage() -> None:
+    response = _response(
+        text="",
+        candidates=0,
+        thoughts=8192,
+        finish_reason=types.FinishReason.MAX_TOKENS,
+    )
+    adapter = GeminiAdapter("key", client=_fake_client(response))
+
+    with pytest.raises(OutputTokenExhaustedError, match="budget was exhausted") as info:
+        adapter.complete(_request(max_output_tokens=8192))
+
+    detail = info.value.detail
+    assert detail is not None
+    assert detail.error_class == "OutputTokenExhaustedError"
+    assert detail.provider_status == "MAX_TOKENS"
+    assert detail.finish_reason == "MAX_TOKENS"
+    assert detail.reasoning_tokens == 8192
+    assert detail.completion_tokens == 8192
+    assert detail.retryable is False
+
+
+def test_api_error_detail_is_sanitized() -> None:
+    error = errors.APIError(
+        400,
+        {
+            "error": {
+                "code": 400,
+                "status": "INVALID_ARGUMENT",
+                "message": "bad request with header Authorization: Bearer fixture-token",
+            }
+        },
+    )
+    adapter = GeminiAdapter("key", client=_fake_client(error=error))
+
+    with pytest.raises(PermanentProviderError) as info:
+        adapter.complete(_request())
+
+    assert "fixture-token" not in str(info.value)
+    assert "[redacted]" in str(info.value)
+    assert info.value.detail is not None
+    assert info.value.detail.http_status == 400
+    assert info.value.detail.provider_status == "INVALID_ARGUMENT"
 
 
 def test_prompt_is_sent_verbatim() -> None:

@@ -22,8 +22,10 @@ from axion.ingest.corpus import CorpusPaper
 from axion.llm.adapters import ProviderAdapter, ProviderAdapterConfig
 from axion.llm.cache import SQLiteCache
 from axion.llm.client import LLMClient, RetryPolicy
+from axion.llm.errors import FailureDetail, RateLimitError, TransientProviderError
 from axion.llm.ledger import SQLiteLedger
 from axion.llm.models import ProviderResponse
+from axion.llm.pacing import RateLimit, RequestPacer
 from axion.llm.providers import ProviderRegistry, ScriptedProvider
 from axion.parse.jats import parse_jats
 
@@ -232,3 +234,188 @@ def test_adapter_interface_does_not_import_a_provider_sdk() -> None:
     assert "import openai" not in source
     assert "import groq" not in source
     assert "import anthropic" not in source
+
+
+def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
+    cache = _write_cache(tmp_path / "cache")
+    plans, _ = build_plan([_paper()], cache, sample_size=1, seed=7)
+    detail = FailureDetail(
+        error_class="TransientProviderError",
+        message="Gemini server error (503): UNAVAILABLE",
+        http_status=503,
+        provider_status="UNAVAILABLE",
+        retryable=True,
+    )
+    provider = ScriptedProvider(
+        name="fake",
+        outcomes=[TransientProviderError("503 UNAVAILABLE", detail=detail)],
+    )
+    registry = ProviderRegistry()
+    registry.register(provider)
+    settings = Settings(
+        _env_file=None,
+        llm_large_model="test-large",
+        llm_provider_chain=["fake"],
+        llm_cache_enabled=False,
+        dry_run=False,
+    )
+    client = LLMClient(
+        settings,
+        registry,
+        SQLiteLedger(tmp_path / "ledger.sqlite3"),
+        PricingTable(
+            version=1,
+            models={
+                "test-large": {
+                    "provider": "fake",
+                    "input_usd_per_mtok": "1",
+                    "output_usd_per_mtok": "2",
+                }
+            },
+        ),
+        retry=RetryPolicy(max_attempts=1, base_delay_s=0, max_delay_s=0),
+    )
+
+    run = run_extraction(
+        client,
+        plans,
+        run_id="run-fail",
+        output_dir=tmp_path / "silver",
+        corpus_manifest_sha256="a" * 64,
+        papers_file="papers.csv",
+        papers_sha256="b" * 64,
+        sample_size=1,
+        seed=7,
+    )
+
+    assert run.stopped_reason == "provider_failed"
+    rows = [
+        json.loads(line)
+        for line in run.failures_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    failure = rows[-1]
+    assert failure["error_class"] == "TransientProviderError"
+    assert failure["http_status"] == 503
+    assert failure["provider_status"] == "UNAVAILABLE"
+    assert failure["attempts"] == 1
+    assert failure["retryable"] is True
+    assert failure["detail"].startswith("all LLM providers failed")
+
+
+def test_rate_limit_stops_the_run_at_a_checkpoint(tmp_path: Path) -> None:
+    cache = _write_cache(tmp_path / "cache")
+    plans, _ = build_plan([_paper()], cache, sample_size=1, seed=7)
+    detail = FailureDetail(
+        error_class="RateLimitError",
+        message="Gemini rate limit: RESOURCE_EXHAUSTED",
+        http_status=429,
+        provider_status="RESOURCE_EXHAUSTED",
+        retryable=False,
+    )
+    provider = ScriptedProvider(
+        name="fake",
+        outcomes=[RateLimitError("429 RESOURCE_EXHAUSTED", detail=detail)],
+    )
+    registry = ProviderRegistry()
+    registry.register(provider)
+    settings = Settings(
+        _env_file=None,
+        llm_large_model="test-large",
+        llm_provider_chain=["fake"],
+        llm_cache_enabled=False,
+        dry_run=False,
+    )
+    client = LLMClient(
+        settings,
+        registry,
+        SQLiteLedger(tmp_path / "ledger.sqlite3"),
+        PricingTable(
+            version=1,
+            models={
+                "test-large": {
+                    "provider": "fake",
+                    "input_usd_per_mtok": "1",
+                    "output_usd_per_mtok": "2",
+                }
+            },
+        ),
+        retry=RetryPolicy(max_attempts=2, base_delay_s=0, max_delay_s=0),
+    )
+
+    run = run_extraction(
+        client,
+        plans,
+        run_id="run-rate-limit",
+        output_dir=tmp_path / "silver-rl",
+        corpus_manifest_sha256="a" * 64,
+        papers_file="papers.csv",
+        papers_sha256="b" * 64,
+        sample_size=1,
+        seed=7,
+    )
+
+    assert run.stopped_reason == "rate_limited"
+    assert len(provider.calls) == 1
+    rows = [
+        json.loads(line)
+        for line in run.failures_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert rows[-1]["reason"] == "rate_limited"
+    assert rows[-1]["http_status"] == 429
+
+
+def test_daily_quota_is_a_clean_checkpoint(tmp_path: Path) -> None:
+    cache = _write_cache(tmp_path / "cache")
+    plans, _ = build_plan([_paper()], cache, sample_size=1, seed=7)
+    provider = ScriptedProvider(name="fake", outcomes=[])
+    registry = ProviderRegistry()
+    registry.register(provider)
+    settings = Settings(
+        _env_file=None,
+        llm_large_model="test-large",
+        llm_provider_chain=["fake"],
+        llm_cache_enabled=False,
+        dry_run=False,
+    )
+    client = LLMClient(
+        settings,
+        registry,
+        SQLiteLedger(tmp_path / "ledger.sqlite3"),
+        PricingTable(
+            version=1,
+            models={
+                "test-large": {
+                    "provider": "fake",
+                    "input_usd_per_mtok": "1",
+                    "output_usd_per_mtok": "2",
+                }
+            },
+        ),
+        retry=RetryPolicy(max_attempts=1, base_delay_s=0, max_delay_s=0),
+    )
+    pacer = RequestPacer(RateLimit(rpm=5, tpm=250_000, rpd=20, daily_margin=2), requests_today=18)
+
+    run = run_extraction(
+        client,
+        plans,
+        run_id="run-quota",
+        output_dir=tmp_path / "silver-quota",
+        corpus_manifest_sha256="a" * 64,
+        papers_file="papers.csv",
+        papers_sha256="b" * 64,
+        sample_size=1,
+        seed=7,
+        pacer=pacer,
+    )
+
+    assert run.stopped_reason == "daily_quota_reached"
+    assert provider.calls == []
+    rows = [
+        json.loads(line)
+        for line in run.failures_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert rows[-1]["reason"] == "daily_quota_reached"
+    assert "daily request cap" in rows[-1]["detail"]

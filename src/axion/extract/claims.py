@@ -107,7 +107,12 @@ class ClaimExtraction(BaseModel):
 
 
 class ClaimFailure(BaseModel):
-    """A rejected claim; kept so failures are recorded, never dropped."""
+    """A rejected claim or failed paper; recorded, never dropped.
+
+    Provider failures carry the root cause (sanitized error class and message,
+    HTTP/provider status, finish reason, and any known token usage) so a run
+    report can explain *why* a paper failed without re-reading the ledger.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -118,6 +123,16 @@ class ClaimFailure(BaseModel):
     claim_text: str | None = None
     evidence_span: str | None = None
     category: str | None = None
+    error_class: str | None = None
+    error_message: str | None = None
+    http_status: int | None = None
+    provider_status: str | None = None
+    finish_reason: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    attempts: int | None = None
+    retryable: bool | None = None
 
 
 class SilverClaim(BaseModel):

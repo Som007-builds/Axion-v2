@@ -77,8 +77,15 @@ module = [
   "chromadb.*",
   "sentence_transformers",
   "sentence_transformers.*",
+  "torch",
+  "torch.*",
+  "transformers",
+  "transformers.*",
 ]
 ignore_missing_imports = true
+# Installed third-party packages are typed with syntax mypy 1.14 cannot parse;
+# skip them instead of failing the project-wide strict check. Project code stays strict.
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 minversion = "8.0"

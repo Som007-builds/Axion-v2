@@ -57,7 +57,11 @@ CREATE TABLE IF NOT EXISTS llm_calls (
     cache_hit INTEGER NOT NULL DEFAULT 0 CHECK (cache_hit IN (0, 1)),
     paper_id TEXT,
     parent_call_id INTEGER,
-    error TEXT
+    error TEXT,
+    error_class TEXT,
+    error_status TEXT,
+    http_status INTEGER,
+    finish_reason TEXT
 )
 """
 
@@ -86,6 +90,10 @@ _LLM_CALL_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("thinking_level", "TEXT"),
     ("max_output_tokens", "INTEGER"),
     ("temperature", "REAL"),
+    ("error_class", "TEXT"),
+    ("error_status", "TEXT"),
+    ("http_status", "INTEGER"),
+    ("finish_reason", "TEXT"),
 )
 
 
@@ -114,6 +122,10 @@ class LedgerEntry:
     thinking_level: str | None = None
     max_output_tokens: int | None = None
     temperature: float | None = None
+    error_class: str | None = None
+    error_status: str | None = None
+    http_status: int | None = None
+    finish_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -167,6 +179,10 @@ class CallRecord:
     thinking_level: str | None = None
     max_output_tokens: int | None = None
     temperature: float | None = None
+    error_class: str | None = None
+    error_status: str | None = None
+    http_status: int | None = None
+    finish_reason: str | None = None
 
 
 def _call_record(row: sqlite3.Row) -> CallRecord:
@@ -196,6 +212,10 @@ def _call_record(row: sqlite3.Row) -> CallRecord:
             None if row["max_output_tokens"] is None else int(row["max_output_tokens"])
         ),
         temperature=None if row["temperature"] is None else float(row["temperature"]),
+        error_class=None if row["error_class"] is None else str(row["error_class"]),
+        error_status=None if row["error_status"] is None else str(row["error_status"]),
+        http_status=None if row["http_status"] is None else int(row["http_status"]),
+        finish_reason=None if row["finish_reason"] is None else str(row["finish_reason"]),
     )
 
 
@@ -322,8 +342,12 @@ class SQLiteLedger:
                     completion_tokens, reasoning_tokens, usd, usd_post_promotion,
                     input_usd, output_usd, billing, price_version, thinking_level,
                     max_output_tokens, temperature, latency_ms, cache_hit,
-                    paper_id, parent_call_id, error
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    paper_id, parent_call_id, error, error_class, error_status,
+                    http_status, finish_reason
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?
+                )
                 """,
                 (
                     timestamp,
@@ -349,6 +373,10 @@ class SQLiteLedger:
                     entry.paper_id,
                     entry.parent_call_id,
                     entry.error,
+                    entry.error_class,
+                    entry.error_status,
+                    entry.http_status,
+                    entry.finish_reason,
                 ),
             )
             return int(cursor.lastrowid or 0)
@@ -415,7 +443,8 @@ class SQLiteLedger:
                        completion_tokens, reasoning_tokens, usd, latency_ms,
                        cache_hit, paper_id, error, usd_post_promotion, input_usd,
                        output_usd, billing, price_version, thinking_level,
-                       max_output_tokens, temperature
+                       max_output_tokens, temperature, error_class, error_status,
+                       http_status, finish_reason
                 FROM llm_calls
                 WHERE run_id = ?
                 ORDER BY id
@@ -440,7 +469,8 @@ class SQLiteLedger:
                        completion_tokens, reasoning_tokens, usd, latency_ms,
                        cache_hit, paper_id, error, usd_post_promotion, input_usd,
                        output_usd, billing, price_version, thinking_level,
-                       max_output_tokens, temperature
+                       max_output_tokens, temperature, error_class, error_status,
+                       http_status, finish_reason
                 FROM llm_calls
                 WHERE model = ?
                 ORDER BY id
