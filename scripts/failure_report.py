@@ -147,7 +147,8 @@ def main(argv: list[str] | None = None) -> int:
         model=args.model,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(markdown + "\n", encoding="utf-8", newline="\n")
+    text = markdown if markdown.endswith("\n") else markdown + "\n"
+    args.out.write_text(text, encoding="utf-8", newline="\n")
     print(f"wrote {args.out} ({len(rows)} attempts, {len(failures)} failure records)", flush=True)
     return 0
 

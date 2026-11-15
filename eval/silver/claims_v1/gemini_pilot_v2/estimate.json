@@ -1,0 +1,41 @@
+{
+  "estimate": {
+    "claims_per_paper_scenarios": {
+      "10": 10.0,
+      "2": 2.0,
+      "5": 5.0
+    },
+    "clears_200_claims_at_5_per_paper": false,
+    "cost_status": "not computed here: this is a dry-run estimate; the paid run records actual list-price cost in the ledger",
+    "estimated_calls": 1,
+    "expected_claims_by_scenario": {
+      "10": 10.0,
+      "2": 2.0,
+      "5": 5.0
+    },
+    "kind": "estimate",
+    "method": "Token counts are ceil(characters/4) over the rendered prompt (baseline sections plus instructions). Output assumes 120 tokens per claim. Claims/paper is a scenario, not a measurement; no extractor has run.",
+    "output_tokens_by_scenario": {
+      "10": 1200,
+      "2": 240,
+      "5": 600
+    },
+    "papers_with_text": 1,
+    "prompt_tokens_mean": 7589.0,
+    "prompt_tokens_total": 7589,
+    "prompt_version": "claim-extraction-v1",
+    "recommended_sample_size": 100,
+    "sample_size": 1,
+    "seed": 20261114
+  },
+  "plan": {
+    "empty_documents": 0,
+    "mean_prompt_tokens": 7589.0,
+    "median_prompt_tokens": 7589,
+    "missing_fulltext": 0,
+    "p95_prompt_tokens": 7589,
+    "parse_failures": 0,
+    "requested": 1,
+    "with_text": 1
+  }
+}
