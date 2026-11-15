@@ -99,10 +99,15 @@ after at least 7 days. ADR-0016 is the Proposed decision; the owner approves.
 
 ## Current P1 status (2026-11-15)
 
-The paid P1-10 pilot produced **21 candidate claims from one paper** before
-Groq's free-tier tokens-per-minute limit stopped the run (`TPM 8000`,
-request `12111`). That pilot export is **below the 200-claim minimum** and is
-not the official audit set. The local, git-ignored `claims_audit_v1_pilot.csv`
-exists only to exercise the tooling; the official `claims_audit_v1.csv` waits
-for a run that can clear the limit. Do not label the pilot file as if it were
-the official sample.
+The official export is ready and was drawn from the Flash-Lite baseline run
+`p1-10-flashlite-s20261114-n100` (100 papers, 765 accepted silver claims):
+
+- `claims_audit_v1.csv` — **200 claims from 45 papers**, at most 5 claims per
+  paper (ADR-0018), seed `20261114`, 22 dev / 23 test papers, every label field
+  blank.
+- `claims_audit_v1.summary.json` — counts, seed, sampler, and the corpus
+  snapshot id (`fdaf972b397a32183d2ccf93f55298f1c76fe02037f07fb5a1cb7e4d5d2927be`).
+
+**No labels exist.** The earlier 21-claim Groq pilot export and the pilot CSV
+are tooling fixtures, not the official sample. Do not label them as if they
+were.
