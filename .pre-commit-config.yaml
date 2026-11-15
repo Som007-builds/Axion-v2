@@ -32,9 +32,8 @@ repos:
     hooks:
       - id: secret-scan
         name: secret scan
-        # Uses the project interpreter. On this Windows host, put
-        # .venv/Scripts first on PATH so `python` is not the broken D:\ shim;
-        # CI's `python` already points at the job interpreter.
+        # Runs inside a pre-commit-managed env: the host's bare `python` is a
+        # broken D:\ shim and `language: system` inherited it.
         entry: python scripts/check_secrets.py
-        language: system
+        language: python
         pass_filenames: false

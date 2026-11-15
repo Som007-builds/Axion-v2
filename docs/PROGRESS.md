@@ -109,7 +109,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - **Sub-topic:** resolved 2026-11-14 — ADR-0012 accepted (`(HSC) Medicine - Infectious Disease`), with the exact-count stop condition and PMID-gap reporting. Oncology deferred to its own ADR as a held-out transfer corpus.
 - **Labeling:** when can the owner block ~3–6 hours for P1-11 and ~3–6 hours for P3-03, including the P1-11 7-day relabel gap?
 - **ADR renumbering:** confirm ADR-0008 (scale) and ADR-0009 (Day-0) are the intended final numbers.
-- **Local tooling:** no GNU `make` on this host; equivalent Python commands are used. Pre-commit cannot create new hook envs because its base Python is at `D:\`, so the `secret-scan` hook is `language: system` and the documented command puts `.venv/Scripts` first on PATH (`docs/LOCAL_SETUP.md`). `pre-commit run --all-files` passes.
+- **Local tooling:** no GNU `make` on this host; equivalent Python commands are used. Hook environments must be built with the system **Python 3.12** (`py -3.12 -m pre_commit install --install-hooks`), because the 3.11 venv's base at `D:\` breaks virtualenv; `secret-scan` runs inside a pre-commit env, so it no longer depends on the host's broken bare `python`. `py -3.12 -m pre_commit run --all-files` passes every hook; CI uses Ubuntu. See `docs/LOCAL_SETUP.md`.
 - **Provider SDK adapters:** the approved Groq adapter is `src/axion/llm/groq.py` (`groq==1.7.0`); Gemini/Anthropic remain deferred. Offline tests still use the scripted provider.
 
 ## Blocked tasks
@@ -126,7 +126,7 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - Failure handling: a 503 and a TLS `ReadError` each stopped a resume before the policy change; TLS/socket read errors are now transient (one retry through the pacer) and an isolated provider failure is recorded while the batch continues, stopping only after three consecutive failures (quota errors stop immediately). Both affected papers were recovered; 20 of 120 requests were failed attempts.
 - Audit export (ADR-0018): `eval/audit/claims_audit_v1.csv` — 200 claims from **45 papers**, max 5 per paper, seed 20261114, 22 dev / 23 test papers, every label field blank; `claims_audit_v1.summary.json` records the corpus snapshot. **No labels were created.**
 - Bug fixed while measuring: strict/normalization counters were per-invocation, so a resumed run reported a meaningless 100% strict rate; they now persist in `strict_state.json` and the final report carries recomputed cumulative values.
-- Tooling: the `secret-scan` pre-commit hook runs under the venv interpreter via a documented PATH command; `pre-commit run --all-files` passes with no `SKIP=`. Offline checks: **302 passed, 2 skipped**; ruff, ruff format, strict mypy clean.
+- Tooling: hook envs are built with the system Python 3.12 (the 3.11 venv's `D:\` base breaks virtualenv), so `py -3.12 -m pre_commit run --all-files` passes every hook, including `secret-scan`, with no `SKIP=`. Offline checks: **302 passed, 2 skipped**; ruff, ruff format, strict mypy clean.
 - Optional reference comparison `p1-10-ref-flash38-s20261114-n5` (first 5 seeded papers, not baseline, not silver): **74 claims, 100% verbatim, 0 failures**, 9,177 of 22,073 completion tokens were thinking, list price $0.103838 (**$0.001403/claim**, 1.9× Flash-Lite), latency mean 196.6 s / p95 291.0 s (≈30× slower), 17 of 18 daily requests.
 - Next: owner labeling for P1-11, then P1-12.
 

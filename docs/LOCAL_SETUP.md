@@ -65,16 +65,20 @@ Run every hook on the working tree before a commit:
 .venv/Scripts/pre-commit.exe run --all-files
 ```
 
-The `secret-scan` hook runs `scripts/check_secrets.py` (stdlib only) as a
-`language: system` hook, so `python` must resolve to a working interpreter. On
-this host the bare `python` is the broken `D:\` shim (`No pyvenv.cfg file`), so
-put the venv first on PATH for the hook run:
+**On this Windows host, use Python 3.12 for the hooks.** The project venv (3.11)
+cannot build pre-commit hook environments: its base interpreter lives at `D:\`,
+and virtualenv fails with `ValueError: 'D:\Scripts' is not in the subpath of
+...py_env-python3.11`. Hook environments built by the system 3.12 work, and the
+`secret-scan` hook runs `scripts/check_secrets.py` (stdlib only) inside such an
+environment instead of the host's broken bare `python`. Install once, then run:
 
 ```bash
-PATH="$PWD/.venv/Scripts:$PATH" .venv/Scripts/pre-commit.exe run --all-files
+py -3.12 -m pre_commit install --install-hooks
+py -3.12 -m pre_commit run --all-files
 ```
 
-Do not skip hooks. If the hook has to be run by hand, the exact equivalent is:
+CI (Ubuntu) uses the job interpreter and needs none of this. Do not skip hooks.
+If the secret scan has to be run by hand, the exact equivalent is:
 
 ```bash
 .venv/Scripts/python.exe scripts/check_secrets.py
