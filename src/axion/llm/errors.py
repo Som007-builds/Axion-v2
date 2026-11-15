@@ -35,8 +35,15 @@ TRANSIENT_MARKERS = (
     "timed out",
     "connection reset",
     "connection aborted",
+    "connection error",
+    "server disconnected",
+    "remote protocol error",
     "service unavailable",
     "try again later",
+    # TLS/socket read failures seen from the Gemini SDK (httpx ReadError).
+    "readerror",
+    "ssl",
+    "bad record mac",
 )
 
 _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (

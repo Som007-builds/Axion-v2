@@ -24,6 +24,8 @@ from axion.llm.errors import (
     RateLimitError,
     StructuredOutputError,
     TransientProviderError,
+    classify_error,
+    failure_detail,
 )
 from axion.llm.ledger import SQLiteLedger
 from axion.llm.models import LLMRequest, ProviderResponse
@@ -392,6 +394,15 @@ def test_unknown_provider_is_skipped(tmp_path: Path) -> None:
 
     assert result.provider == "primary"
     assert ledger.report("provider").total_errors == 1
+
+
+def test_ssl_read_error_is_classified_as_transient() -> None:
+    """A TLS/socket read failure is a network error and gets one retry."""
+    classified = classify_error(
+        RuntimeError("ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac")
+    )
+    assert isinstance(classified, TransientProviderError)
+    assert failure_detail(classified).retryable is True
 
 
 def test_attempt_gate_counts_every_retry(tmp_path: Path) -> None:
