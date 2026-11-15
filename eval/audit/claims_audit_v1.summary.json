@@ -1,0 +1,14 @@
+{
+  "claims": 200,
+  "corpus_snapshot_id": "fdaf972b397a32183d2ccf93f55298f1c76fe02037f07fb5a1cb7e4d5d2927be",
+  "max_claims_per_paper": 5,
+  "max_observed_per_paper": 5,
+  "papers": 45,
+  "papers_dev": 22,
+  "papers_test": 23,
+  "path": "eval\\audit\\claims_audit_v1.csv",
+  "sampler": "seeded_by_paper_max_cap",
+  "seed": 20261114,
+  "source_candidates": "eval\\silver\\claims_v1\\baseline_flashlite\\candidates.jsonl",
+  "status": "written"
+}

@@ -1,0 +1,30 @@
+{
+  "billing": "free_tier",
+  "claims": 765,
+  "corpus_manifest_sha256": "a8f745022d4ade9db6b50f2866e1b14d01116649c3ba45701d754beaca0c88aa",
+  "created_at": "2026-11-15T19:42:28+00:00",
+  "failures": 108,
+  "failures_file": "eval\\silver\\claims_v1\\baseline_flashlite\\failures.jsonl",
+  "forbidden_for": [
+    "evaluation",
+    "reported_quality"
+  ],
+  "label_kind": "silver",
+  "max_output_tokens": 16384,
+  "not_gold": true,
+  "papers_file": "docs\\reports\\P1-corpus-papers.csv",
+  "papers_processed": 100,
+  "papers_sha256": "7adf8572c623cd70407a49ad93e4e8741fd8972f0d21ea2dfe01e50d64cef6ff",
+  "prompt_version": "claim-extraction-v1",
+  "provider": "gemini",
+  "run_id": "p1-10-flashlite-s20261114-n100",
+  "sample_size": 100,
+  "schema_version": 1,
+  "seed": 20261114,
+  "teacher_model": "gemini-3.5-flash-lite",
+  "temperature": 0.0,
+  "thinking_level": "default",
+  "usable_for": [
+    "student_training"
+  ]
+}
