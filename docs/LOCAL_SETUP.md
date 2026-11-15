@@ -57,6 +57,29 @@ python scripts/day0_check.py --network
 
 The network checks send only a polite `User-Agent`/`mailto` contact; they never send API keys or other secrets. Neo4j is checked when `NEO4J_URI` is configured and the service is running; otherwise the check reports `SKIP`.
 
+## Pre-commit
+
+Run every hook on the working tree before a commit:
+
+```bash
+.venv/Scripts/pre-commit.exe run --all-files
+```
+
+The `secret-scan` hook runs `scripts/check_secrets.py` (stdlib only) as a
+`language: system` hook, so `python` must resolve to a working interpreter. On
+this host the bare `python` is the broken `D:\` shim (`No pyvenv.cfg file`), so
+put the venv first on PATH for the hook run:
+
+```bash
+PATH="$PWD/.venv/Scripts:$PATH" .venv/Scripts/pre-commit.exe run --all-files
+```
+
+Do not skip hooks. If the hook has to be run by hand, the exact equivalent is:
+
+```bash
+.venv/Scripts/python.exe scripts/check_secrets.py
+```
+
 ## P1 stores (Neo4j schema v2 + Chroma)
 
 The corpus loader needs the optional store packages and a running Neo4j. Keep

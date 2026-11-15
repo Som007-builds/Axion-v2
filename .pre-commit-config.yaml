@@ -32,6 +32,9 @@ repos:
     hooks:
       - id: secret-scan
         name: secret scan
+        # Uses the project interpreter. On this Windows host, put
+        # .venv/Scripts first on PATH so `python` is not the broken D:\ shim;
+        # CI's `python` already points at the job interpreter.
         entry: python scripts/check_secrets.py
         language: system
         pass_filenames: false
