@@ -105,7 +105,20 @@ class GeminiAdapter(ProviderAdapter):
         except Exception as exc:
             message = str(exc).lower()
             sanitized = sanitize_error_text(f"{type(exc).__name__}: {exc}")
-            if any(marker in message for marker in ("timeout", "timed out", "connection", "503")):
+            if any(
+                marker in message
+                for marker in (
+                    "timeout",
+                    "timed out",
+                    "connection",
+                    "503",
+                    "ssl",
+                    "readerror",
+                    "bad record mac",
+                    "server disconnected",
+                    "remote protocol error",
+                )
+            ):
                 raise TransientProviderError(
                     f"Gemini transport error: {sanitized}",
                     detail=FailureDetail(

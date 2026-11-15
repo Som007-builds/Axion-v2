@@ -295,7 +295,9 @@ def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
         billing="free_tier",
     )
 
-    assert run.stopped_reason == "provider_failed"
+    # One isolated provider failure no longer ends the batch.
+    assert run.stopped_reason is None
+    assert run.papers_processed == 0
     rows = [
         json.loads(line)
         for line in run.failures_path.read_text(encoding="utf-8").splitlines()
@@ -315,6 +317,72 @@ def test_provider_failure_record_carries_the_root_cause(tmp_path: Path) -> None:
     assert manifest["billing"] == "free_tier"
     assert manifest["run_id"] == "run-fail"
     assert manifest["prompt_version"] == "claim-extraction-v1"
+
+
+def test_three_consecutive_provider_failures_stop_the_run(tmp_path: Path) -> None:
+    ids = ["PMC1", "PMC2", "PMC3"]
+    cache = tmp_path / "cache"
+    fulltext = cache / "fulltext"
+    fulltext.mkdir(parents=True)
+    for index, pmcid in enumerate(ids, start=1):
+        xml = XML.replace("PMC1", pmcid).replace(">42<", f">{index}<")
+        (fulltext / f"{pmcid}.xml").write_text(xml, encoding="utf-8")
+    papers = [
+        CorpusPaper(pmcid=pmcid, pmid=str(index), doi=f"10.1000/{pmcid}", role="source")
+        for index, pmcid in enumerate(ids, start=1)
+    ]
+    plans, _ = build_plan(papers, cache, sample_size=3, seed=7)
+    provider = ScriptedProvider(
+        name="fake",
+        outcomes=[TransientProviderError("503 UNAVAILABLE") for _ in range(6)],
+    )
+    registry = ProviderRegistry()
+    registry.register(provider)
+    settings = Settings(
+        _env_file=None,
+        llm_large_model="test-large",
+        llm_provider_chain=["fake"],
+        llm_cache_enabled=False,
+        dry_run=False,
+    )
+    client = LLMClient(
+        settings,
+        registry,
+        SQLiteLedger(tmp_path / "ledger.sqlite3"),
+        PricingTable(
+            version=1,
+            models={
+                "test-large": {
+                    "provider": "fake",
+                    "input_usd_per_mtok": "1",
+                    "output_usd_per_mtok": "2",
+                }
+            },
+        ),
+        retry=RetryPolicy(max_attempts=2, base_delay_s=0, max_delay_s=0),
+    )
+
+    run = run_extraction(
+        client,
+        plans,
+        run_id="run-outage",
+        output_dir=tmp_path / "silver-outage",
+        corpus_manifest_sha256="a" * 64,
+        papers_file="papers.csv",
+        papers_sha256="b" * 64,
+        sample_size=3,
+        seed=7,
+        model="test-large",
+    )
+
+    assert run.stopped_reason == "provider_failed"
+    assert len(provider.calls) == 6
+    rows = [
+        json.loads(line)
+        for line in run.failures_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert sum(1 for row in rows if row["reason"] == "provider_failed") == 3
 
 
 def test_rate_limit_stops_the_run_at_a_checkpoint(tmp_path: Path) -> None:

@@ -55,6 +55,9 @@ CHARS_PER_TOKEN = 4.0
 DEFAULT_MAX_CLAIMS = 25
 OUTPUT_TOKENS_PER_CLAIM = 120
 DEFAULT_MAX_CALLS = 100
+# One unlucky paper must not end a 450-request day, but a model-wide outage
+# should. Stop only after this many consecutive provider failures.
+MAX_CONSECUTIVE_PROVIDER_FAILURES = 3
 
 
 class ExtractionError(Exception):
@@ -339,6 +342,7 @@ def run_extraction(
     span_failures = 0
     normalization_fixes = 0
     structured_output_failures = 0
+    consecutive_provider_failures = 0
 
     for plan in plans:
         paper_id = plan.paper.pmcid
@@ -393,8 +397,17 @@ def run_extraction(
             detail = exc.detail or failure_detail(exc)
             reason = _provider_failure_reason(exc, detail)
             failures.append(_provider_failure(paper_id, exc, reason=reason, detail=detail))
-            stopped_reason = reason
-            break
+            if reason in {"daily_quota_reached", "rate_limited"}:
+                stopped_reason = reason
+                break
+            consecutive_provider_failures += 1
+            if consecutive_provider_failures >= MAX_CONSECUTIVE_PROVIDER_FAILURES:
+                stopped_reason = "provider_failed"
+                break
+            # An isolated failure (one paper, one 503, one TLS read) is recorded
+            # and the batch moves on; the paper stays unprocessed for a resume.
+            continue
+        consecutive_provider_failures = 0
         model_name = result.model
         provider_name = result.provider
         if result.parsed is None:
@@ -514,6 +527,7 @@ __all__ = [
     "CHARS_PER_TOKEN",
     "DEFAULT_MAX_CALLS",
     "DEFAULT_MAX_CLAIMS",
+    "MAX_CONSECUTIVE_PROVIDER_FAILURES",
     "DryRunEstimate",
     "ExtractionError",
     "PaperPlan",

@@ -195,6 +195,17 @@ def test_max_tokens_empty_is_permanent_and_keeps_usage() -> None:
     assert detail.retryable is False
 
 
+def test_tls_read_error_is_transient() -> None:
+    error = RuntimeError("ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] bad record mac")
+    adapter = GeminiAdapter("key", client=_fake_client(error=error))
+
+    with pytest.raises(TransientProviderError) as info:
+        adapter.complete(_request())
+
+    assert info.value.detail is not None
+    assert info.value.detail.retryable is True
+
+
 def test_default_thinking_sends_no_thinking_config() -> None:
     client = _fake_client(_response())
     adapter = GeminiAdapter("key", client=client)
