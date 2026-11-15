@@ -22,6 +22,12 @@
 | Total tokens | 13,968 | — | — |
 | USD | 0.005317 | 0.005317 | 0.005317 |
 
+## Per-paper records
+
+| Paper | Calls | Prompt | Completion | Reasoning | Total | USD | Latency ms |
+| :-- | --: | --: | --: | --: | --: | --: | --: |
+| `PMC12178481` | 1 | 6,809 | 7,159 | 3,011 | 13,968 | 0.005317 | 16459 |
+
 Latency: mean **16459 ms**, p95 **16459 ms**.
 
 Stopped reason: **provider_failed**.

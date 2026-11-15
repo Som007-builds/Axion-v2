@@ -257,6 +257,19 @@ def _write_run_report(
     paper_tokens = [
         int(row["prompt_tokens"]) + int(row["completion_tokens"]) for row in per_paper.values()
     ]
+    paper_rows = [
+        {
+            "paper_id": key,
+            "calls": int(row["calls"]),
+            "prompt_tokens": int(row["prompt_tokens"]),
+            "completion_tokens": int(row["completion_tokens"]),
+            "reasoning_tokens": int(row["reasoning_tokens"]),
+            "total_tokens": int(row["prompt_tokens"]) + int(row["completion_tokens"]),
+            "usd": format(Decimal(str(row["usd"])), "f"),
+            "latency_ms": float(row["latency_ms"]),
+        }
+        for key, row in sorted(per_paper.items())
+    ]
     gap = (prompt_tokens / estimate_prompt_tokens - 1.0) if estimate_prompt_tokens else 0.0
     report = {
         "run_id": run_id,
@@ -297,6 +310,7 @@ def _write_run_report(
             "median_usd": statistics.median(paper_costs) if paper_costs else 0.0,
             "p95_usd": _percentile(paper_costs, 0.95),
         },
+        "papers": paper_rows,
         "latency_ms": {
             "mean": statistics.fmean(latencies) if latencies else 0.0,
             "p95": _percentile(latencies, 0.95),
@@ -344,6 +358,17 @@ def _write_run_report(
         f"| Total tokens | {report['per_paper']['mean_total_tokens']:,.0f} | — | — |",
         f"| USD | {report['per_paper']['mean_usd']:.6f} | "
         f"{report['per_paper']['median_usd']:.6f} | {report['per_paper']['p95_usd']:.6f} |",
+        "",
+        "## Per-paper records",
+        "",
+        "| Paper | Calls | Prompt | Completion | Reasoning | Total | USD | Latency ms |",
+        "| :-- | --: | --: | --: | --: | --: | --: | --: |",
+        *[
+            f"| `{row['paper_id']}` | {row['calls']} | {row['prompt_tokens']:,} | "
+            f"{row['completion_tokens']:,} | {row['reasoning_tokens']:,} | "
+            f"{row['total_tokens']:,} | {row['usd']} | {row['latency_ms']:.0f} |"
+            for row in report["papers"]
+        ],
         "",
         f"Latency: mean **{report['latency_ms']['mean']:.0f} ms**, "
         f"p95 **{report['latency_ms']['p95']:.0f} ms**.",

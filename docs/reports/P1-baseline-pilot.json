@@ -16,6 +16,18 @@
   },
   "list_price_usd": "0.005317",
   "manifest_path": "eval\\silver\\claims_v1\\pilot\\silver_manifest.json",
+  "papers": [
+    {
+      "calls": 1,
+      "completion_tokens": 7159,
+      "latency_ms": 16458.649100000912,
+      "paper_id": "PMC12178481",
+      "prompt_tokens": 6809,
+      "reasoning_tokens": 3011,
+      "total_tokens": 13968,
+      "usd": "0.005317"
+    }
+  ],
   "papers_processed": 1,
   "parse_failures": 0,
   "per_paper": {

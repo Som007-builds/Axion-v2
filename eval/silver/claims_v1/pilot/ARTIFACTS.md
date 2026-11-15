@@ -14,8 +14,8 @@ without redistributing the excerpts.
 | `silver_claims.jsonl` | `aa10a98be45f9fbe9bfab19889ee11ab2c35e76fc5d71d9cc932c5c494580be1` | 16,241 |
 | `failures.jsonl` | `9b23a20884000c34a2db5a9ab458f08be4f76423d8c0a3baf2078dffa9f28bdc` | 2,452 |
 | `papers_processed.jsonl` | `51c3f10f359bb9906c7876a58184e02ca3ec58ea7d7cf841ece5d471ccc1ad83` | 92 |
-| `run_report.json` | `7d8afd2167a00ccf25658919e914bbf70a3d755d976b73a30d08edab4fb48908` | 1,136 |
-| `run_report.md` | `851491f83c3b35ee4b4e361e9610979a2c1db212f5f7c20463bfbe0eae68053d` | 1,090 |
+| `run_report.json` | `c31810613a05b4aa2d3b8cb033219d891265584e9da767c74a4c888dfbea5402` | 1,405 |
+| `run_report.md` | `134544fdf9e613f7318e3c1ee6b7ea98e7468740365ae695c51bab0c47368cc9` | 1,316 |
 | `estimate.json` | `c942248066277c1922101b4752e6518217bf0526af07cdf34b17962c9c7fa818` | 1,244 |
 | `estimate.md` | `38cc2128fb3f19b3348bcadd8155054ef578b7cc6f1d09b974e5ce18e48e6662` | 1,959 |
 | `silver_manifest.json` | `7ded6933226e5d59b62c5b846f10b2c9ce6eb0a31d9bd2b3a25cf8c530f20436` | 786 |
