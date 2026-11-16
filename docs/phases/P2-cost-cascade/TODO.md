@@ -79,12 +79,17 @@ to every task below; task IDs are unchanged.
     - 2026-11-14: replaced by ADR-0008; audited-label-only classifier was too small a lever for corpus scale.
   - done: — | evidence: ADR-0008.
 
-### [ ] P2-03a — Silver-label generation by teacher
+### [~] P2-03a — Silver-label generation by teacher
 - depends: P2-01, P1-10
 - what: Budget-capped, dry-run-first teacher labeling on a **seeded sample of corpus papers excluding all 45 gold papers**; persist provenance (teacher model/version, prompt version, run_id); paper-level split; write to the silver-label store. Sample size is justified by the learning curve (P2-03c).
 - acceptance: Dry-run estimate produced; sample size and seed recorded and justified from the learning curve; silver manifest + hashes committed (large labels may be external with manifest); **zero gold papers in the sample**; ledger stage `teacher_label`; daily-quota stop is clean and resumable.
-  - agent: — | started: — | branch: p2
+  - agent: Buffy | started: 2026-11-16 | branch: p2
   - notes:
+    - **Owner decisions (2026-11-16):** sample ceiling **300 teacher-labelled papers total**, excluding all 45 gold papers; the ~55 non-gold papers already labelled by the P1 baseline count toward it; nested seeded increments 50/100/200/300 with the learning curve deciding when to stop (stop early if it flattens); teacher stays `gemini-3.5-flash-lite` with the frozen baseline config and prompt v1.
+    - Sample draw is a **prefix of one seeded permutation** (`sample_papers_excluding`, seed 20261114) after removing gold and already-labelled papers, so increments never re-label a paper. Gold exclusion is enforced by `--exclude-paper-ids`, not by eyeballing.
+    - Planned increment command: `AXION_DRY_RUN=false python scripts/run_baseline_extraction.py --execute --sample 45 --exclude-paper-ids eval/audit/claims_audit_v1.csv --exclude-paper-ids eval/silver/claims_v1/baseline_flashlite/papers_processed.jsonl --run-id p2-03a-teacher-s20261114-n100 --silver-dir eval/silver/claims_v1/p2_03a_teacher --out docs/reports/P2-03a-dryrun --audit-out eval/audit/p2-03a-teacher.csv` (45 new papers brings the non-gold total to 100).
+  - **Checkpoint 2026-11-16 (increment 1 of the 300 ceiling):** run `p2-03a-teacher-s20261114-n100` labelled **43 of 45 new papers** (2 lost to provider failures), **303 accepted silver claims**, 31 rejects, verbatim **92.7%**, **59 requests**, list price **$0.234809**, real spend **$0**. With the baseline's 55 non-gold papers this is **98 non-gold labelled papers** of the 300 ceiling. Sample plan: `docs/reports/P2-03a-sample.md` (draw verified gold-free: 0 gold, 0 already-labelled). Daily usage after this run: **342 of 450** requests.
+  - **Why not closed:** the acceptance requires the sample size to be justified by the learning curve (P2-03c), which needs the student (P2-03b). Labelling continues in nested increments until the curve flattens or 300 is reached.
   - done: — | evidence: —
 
 ### [ ] P2-03b — Train claim-sentence student + gold evaluation

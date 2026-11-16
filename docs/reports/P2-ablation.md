@@ -10,27 +10,29 @@
 
 - **Aligned precision**: `CORRECT / aligned` over output that matches a gold-labelled
   baseline claim (same sentence; see the `matching` column). Wilson 95% CI.
-- **Retention**: share of the 200 gold claims the configuration still emits.
+- **Retention (all)**: share of the 200 gold claims the configuration still emits.
+- **Retention (core)**: share of the gold claims in `core` sections (abstract/results/conclusion) that it still emits — ADR-0021, proposed. It shows what a configuration
+  gives up by reading fewer sections instead of hiding it in one blended rate.
 - **Unverifiable rate**: share of evaluated output that matches no gold row.
 - **Cost**: list-price USD from the ledger. Free tier: real spend is $0.
 
 ## Configurations
 
-| Config | Papers | Claims | Claims/paper | $/paper | Dev precision | Dev retention | Test precision | Test retention | Unverifiable | Matching | Notes |
-| :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |
-| `baseline` | 100 | 765 | 7.65 | $0.005644590 | 96.1% [90.4-98.5] | 100.0% | 96.9% [91.3-98.9] | 100.0% | 45.1% | sentence | P1 frozen baseline replay: gemini-3.5-flash-lite, all sections, prompt v1 |
-| `sections-core` | 93 | 428 | 4.60 | $0.002460613 | 92.9% [81.0-97.5] | 40.8% | 96.3% [81.7-99.3] | 27.8% | 59.7% | sentence | P2-02 section targeting: abstract/results/conclusion only, gemini-3.5-flash-lite, prompt v1 |
+| Config | Papers | Claims | Claims/paper | $/paper | $/core claim | Dev precision | Dev retention | Test precision | Test retention | Core retention | Unverifiable | Matching | Notes |
+| :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |
+| `baseline` | 100 | 765 | 7.65 | $0.005644590 | $0.009902789 | 96.1% [90.4-98.5] | 100.0% | 96.9% [91.3-98.9] | 100.0% | 100.0% | 45.1% | sentence | P1 frozen baseline replay: gemini-3.5-flash-lite, all sections, prompt v1 |
+| `sections-core` | 93 | 428 | 4.60 | $0.002460613 | $0.006730500 | 92.9% [81.0-97.5] | 40.8% | 96.3% [81.7-99.3] | 27.8% | 59.6% | 59.7% | sentence | P2-02 section targeting: abstract/results/conclusion only, gemini-3.5-flash-lite, prompt v1 |
 
 ## Detail
 
-| Config | Split | n gold | Retained | Retention | Aligned rows | Correct rows | Emitted claims | Aligned claims | Cost USD | Calls | Cache hits |
-| :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| `baseline` | dev | 103 | 103 | 100.0% | 103 | 99 | 222 | 111 | 0.564459 | 100 | 0 |
-| `baseline` | test | 97 | 97 | 100.0% | 97 | 94 | 159 | 98 | 0.564459 | 100 | 0 |
-| `baseline` | all | 200 | 200 | 100.0% | 200 | 193 | 381 | 209 | 0.564459 | 100 | 0 |
-| `sections-core` | dev | 103 | 42 | 40.8% | 42 | 39 | 100 | 45 | 0.228837 | 90 | 3 |
-| `sections-core` | test | 97 | 27 | 27.8% | 27 | 26 | 86 | 30 | 0.228837 | 90 | 3 |
-| `sections-core` | all | 200 | 69 | 34.5% | 69 | 65 | 186 | 75 | 0.228837 | 90 | 3 |
+| Config | Split | n gold | Retained | Retention | Core gold | Core retained | Core retention | Aligned rows | Correct rows | Emitted claims | Aligned claims | Cost USD | Calls | Cache hits |
+| :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
+| `baseline` | dev | 103 | 103 | 100.0% | 37 | 37 | 100.0% | 103 | 99 | 222 | 111 | 0.564459 | 100 | 0 |
+| `baseline` | test | 97 | 97 | 100.0% | 20 | 20 | 100.0% | 97 | 94 | 159 | 98 | 0.564459 | 100 | 0 |
+| `baseline` | all | 200 | 200 | 100.0% | 57 | 57 | 100.0% | 200 | 193 | 381 | 209 | 0.564459 | 100 | 0 |
+| `sections-core` | dev | 103 | 42 | 40.8% | 37 | 25 | 67.6% | 42 | 39 | 100 | 45 | 0.228837 | 90 | 3 |
+| `sections-core` | test | 97 | 27 | 27.8% | 20 | 9 | 45.0% | 27 | 26 | 86 | 30 | 0.228837 | 90 | 3 |
+| `sections-core` | all | 200 | 69 | 34.5% | 57 | 34 | 59.6% | 69 | 65 | 186 | 75 | 0.228837 | 90 | 3 |
 
 ## Baseline tolerance
 
