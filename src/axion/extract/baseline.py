@@ -17,7 +17,7 @@ from typing import Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from axion.eval.cost_estimate import DEFAULT_SEED, sample_papers
+from axion.eval.cost_estimate import DEFAULT_SEED, sample_papers, sample_papers_excluding
 from axion.extract.claims import (
     PROMPT_VERSION,
     BaselineDocument,
@@ -235,6 +235,7 @@ def build_plan(
     prompt_version: str = PROMPT_VERSION,
     max_claims: int = DEFAULT_MAX_CLAIMS,
     include_sections: tuple[str, ...] = (),
+    exclude_paper_ids: frozenset[str] = frozenset(),
 ) -> tuple[list[PaperPlan], PlanReport]:
     """Parse a seeded paper sample and render one prompt per usable paper.
 
@@ -243,7 +244,12 @@ def build_plan(
     """
     if sample_size < 1:
         raise ExtractionError("sample_size must be at least 1")
-    chosen = sample_papers(papers, sample_size, seed=seed)
+    if exclude_paper_ids:
+        # P2 training samples must exclude every gold paper; nested draw order
+        # keeps learning-curve increments from re-labelling the same paper.
+        chosen = sample_papers_excluding(papers, sample_size, seed=seed, exclude=exclude_paper_ids)
+    else:
+        chosen = sample_papers(papers, sample_size, seed=seed)
     plans: list[PaperPlan] = []
     missing = 0
     parse_failures = 0

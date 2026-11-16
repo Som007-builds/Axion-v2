@@ -35,7 +35,24 @@ from axion.extract.claims import (
     find_evidence_span,
     normalize_for_match,
 )
+from axion.extract.sections import load_section_sets
 from axion.parse.jats import sentence_bounds
+
+_CORE_PATTERNS: tuple[str, ...] | None = None
+
+
+def core_section_patterns() -> tuple[str, ...]:
+    """The `core` set from config; fixed for every row, so rows stay comparable."""
+    global _CORE_PATTERNS
+    if _CORE_PATTERNS is None:
+        _CORE_PATTERNS = load_section_sets().require("core").include
+    return _CORE_PATTERNS
+
+
+def is_core_section(section: str) -> bool:
+    haystack = section.casefold()
+    return any(pattern.casefold() in haystack for pattern in core_section_patterns())
+
 
 Matching = Literal["span", "sentence"]
 SPLITS = ("dev", "test")
@@ -103,6 +120,11 @@ class SplitScore(BaseModel):
     emitted: int
     claim_aligned: int
     claim_correct: int
+    # ADR-0021 (proposed): retention over gold claims in ``core`` sections, so a
+    # configuration that reads fewer sections is not scored on claims it never saw.
+    core_gold: int
+    core_retained: int
+    core_retention: float
 
 
 class ConfigScore(BaseModel):
@@ -123,6 +145,7 @@ class ConfigScore(BaseModel):
     cost_usd: str | None
     cost_per_paper_usd: str | None
     cost_per_retained_claim_usd: str | None
+    cost_per_core_claim_usd: str | None
     cache_hits: int
     calls: int
     by_split: dict[str, SplitScore]
@@ -140,6 +163,8 @@ class ConfigScore(BaseModel):
             "test_precision": _fmt_pct(self.by_split["test"].precision),
             "test_retention": _fmt_pct(self.by_split["test"].retention),
             "unverifiable_rate": _fmt_pct(_unverifiable_rate(self.overall)),
+            "core_retention": _fmt_pct(self.overall.core_retention),
+            "cost_per_core_claim_usd": self.cost_per_core_claim_usd,
             "description": self.description,
         }
 
@@ -374,10 +399,17 @@ def score(
                 claim_correct += 1
         retained = 0
         correct = 0
+        core_gold = 0
+        core_retained = 0
         for row in gold_rows:
+            core_row = is_core_section(row.section)
+            if core_row:
+                core_gold += 1
             key = gold_keys[row.claim_id]
             if key is None or key not in claims_by_key:
                 continue
+            if core_row:
+                core_retained += 1
             retained += 1
             if row.label == "CORRECT":
                 correct += 1
@@ -396,6 +428,9 @@ def score(
             emitted=emitted,
             claim_aligned=claim_aligned,
             claim_correct=claim_correct,
+            core_gold=core_gold,
+            core_retained=core_retained,
+            core_retention=core_retained / core_gold if core_gold else 0.0,
         )
 
     by_split = {
@@ -473,6 +508,9 @@ def evaluate_config(
     per_retained = None
     if per_paper is not None and overall.retained:
         per_retained = cost.usd / overall.retained
+    per_core = None
+    if per_paper is not None and overall.core_retained:
+        per_core = cost.usd / overall.core_retained
     return ConfigScore(
         config=config.name,
         description=config.description,
@@ -489,6 +527,7 @@ def evaluate_config(
         cost_usd=None if cost_usd is None else format(cost_usd, "f"),
         cost_per_paper_usd=None if per_paper is None else f"{per_paper:.9f}",
         cost_per_retained_claim_usd=None if per_retained is None else f"{per_retained:.9f}",
+        cost_per_core_claim_usd=None if per_core is None else f"{per_core:.9f}",
         cache_hits=cost.cache_hits,
         calls=cost.calls,
         by_split=by_split,
@@ -531,42 +570,55 @@ def render_report(scores: Sequence[ConfigScore], *, baseline_name: str = "baseli
         "",
         "- **Aligned precision**: `CORRECT / aligned` over output that matches a gold-labelled",
         "  baseline claim (same sentence; see the `matching` column). Wilson 95% CI.",
-        "- **Retention**: share of the 200 gold claims the configuration still emits.",
+        "- **Retention (all)**: share of the 200 gold claims the configuration still emits.",
+        "- **Retention (core)**: share of the gold claims in `core` sections (abstract/results/"
+        "conclusion) that it still emits — ADR-0021, proposed. It shows what a configuration",
+        "  gives up by reading fewer sections instead of hiding it in one blended rate.",
         "- **Unverifiable rate**: share of evaluated output that matches no gold row.",
         "- **Cost**: list-price USD from the ledger. Free tier: real spend is $0.",
         "",
         "## Configurations",
         "",
-        "| Config | Papers | Claims | Claims/paper | $/paper | Dev precision | Dev retention | "
-        "Test precision | Test retention | Unverifiable | Matching | Notes |",
-        "| :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |",
+        "| Config | Papers | Claims | Claims/paper | $/paper | $/core claim | Dev precision | "
+        "Dev retention | Test precision | Test retention | Core retention | Unverifiable | "
+        "Matching | Notes |",
+        "| :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |",
     ]
     for score_row in scores:
         unverifiable = _unverifiable_rate(score_row.overall)
         cost = "-" if score_row.cost_per_paper_usd is None else "$" + score_row.cost_per_paper_usd
+        core_cost = (
+            "-"
+            if score_row.cost_per_core_claim_usd is None
+            else "$" + score_row.cost_per_core_claim_usd
+        )
         lines.append(
             f"| `{score_row.config}` | {score_row.papers} | {score_row.claims} | "
-            f"{score_row.claims_per_paper:.2f} | {cost} | "
+            f"{score_row.claims_per_paper:.2f} | {cost} | {core_cost} | "
             f"{_ci(score_row.by_split['dev'])} | "
             f"{_fmt_pct(score_row.by_split['dev'].retention)} | "
             f"{_ci(score_row.by_split['test'])} | "
             f"{_fmt_pct(score_row.by_split['test'].retention)} | "
+            f"{_fmt_pct(score_row.overall.core_retention)} | "
             f"{_fmt_pct(unverifiable)} | {score_row.matching} | {score_row.description} |"
         )
     lines += [
         "",
         "## Detail",
         "",
-        "| Config | Split | n gold | Retained | Retention | Aligned rows | Correct rows | "
-        "Emitted claims | Aligned claims | Cost USD | Calls | Cache hits |",
-        "| :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |",
+        "| Config | Split | n gold | Retained | Retention | Core gold | Core retained | "
+        "Core retention | Aligned rows | Correct rows | Emitted claims | Aligned claims | "
+        "Cost USD | Calls | Cache hits |",
+        "| :-- | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | "
+        "--: | --: |",
     ]
     for score_row in scores:
         for split in (*SPLITS, "all"):
             row = score_row.by_split.get(split, score_row.overall)
             lines.append(
                 f"| `{score_row.config}` | {split} | {row.gold} | {row.retained} | "
-                f"{_fmt_pct(row.retention)} | {row.aligned} | {row.aligned_correct} | "
+                f"{_fmt_pct(row.retention)} | {row.core_gold} | {row.core_retained} | "
+                f"{_fmt_pct(row.core_retention)} | {row.aligned} | {row.aligned_correct} | "
                 f"{row.emitted} | {row.claim_aligned} | {score_row.cost_usd or '-'} | "
                 f"{score_row.calls} | {score_row.cache_hits} |"
             )

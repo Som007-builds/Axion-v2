@@ -339,6 +339,48 @@ selection) and cannot inherit the baseline's 96.5% precision by construction. So
 be dev-only; the operating point is always reported on the frozen test split. The owner must
 approve ADR-0020 and any small-tier adoption before P3.
 
+## ADR-0021 — P2 reports two retention numbers and cost per core-section claim
+
+**Date:** 2026-11-16 — **Status:** Proposed (owner instruction at P2-02 review, 2026-11-16). The gate is
+**not** changed until the owner approves this ADR.
+
+**Context.** P2-02 measured that section targeting removes most of the audited output: the `core` set
+(abstract/results/conclusion) held only **57 of 200 gold claims (28.5%)**, so the lever showed −56.4%
+cost with retention 34.5%. A single retention number therefore conflates two very different things:
+output the configuration chose not to look for (sections it never read) and output it failed to
+reproduce (sections it read but produced nothing usable). Passing the whole P2 phase on one blended
+number would let a cheap configuration win by simply reading less. P3 will need to know which
+sections the *relied-upon* claims actually live in before that is decided.
+
+**Decision (proposed).** Every P2 configuration reports:
+1. **Retention — all claims:** share of the 200 gold claims the configuration still emits (today's
+   number, unchanged).
+2. **Retention — core-section claims:** share of the **57** gold claims whose recorded section matches
+   the configuration's own section set that it still emits. A configuration that does not read a
+   section is not scored on claims from it, but the exclusion is stated, never folded into one rate.
+3. **Cost per core-section claim:** list-price USD (from the ledger) divided by the retained
+   core-section gold claims, reported next to `$/paper` and `$/claim`.
+4. **Aligned precision** stays as defined (ADR-0020): `CORRECT / aligned`, with unverifiable output
+   counted separately.
+
+The **gate keeps both precision and agreement-with-baseline**: a configuration must hold aligned
+precision within tolerance *and* retain claims, reported under both definitions above. The numeric
+thresholds, and whether the core-section retention becomes the binding one, are **NOT** decided here;
+they stay as PRD §P2 states until the owner approves. P3 separately checks which sections the
+relied-upon claims come from, because that — not P2's cost table — determines whether dropping a
+section is acceptable.
+
+**Alternatives considered:** keep one blended retention number (hides reading less as failure or
+manufactures success); score precision only on retained claims with no retention reported (lets a
+configuration emit almost nothing); let each lever choose its own sections and report its own
+convenient subset (not comparable across rows).
+
+**Consequences:** the ablation harness must emit both retention numbers and `$/core-section claim`
+for every row; existing rows are recomputed from the same artifacts (no new labels, no new LLM
+calls). Rows with a different section set remain comparable because the core definition is fixed in
+config, not per configuration. Promotion to Accepted is the owner's call, together with any change to
+the gate wording.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title
