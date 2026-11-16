@@ -44,13 +44,15 @@ to every task below; task IDs are unchanged.
 - depends: P1 gate passed
 - what: Frozen dev/test claim audit split; scripted configs; JSON + markdown outputs; seeds and config hashes recorded; cost from ledger.
 - acceptance: `python scripts/ablate.py --config baseline` reproduces the P1 baseline within tolerance **without new LLM calls** (replays the frozen silver run). Reports aligned precision, retention, unverifiable rate, and cost.
-  - agent: opencode | started: 2026-11-16 | branch: p2
+  - agent: opencode (implementation), Buffy (verify + commit) | started: 2026-11-16 | branch: p2
   - notes:
+    - 2026-11-16 Buffy: resumed the stale work per protocol §5 — the task was already `[x]` with evidence but **committed nowhere**; all nine files were staged and `jats.py` also had an unstaged ruff-format rewrap of the function added in the same diff. Decision: **continue**, not restart. Re-ran the whole suite and the replay before committing; the `jats.py` addition (`split_sentences`, `sentence_bounds`) is required by the harness's sentence alignment, and the unstaged part is only its formatting, so both belong to this task rather than a separate commit.
     - Unit of precision is the **gold row**: a config covers a gold claim when it emits a claim in the same sentence. A replay is therefore exact, not approximate (193/200), and duplicate output cannot inflate precision.
     - Baseline replay makes **no LLM calls**; cost is read from the existing ledger run `p1-10-flashlite-s20261114-n100`. Config file hash and input file hashes are recorded in `eval/ablation/results/results.json`.
     - Output that matches no gold row is reported as unverifiable and never counted as correct. This is expected to be large (~45%) because gold sampled only 200 of the baseline's claims.
     - 10 offline tests in `tests/test_ablation.py` cover exact replay, duplicate handling, sentence alignment, split leakage, and ledger cost.
-  - done: 2026-11-16 | evidence: `python scripts/ablate.py --config baseline --report docs/reports/P2-ablation.md` → precision **0.965** (193/200 exact), retention **1.000**, dev **0.961165**, test **0.969072**, unverifiable **45.1%**, cost **$0.005644590/paper**, 0 calls (replay); `pytest -q` 306 passed / 2 skipped on main before change and green with the new tests; ruff check/format and mypy clean.
+  - done: 2026-11-16 | evidence: commit `6033b07`; `python scripts/ablate.py --config baseline` → precision **0.965** (193/200 exact), retention **1.000**, dev **0.961165**, test **0.969072**, unverifiable **45.1%**, cost **$0.005644590/paper** vs the P1 run report **$0.005645**, 0 calls (replay); `baseline_check` → `precision_matches: true`, `retention_complete: true`.
+  - verification 2026-11-16 (Buffy): `ruff check .` clean; `ruff format --check .` 91 files formatted; `mypy src/axion` clean (46 files); `pytest -q` **316 passed, 2 skipped** (306 before + 10 in `tests/test_ablation.py`); pre-commit **8/8** on the commit. No LLM calls; real spend remained **$0**.
 
 ### [ ] P2-02 — Lever: section targeting
 - depends: P2-01

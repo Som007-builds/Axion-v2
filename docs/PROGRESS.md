@@ -14,8 +14,9 @@
 - **Failure/retry hardening (ADR-0017 amendment):** sanitized root cause (class, message, HTTP/provider status, finish reason, tokens, attempts) now lands in the ledger, `failures.jsonl`, and the run report; `max_output_tokens` is **16384** with thinking **medium** recorded per call; empty `MAX_TOKENS` output is `OutputTokenExhaustedError` and non-retryable; only network/5xx/504 retries, at most once, and retries are paced like first attempts; 429/`RESOURCE_EXHAUSTED`/daily quota stop the run at a checkpoint.
 - **Gemini validation (2026-11-15, 2 requests):** the fixed request was accepted (no schema error) but `gemini-3.8-flash` returned **HTTP 504 `DEADLINE_EXCEEDED` twice**, each after ~119 s, with `thinking=medium` and `max_output_tokens=16384` on a 7,589-token prompt. **No claims/tokens/cost measured.** The adapter timeout is now 300 s; that change is unverified. Daily quota used: **12 of 20** (cap 18).
 - **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Blast-radius counts are **conditional on the included citer set only**; P3 owns on-demand expansion (ADR-0015 Proposed). Exact counts are in `docs/reports/P1-corpus-coverage.md`.
-- **Next action:** P1 is closed. Start P2 at `docs/phases/P2-cost-cascade/TODO.md` with the first unclaimed task, using the frozen 22 dev / 23 test paper split. The P2 small tier (`gemini-3.1-flash-lite`) and bulk labeler (Gemma 4 26B/31B) remain **Proposed**; do not switch models or begin that spend path without owner approval. The optional `gemini-3.8-flash` reference comparison never becomes silver.
-- **Last updated:** 2026-11-16 by DeepSeek V4.1 Flash Free (P1-11 agreement closed; P1 complete)
+- **P2-01 complete (2026-11-16, commit `6033b07`):** the ablation harness replays a configuration against the frozen gold audit with **no LLM calls**. Baseline replay reproduces P1 exactly: aligned precision **0.965** (193/200), retention **1.000**, dev **0.961165**, test **0.969072**, unverifiable **45.1%**, cost **$0.005644590/paper** vs the P1 run's **$0.005645**. Verbatim gold, ledger cost, paper-level split; `eval/ablation/results/` is regenerable and ignored.
+- **Next action:** claim **P2-02 (lever: section targeting)** in `docs/phases/P2-cost-cascade/TODO.md`, using the frozen 22 dev / 23 test paper split. The P2 small tier (`gemini-3.1-flash-lite`) and bulk labeler (Gemma 4 26B/31B) remain **Proposed**; do not switch models or begin that spend path without owner approval. The optional `gemini-3.8-flash` reference comparison never becomes silver.
+- **Last updated:** 2026-11-16 by Buffy (P2-01 verified and committed; P2-02 is next)
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -122,6 +123,14 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-16 — Buffy — P2-01 verified and committed
+- Resumed after a cut-off thread: P2-01 was `[x]` in the TODO with evidence, but the work existed only as a **staged, uncommitted** diff (`src/axion/eval/ablation.py`, `scripts/ablate.py`, `eval/ablation/configs/baseline.json`, `tests/test_ablation.py`, `docs/reports/P2-ablation.md`, `Makefile`, `.gitignore`, `src/axion/parse/jats.py`, TODO).
+- `src/axion/parse/jats.py` had two parts: a **staged** addition of `split_sentences`/`sentence_bounds` (public, so evaluation alignment uses the parser's own sentence boundary rule — required by this harness) and an **unstaged** ruff-format rewrap of that same new function. Neither is unrelated work; both are part of P2-01, so they ship in one commit.
+- Verification before committing: `ruff check .` clean, `ruff format --check .` 91 files, `mypy src/axion` clean (46 files), `pytest -q` **316 passed / 2 skipped**, pre-commit **8/8**.
+- `python scripts/ablate.py --config baseline` (replay, **0 LLM calls**): precision **0.965** (193/200), retention **1.000**, dev **0.961165**, test **0.969072**, unverifiable **45.1%**, cost **$0.005644590/paper**; `baseline_check` reports `precision_matches: true` and `retention_complete: true` against the documented P1 values ($0.005645/paper, precision 96.5%).
+- State: branch `p2`, commit `6033b07`; TODO P2-01 `[x]` with evidence. Real spend **$0**.
+- Next: P2-02 (section targeting). Blockers/questions: none; the P2 small tier and bulk labeler still need owner approval before adoption.
+
 ### 2026-11-16 — DeepSeek V4.1 Flash Free — P1-11 agreement closed; P1 complete
 - Owner supplied `eval/audit/claims_audit_v1_overlap_labelled.csv`: 40 rows, `labeler=friend`, rubric v2, all `CORRECT`. The agent created or changed no labels.
 - `scripts/audit_validate.py --overlap` reports **n=200, precision 96.5%, Wilson 93.0–98.3%**; agreement **n=40, raw 100.0%, Cohen's κ not estimable** because both label sets used only `CORRECT`. The overlap contains none of the 7 `NOT_A_CLAIM` rows, so it does not estimate agreement on the error class. `docs/reports/P1-audit.md` and `docs/reports/P1-baseline.md` state this caveat.
