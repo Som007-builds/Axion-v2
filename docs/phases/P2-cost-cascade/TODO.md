@@ -11,19 +11,46 @@
 - Take the **first** task that is `[ ]` or a stale `[~]`, respecting `depends:`.
 - Update `docs/PROGRESS.md` at session end.
 
+## Reality check and amendments (2026-11-16, ADR-0020 Proposed — read before starting)
+
+Since this TODO was written, P1 measured a baseline and the provider changed. These amendments apply
+to every task below; task IDs are unchanged.
+
+- **Provider and baseline are frozen.** Gemini free tier; baseline `gemini-3.5-flash-lite`, thinking
+  `default`, max output 16,384, temperature 0.0, prompt `claim-extraction-v1`. `gemini-3.8-flash` is
+  the large/reference tier (5 RPM / 20 RPD). Billing off, real spend $0, list price ledgered.
+- **Gold is precision-only.** 200 audited baseline claims over 45 papers, 22 dev / 23 test, split by
+  paper and frozen. Gold labels the P1 output; **absolute recall is unknown**.
+- **Three quality numbers, always reported together:** (a) precision on gold dev/test over *aligned*
+  output; (b) retention of the 200 gold baseline claims (agreement relative to baseline output —
+  **not recall**); (c) cost from the ledger. Output that aligns with no gold row is **unverifiable**
+  and reported separately, never counted as correct.
+- **Training excludes all 45 gold papers.** Silver trains; gold evaluates; split by paper; never
+  tune on the frozen test split.
+- **Silver labelling is a seeded corpus sample, not the corpus.** Daily caps (450 teacher
+  requests/day) forbid corpus-wide labelling. The sample size is justified by the measured learning
+  curve (P2-03c), not chosen to hit a round number.
+- **No new model is adopted without owner approval.** `gemini-3.1-flash-lite` and Gemma 4
+  (`gemma-4-26b-a4b-it`, `gemma-4-31b-it`) are candidates. No list price exists for Gemma and
+  structured-output support is unverified; test on small samples and ask.
+- **Structured claim fields are not measured by gold.** A sentence-level student emits
+  `claim_type="other"`; report that honestly.
+- **No GNU `make` on this host.** "`make ablate`" means `python scripts/ablate.py`; "`make report`"
+  means the documented Python script.
+
 ## Tasks
 
 ### [ ] P2-01 — Ablation harness
 - depends: P1 gate passed
 - what: Frozen dev/test claim audit split; scripted configs; JSON + markdown outputs; seeds and config hashes recorded; cost from ledger.
-- acceptance: `make ablate CONFIG=baseline` reproduces P1 baseline within tolerance.
+- acceptance: `python scripts/ablate.py --config baseline` reproduces the P1 baseline within tolerance **without new LLM calls** (replays the frozen silver run). Reports aligned precision, retention, unverifiable rate, and cost.
   - agent: — | started: — | branch: p2
   - notes:
   - done: — | evidence: —
 
 ### [ ] P2-02 — Lever: section targeting
 - depends: P2-01
-- what: Restrict extraction to configurable sections; measure delta cost, precision, claim yield.
+- what: Restrict extraction to configurable sections; measure delta cost, aligned precision, retention of gold baseline claims, unverifiable rate, and claim yield.
 - acceptance: Isolated ablation row in results table.
   - agent: — | started: — | branch: p2
   - notes:
@@ -40,8 +67,8 @@
 
 ### [ ] P2-03a — Silver-label generation by teacher
 - depends: P2-01, P1-10
-- what: Budget-capped, dry-run-first teacher labeling on the unlabeled corpus; persist provenance (teacher model/version, prompt version, run_id); paper-level split; write to the silver-label store.
-- acceptance: Dry-run estimate produced; silver manifest + hashes committed (large labels may be external with manifest); gold papers excluded; ledger stage `teacher_label`.
+- what: Budget-capped, dry-run-first teacher labeling on a **seeded sample of corpus papers excluding all 45 gold papers**; persist provenance (teacher model/version, prompt version, run_id); paper-level split; write to the silver-label store. Sample size is justified by the learning curve (P2-03c).
+- acceptance: Dry-run estimate produced; sample size and seed recorded and justified from the learning curve; silver manifest + hashes committed (large labels may be external with manifest); **zero gold papers in the sample**; ledger stage `teacher_label`; daily-quota stop is clean and resumable.
   - agent: — | started: — | branch: p2
   - notes:
   - done: — | evidence: —
@@ -49,7 +76,7 @@
 ### [ ] P2-03b — Train claim-sentence student + gold evaluation
 - depends: P2-03a
 - what: Train a small encoder on the silver TRAIN split; tune thresholds on gold DEV; report on frozen gold TEST; record student version/hash. Never evaluate on teacher-labeled data.
-- acceptance: Gold-test precision/recall/F1 with CIs; no paper overlap between train and gold dev/test; isolated ablation row; model metadata/hash recorded.
+- acceptance: Gold-test aligned precision, **retention of gold baseline claims**, and unverifiable rate with CIs; absolute recall is reported as **unmeasured**; no paper overlap between train and gold dev/test; isolated ablation row; model metadata/hash recorded.
   - agent: — | started: — | branch: p2
   - notes:
   - done: — | evidence: —
