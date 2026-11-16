@@ -117,11 +117,17 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 
 ## Blocked tasks
 - ✅ P1-10: closed 2026-11-15 — measured baseline 100 papers / 765 claims on `gemini-3.5-flash-lite`, $0 real spend.
-- P1-11: labels are in and precision is computed (96.5%). Remaining: the blind 10% relabel **due ≥7 days after 2026-11-15 (2026-11-22)** or a second labeler on `claims_audit_v1_overlap.csv`; then `audit_validate.py --overlap` reports κ.
+- P1-11: labels are in and precision is computed (96.5%). Remaining: the blind **40-claim (20%)** overlap relabel **on/after 2026-11-22** (≥10% requirement) or a second labeler on `claims_audit_v1_overlap.csv`; then `audit_validate.py --overlap` reports raw agreement + κ.
 - P1-12: follows from P1-11 (and the full P1-10 run).
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-16 — DeepSeek V4.1 Flash Free — P1 verification + status cleanup
+- Verified clean at `67555ac`: `p1 = main = origin/p1 = origin/main`; **304 passed, 2 skipped**; ruff check/format, strict mypy, and all 8 pre-commit hooks pass; `scripts/build_p1_report.py` regenerates `docs/reports/P1-baseline.md` with no diff; `scripts/audit_validate.py` confirms **n=200, precision 96.5%, Wilson 93.0–98.3%**; primary CSV has 0 blank labels and 0 non-CORRECT rows without a note; the 40-row overlap file is entirely blank.
+- No labels were created or changed and no LLM calls were made. Corrected stale docs that still said "No labels exist"/"0 claims labelled", and refreshed the P1 status, next action, and pacing text.
+- Only **P1-11** remains: blind 40-claim overlap relabel on/after 2026-11-22, or an independent second labeler; then run `audit_validate.py --overlap` and close the phase.
+- Commit `5112587`; `p1` and `main` pushed.
+
 ### 2026-11-15 — Freebuff / DeepSeek V4.x Flash — P1 audit labelled, gate passed
 - Status: **P1 gate PASSED**; branch `p1`; nothing pushed by this session's agent-owned steps until the owner asked (then `p1` + `main` were pushed together).
 - Owner labelled all 200 audit claims: 193 `CORRECT`, 7 `NOT_A_CLAIM` (each with a note), labeler `owner`, rubric v2. The agent created no labels.
