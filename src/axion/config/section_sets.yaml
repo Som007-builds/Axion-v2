@@ -1,0 +1,18 @@
+# Named section sets for the extraction section-targeting lever (P2-02, ADR-0020).
+#
+# A pattern matches case-insensitively against a section's title and its path,
+# as substrings. An empty list keeps every section the parser produced (minus
+# the owner's exclusion list in `axion.extract.claims`), which is the frozen P1
+# baseline. The set is applied before the prompt is rendered, so a model cannot
+# see or be credited for a section outside it.
+version: 1
+sets:
+  all:
+    description: "P1 baseline — every parsed section except the owner's exclusions."
+    include: []
+  core:
+    description: "Abstract, Results and Conclusion only (PRD P2.2 lever)."
+    include:
+      - abstract
+      - result
+      - conclusion

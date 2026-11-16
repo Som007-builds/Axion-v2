@@ -1,0 +1,51 @@
+{
+  "estimate": {
+    "claims_per_paper_scenarios": {
+      "10": 10.0,
+      "2": 2.0,
+      "5": 5.0
+    },
+    "clears_200_claims_at_5_per_paper": true,
+    "cost_status": "not computed here: this is a dry-run estimate; the paid run records actual list-price cost in the ledger",
+    "estimated_calls": 96,
+    "expected_claims_by_scenario": {
+      "10": 960.0,
+      "2": 192.0,
+      "5": 480.0
+    },
+    "kind": "estimate",
+    "method": "Token counts are ceil(characters/4) over the rendered prompt (baseline sections plus instructions). Output assumes 120 tokens per claim. Claims/paper is a scenario, not a measurement; no extractor has run.",
+    "output_tokens_by_scenario": {
+      "10": 115200,
+      "2": 23040,
+      "5": 57600
+    },
+    "papers_with_text": 96,
+    "prompt_tokens_mean": 2014.8958333333333,
+    "prompt_tokens_total": 193430,
+    "prompt_version": "claim-extraction-v1",
+    "recommended_sample_size": 96,
+    "sample_size": 100,
+    "seed": 20261114
+  },
+  "plan": {
+    "empty_documents": 4,
+    "mean_prompt_tokens": 2014.8958333333333,
+    "median_prompt_tokens": 1495.0,
+    "missing_fulltext": 0,
+    "p95_prompt_tokens": 5218,
+    "parse_failures": 0,
+    "requested": 100,
+    "with_text": 96
+  },
+  "section_set": {
+    "description": "Abstract, Results and Conclusion only (PRD P2.2 lever).",
+    "file_sha256": "b5f2c0cea8cf11624569853ef09ff02e39ef8b144e1489349cc87b6bc80a7a0d",
+    "include": [
+      "abstract",
+      "result",
+      "conclusion"
+    ],
+    "name": "core"
+  }
+}

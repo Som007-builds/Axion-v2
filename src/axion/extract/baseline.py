@@ -39,6 +39,7 @@ from axion.extract.claims import (
     write_silver_manifest,
 )
 from axion.extract.prompting import render_claim_prompt
+from axion.extract.sections import restrict_document
 from axion.ingest.corpus import CorpusPaper
 from axion.llm.client import LLMClient
 from axion.llm.errors import (
@@ -233,8 +234,13 @@ def build_plan(
     seed: int = DEFAULT_SEED,
     prompt_version: str = PROMPT_VERSION,
     max_claims: int = DEFAULT_MAX_CLAIMS,
+    include_sections: tuple[str, ...] = (),
 ) -> tuple[list[PaperPlan], PlanReport]:
-    """Parse a seeded paper sample and render one prompt per usable paper."""
+    """Parse a seeded paper sample and render one prompt per usable paper.
+
+    ``include_sections`` applies the section-targeting lever (P2-02) before the
+    prompt is rendered; empty keeps the frozen P1 baseline sections.
+    """
     if sample_size < 1:
         raise ExtractionError("sample_size must be at least 1")
     chosen = sample_papers(papers, sample_size, seed=seed)
@@ -252,7 +258,7 @@ def build_plan(
         except JatsParseError:
             parse_failures += 1
             continue
-        document = build_baseline_document(parsed)
+        document = restrict_document(build_baseline_document(parsed), include_sections)
         if not document.sections:
             empty += 1
             continue

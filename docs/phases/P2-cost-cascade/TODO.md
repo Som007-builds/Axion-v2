@@ -54,12 +54,16 @@ to every task below; task IDs are unchanged.
   - done: 2026-11-16 | evidence: commit `6033b07`; `python scripts/ablate.py --config baseline` → precision **0.965** (193/200 exact), retention **1.000**, dev **0.961165**, test **0.969072**, unverifiable **45.1%**, cost **$0.005644590/paper** vs the P1 run report **$0.005645**, 0 calls (replay); `baseline_check` → `precision_matches: true`, `retention_complete: true`.
   - verification 2026-11-16 (Buffy): `ruff check .` clean; `ruff format --check .` 91 files formatted; `mypy src/axion` clean (46 files); `pytest -q` **316 passed, 2 skipped** (306 before + 10 in `tests/test_ablation.py`); pre-commit **8/8** on the commit. No LLM calls; real spend remained **$0**.
 
-### [ ] P2-02 — Lever: section targeting
+### [~] P2-02 — Lever: section targeting
 - depends: P2-01
 - what: Restrict extraction to configurable sections; measure delta cost, aligned precision, retention of gold baseline claims, unverifiable rate, and claim yield.
 - acceptance: Isolated ablation row in results table.
-  - agent: — | started: — | branch: p2
+  - agent: Buffy | started: 2026-11-16 | branch: p2
   - notes:
+    - 2026-11-16 Buffy: section targeting applied **before the prompt is rendered** (`restrict_document` in `src/axion/extract/sections.py`), so `verify_claims` already rejects a claim naming an excluded section — no second guard needed. Named sets live in `src/axion/config/section_sets.yaml` (`all` = P1 behaviour, `core` = abstract/results/conclusion), selected with `--sections`.
+    - Planned command (free tier, billing off, $0 real spend):
+      `AXION_DRY_RUN=false python scripts/run_baseline_extraction.py --execute --sections core --run-id p2-02-sections-core-s20261114-n100 --silver-dir eval/silver/claims_v1/sections_core --out docs/reports/P2-02-sections-core --audit-out eval/audit/p2-02-sections-core.csv`
+      (the `--audit-out` override keeps the official `claims_audit_v1.csv` untouched).
   - done: — | evidence: —
 
 ### [-] P2-03 — Lever: sentence-level claim filter (superseded)
