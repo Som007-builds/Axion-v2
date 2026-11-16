@@ -97,17 +97,20 @@ the second labels into `relabel_label` and computes raw agreement plus Cohen's
 kappa. The alternative is the owner's blind self-relabel of the seeded 10%
 after at least 7 days. ADR-0016 is the Proposed decision; the owner approves.
 
-## Current P1 status (2026-11-15)
+## Current P1 status (2026-11-16)
 
-The official export is ready and was drawn from the Flash-Lite baseline run
+The official audit was drawn from the Flash-Lite baseline run
 `p1-10-flashlite-s20261114-n100` (100 papers, 765 accepted silver claims):
 
 - `claims_audit_v1.csv` — **200 claims from 45 papers**, at most 5 claims per
-  paper (ADR-0018), seed `20261114`, 22 dev / 23 test papers, every label field
-  blank.
+  paper (ADR-0018), seed `20261114`, 22 dev / 23 test papers. The owner filled
+  the primary labels on 2026-11-15: **193 `CORRECT`, 7 `NOT_A_CLAIM`**, every
+  non-CORRECT row has a note. Precision is **96.5%** (Wilson 95% 93.0–98.3%).
 - `claims_audit_v1.summary.json` — counts, seed, sampler, and the corpus
   snapshot id (`fdaf972b397a32183d2ccf93f55298f1c76fe02037f07fb5a1cb7e4d5d2927be`).
+- `claims_audit_v1_overlap.csv` — seeded **40-claim (20%)** blind subset, label
+  fields still blank. This is the remaining agreement step: a second labeler,
+  or the owner's blind self-relabel on/after 2026-11-22.
 
-**No labels exist.** The earlier 21-claim Groq pilot export and the pilot CSV
-are tooling fixtures, not the official sample. Do not label them as if they
-were.
+The earlier 21-claim Groq pilot export and the pilot CSV are tooling fixtures,
+not the official sample. Do not label them as if they were.
