@@ -168,7 +168,7 @@
 
 ### [x] P1-11 — Claim audit (human)
 - depends: P1-10
-- what: Draw seeded sample >=200 claims; label per AUDIT_RUBRIC; relabel 10% after >=7 days; commit labels with provenance; freeze dev/test split.
+- what: Draw seeded sample >=200 claims; label per AUDIT_RUBRIC; complete agreement (blind self-relabel after >=7 days or independent 20% overlap); commit labels with provenance; freeze dev/test split.
 - acceptance: eval/audit/claims_audit_v1.csv committed; precision + Wilson CI + agreement computed by script. (Owner labels; agent prepares export and scripts.)
   - agent: DeepSeek V4.1 Flash Free (tooling only) | started: 2026-11-14 | branch: p1
   - notes:
