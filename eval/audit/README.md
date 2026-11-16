@@ -39,8 +39,9 @@ python scripts/audit_sample.py --claims data/claims.jsonl --out eval/audit/claim
    `DUPLICATE` in `label`.
 3. Write a one-line `note` for every non-`CORRECT` row.
 4. Fill `labeler` and `date` (ISO `YYYY-MM-DD`).
-5. After **at least 7 days**, relabel a random 10% blind in `relabel_label`
-   without looking at `label`.
+5. Complete **one** agreement path: after **at least 7 days**, relabel a
+   random 10% blind in `relabel_label` without looking at `label`; or have an
+   independent second labeler fill the seeded 20% overlap file blind.
 
 Blank-label rows are allowed in a work-in-progress file and are reported as
 unlabelled; the metrics script never guesses them.
@@ -53,8 +54,10 @@ python scripts/audit_metrics.py --audit eval/audit/claims_audit_v1.csv \
 ```
 
 The script refuses unknown label values and reports precision, a Wilson 95%
-CI, the failure breakdown, precision by section, and self-agreement (raw % and
-Cohen's κ) once relabels exist. `--json` prints the same numbers for tooling.
+CI, the failure breakdown, precision by section, and agreement (raw % and
+Cohen's κ) once relabels or a second-labeler overlap exist. If both label sets
+use only one label, κ is undefined and is reported as **not estimable** rather
+than as a perfect score. `--json` prints the same numbers for tooling.
 
 ## 5. Provenance
 
@@ -69,7 +72,7 @@ version, run id) in the P1 baseline report. A teacher/student output is
 2. Open `eval/audit/claim_audit_tool.html` directly in a browser and load the CSV (no server or network).
 3. Label blind with `1`-`5`; press `N` for a note on every non-`CORRECT` row; arrows navigate; `Z` undoes.
 4. Download the labelled CSV, then validate it: `python scripts/audit_validate.py --audit <labelled.csv> --out docs/reports/P1-audit.md`.
-5. Optional agreement: have a second labeler load the `*_overlap.csv`, label it blind, and pass `--overlap <second.csv>` to `audit_validate.py`.
+5. Agreement: either relabel the 10% blind after ≥7 days, or have a second labeler load the `*_overlap.csv`, label it blind, and pass `--overlap <second.csv>` to `audit_validate.py`.
 
 ## Audit tool (single local HTML file)
 
@@ -95,7 +98,15 @@ subset with the same columns. The second labeler labels that file blind; no
 column is added to the audit. `scripts/audit_validate.py --overlap ...` merges
 the second labels into `relabel_label` and computes raw agreement plus Cohen's
 kappa. The alternative is the owner's blind self-relabel of the seeded 10%
-after at least 7 days. ADR-0016 is the Proposed decision; the owner approves.
+after at least 7 days. ADR-0016 is **Accepted**; the owner chose the
+independent-second-labeler path on 2026-11-16.
+
+**Completed run (2026-11-16):** `claims_audit_v1_overlap_labelled.csv` has the
+40 second-labeler rows (`labeler=friend`, rubric v2). All 40 were `CORRECT` in
+both sets, so raw agreement is **100.0%**; κ is **not estimable** because both
+sets used one label. The overlap contains none of the 7 `NOT_A_CLAIM` rows, so
+it does not estimate agreement on the error class. Report:
+`docs/reports/P1-audit.md`.
 
 ## Current P1 status (2026-11-16)
 
@@ -108,9 +119,13 @@ The official audit was drawn from the Flash-Lite baseline run
   non-CORRECT row has a note. Precision is **96.5%** (Wilson 95% 93.0–98.3%).
 - `claims_audit_v1.summary.json` — counts, seed, sampler, and the corpus
   snapshot id (`fdaf972b397a32183d2ccf93f55298f1c76fe02037f07fb5a1cb7e4d5d2927be`).
-- `claims_audit_v1_overlap.csv` — seeded **40-claim (20%)** blind subset, label
-  fields still blank. This is the remaining agreement step: a second labeler,
-  or the owner's blind self-relabel on/after 2026-11-22.
+- `claims_audit_v1_overlap.csv` — seeded **40-claim (20%)** blind subset; the
+  blank template used for the agreement step.
+- `claims_audit_v1_overlap_labelled.csv` — the independent second-labeler
+  result: **40/40 `CORRECT`**, rubric v2, `labeler=friend`, 2026-11-16. Raw
+  agreement **100.0%**; κ **not estimable** (one label class). It contains
+  none of the 7 `NOT_A_CLAIM` rows, so it does not estimate agreement on the
+  error class. `docs/reports/P1-audit.md` records the full result.
 
 The earlier 21-claim Groq pilot export and the pilot CSV are tooling fixtures,
 not the official sample. Do not label them as if they were.

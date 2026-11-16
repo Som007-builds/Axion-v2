@@ -75,5 +75,34 @@ def test_report_records_the_gate_decision_from_labels(tmp_path: Path) -> None:
 
     assert "**PASS**" in text
     assert "90.0%" in text
-    assert "Self-agreement: **pending**" in text
+    assert "Agreement: **pending**" in text
     assert "0 relabel rows filled" in text
+
+
+def test_report_uses_independent_overlap_and_flags_degenerate_kappa(tmp_path: Path) -> None:
+    import csv
+
+    audit = tmp_path / "audit.csv"
+    _write_audit(audit, ["CORRECT"] * 10, paper_ids=["PMC1", "PMC2"])
+    with audit.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    overlap = tmp_path / "overlap.csv"
+    with overlap.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(AUDIT_COLUMNS))
+        writer.writeheader()
+        writer.writerows(rows[:2])
+
+    out = tmp_path / "P1-baseline.md"
+    text = build_report(
+        manifest_path=tmp_path / "missing-manifest.json",
+        audit_path=audit,
+        ledger_path=None,
+        out_path=out,
+        run_report_path=tmp_path / "missing-run.json",
+        overlap_path=overlap,
+    )
+
+    assert "Independent agreement: raw 100.0%" in text
+    assert "not estimable (degenerate)" in text
+    assert "does not validate the `NOT_A_CLAIM` calls" in text

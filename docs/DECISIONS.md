@@ -183,7 +183,7 @@ P1-08 ingests the Retraction Watch retracted papers in that subject plus all dis
 **Consequences:** P1 can finish with the existing graph and a clearly bounded claim. P3 must add query-time citer expansion (or an approved re-ingest) before any statement about the full citation literature. The 507 isolated sources and 5,734 truncated citers remain recorded in `docs/reports/P1-corpus-coverage.{md,json}`.
 
 ## ADR-0016 - P1-11 agreement: self-relabel or independent second labeler
-**Date:** 2026-11-15 - **Status:** Proposed (owner approval required)
+**Date:** 2026-11-15 - **Status:** Accepted (owner supplied the independent second-labeler overlap, 2026-11-16)
 
 **Context:** P1-11 needs an agreement statistic in addition to precision and its Wilson CI. The owner is the only labeler today, and a single-labeler audit cannot measure intra- or inter-labeler agreement. Labeling a second full sample is expensive.
 
@@ -196,6 +196,8 @@ Either path reports raw agreement and Cohen's kappa through the existing metrics
 **Alternatives considered:** skip agreement and report precision only (weaker audit); have the agent label a second time (not independent and violates the blind human audit); label the whole sample twice (unnecessary cost).
 
 **Consequences:** The first agreement number waits at least 7 days or for a second labeler. The overlap CSV is a separate file and must not be merged back into the primary labels; it only supplies `relabel_label`. The tool stores second-labeler work under a separate browser-storage key.
+
+**Outcome (2026-11-16):** the owner used the independent-second-labeler path. The seeded 40-claim (20%) overlap was labelled by `friend`; all 40 claims were `CORRECT` in both the primary and second-label sets, so raw agreement is **100.0%**. Cohen's kappa is **not estimable** because both sets used a single label (zero variance), and the overlap contains none of the 7 primary `NOT_A_CLAIM` rows. The statistic therefore does not estimate agreement on the error class; it is recorded as a weak but complete agreement check in `docs/reports/P1-audit.md`.
 
 ## ADR-0017 — P1 baseline switches from Groq to the Gemini free tier
 **Date:** 2026-11-15 — **Status:** Accepted (owner decision, 2026-11-15); amended by ADR-0019 (baseline model)

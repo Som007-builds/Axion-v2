@@ -3,9 +3,9 @@
 > Agents: update this file at the end of every session (and mid-session if long). Newest log entries first.
 
 ## Current state
-- **Phase:** P1 (foundation) — P1-01 through **P1-10** and **P1-12** are `[x]`; **P1-11 is the only open task**. The baseline is measured on `gemini-3.5-flash-lite` (**100 papers, 765 silver claims**, $0 real spend) and the official audit export exists (**200 claims from 45 papers**). **P1 gate PASSED (2026-11-15): audited precision 96.5%** ≥ the 90% floor, but the PASS is provisional until the P1-11 agreement step lands. P1-11 needs only the blind 40-claim overlap/relabel.
-- **P1-11 audit (2026-11-15, owner-labelled):** 200 claims / 45 papers, **193 CORRECT, 7 NOT_A_CLAIM** (0 distorted, unsupported, duplicate) → **precision 96.5%**, Wilson 95% **93.0–98.3%**, paper-level cluster bootstrap **94.0–98.6%** (45 clusters, 2,000 resamples, seed 20261114). Single labeler; self-agreement pending the blind relabel. Report: `docs/reports/P1-audit.md`.
-- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample), ADR-0015 Proposed (P1 blast-radius counts conditional on included citers; expansion deferred to P3), ADR-0016 Proposed (agreement by ≥7-day self-relabel or independent 20% second-labeler overlap), **ADR-0017 Accepted (Gemini free tier replaces Groq; $0 real spend)**, **ADR-0018 Accepted (audit export: ≥40 papers, ≤5 claims/paper, paper-level split, cluster bootstrap CI)**, **ADR-0019 Accepted (P1 baseline model = `gemini-3.5-flash-lite`; `gemini-3.8-flash` is the large/reference model only; P2 small tier + bulk labeler Proposed, not decided)**.
+- **Phase:** P1 (foundation) — **all tasks P1-01 through P1-12 are `[x]`; phase complete.** The baseline is measured on `gemini-3.5-flash-lite` (**100 papers, 765 silver claims**, $0 real spend) and the official audit export exists (**200 claims from 45 papers**). **P1 gate PASSED (final, 2026-11-16): audited precision 96.5%** ≥ the 90% floor. The independent 40-claim overlap is complete (40/40 `CORRECT`, raw agreement 100%); Cohen's κ is **not estimable** because both label sets used one label and the overlap contains no `NOT_A_CLAIM` rows. P2 is next.
+- **P1-11 audit (2026-11-16):** 200 claims / 45 papers, **193 CORRECT, 7 NOT_A_CLAIM** (0 distorted, unsupported, duplicate) → **precision 96.5%**, Wilson 95% **93.0–98.3%**, paper-level cluster bootstrap **94.0–98.6%** (45 clusters, 2,000 resamples, seed 20261114). Independent second labeler (`friend`) labelled the seeded 40-claim overlap: **40/40 CORRECT**, raw agreement **100%**, κ **not estimable/degenerate**; the overlap contains none of the 7 non-claims, so it does not estimate error-class agreement. Report: `docs/reports/P1-audit.md`.
+- **Owner decisions recorded:** ADR-0011 (clean V2 store rewrite), ADR-0012 (infectious disease, exact-count conditions, PMID limitation, config-driven manifest, oncology deferred), ADR-0013 (total corpus including citers, ~5,000 hard cap), ADR-0014 (P1-10 seeded sample), ADR-0015 Proposed (P1 blast-radius counts conditional on included citers; expansion deferred to P3), **ADR-0016 Accepted (agreement via independent 20% second-labeler overlap, 2026-11-16)**, **ADR-0017 Accepted (Gemini free tier replaces Groq; $0 real spend)**, **ADR-0018 Accepted (audit export: ≥40 papers, ≤5 claims/paper, paper-level split, cluster bootstrap CI)**, **ADR-0019 Accepted (P1 baseline model = `gemini-3.5-flash-lite`; `gemini-3.8-flash` is the large/reference model only; P2 small tier + bulk labeler Proposed, not decided)**.
 - **P1-10 Gemini implementation (2026-11-15):** `google-genai==2.8.0` pinned; `src/axion/llm/gemini.py` uses cleaned JSON-schema structured output, validates with Pydantic, maps `candidates + thoughts` to completion and `thoughts` to reasoning; `pricing.yaml` v2 has dated list prices (3.8 Flash $0.75/$3.75 through 2026-12-31, $1.50/$7.50 from 2027-01-01; 3.5 Flash-Lite $0.30/$2.50); the ledger records billing, price version, input/output/post-promotion USD, and generation config. Free-tier calls record list price with `billing=free_tier`; real spend is $0. The current ADR-0019 baseline is `gemini-3.5-flash-lite` at **15 RPM / 250K TPM / 500 RPD**, runner cap **450/day** with a 50-request margin; the earlier 5 RPM / 20 RPD values were the ADR-0017 trial tier. `src/axion/llm/pacing.py` enforces the configured RPM gap, daily cap, Pacific-day reset, and a clean `DailyQuotaError` stop.
 - **P1-10 baseline measured (2026-11-15, `p1-10-flashlite-s20261114-n100`):** 100/100 seeded papers, **765 accepted silver claims**, 0 parse failures, 108 recorded failures (97 span-not-verbatim, 11 unknown section). Verbatim **88.7%**, strict identical (0 normalization fixes). Tokens **697,734 prompt / 142,057 completion / 0 thinking** (839,791 total); list price **$0.564459** = **$0.005645/paper** and **$0.000738/accepted claim**; output **62.9%** of cost; latency mean 6,448 ms, p95 15,490 ms; prompt-gap **-8.7%**; **120 of 450** daily requests. Config: thinking `default` (no `thinking_config`), temperature 0.0, max output 16,384, prompt v1. Report: `eval/silver/claims_v1/baseline_flashlite/run_report.md`.
 - **Provider-failure policy:** TLS/socket read errors are transient (one retry through the pacer); an isolated provider failure is recorded and the batch continues; the run stops after **three consecutive** provider failures or immediately on a 429/daily-quota error (ADR-0019).
@@ -14,8 +14,8 @@
 - **Failure/retry hardening (ADR-0017 amendment):** sanitized root cause (class, message, HTTP/provider status, finish reason, tokens, attempts) now lands in the ledger, `failures.jsonl`, and the run report; `max_output_tokens` is **16384** with thinking **medium** recorded per call; empty `MAX_TOKENS` output is `OutputTokenExhaustedError` and non-retryable; only network/5xx/504 retries, at most once, and retries are paced like first attempts; 429/`RESOURCE_EXHAUSTED`/daily quota stop the run at a checkpoint.
 - **Gemini validation (2026-11-15, 2 requests):** the fixed request was accepted (no schema error) but `gemini-3.8-flash` returned **HTTP 504 `DEADLINE_EXCEEDED` twice**, each after ~119 s, with `thinking=medium` and `max_output_tokens=16384` on a 7,589-token prompt. **No claims/tokens/cost measured.** The adapter timeout is now 300 s; that change is unverified. Daily quota used: **12 of 20** (cap 18).
 - **Link coverage caveat:** 285 of 792 source papers have at least one incoming citer edge; 507 do not, and 34 citer papers have no outgoing edge. The 5,000-paper cap is not coverage-neutral. Blast-radius counts are **conditional on the included citer set only**; P3 owns on-demand expansion (ADR-0015 Proposed). Exact counts are in `docs/reports/P1-corpus-coverage.md`.
-- **Next action:** P1-11 needs only the **blind agreement step** — a second labeler, or the owner's blind self-relabel on/after **2026-11-22**. Open `eval/audit/claim_audit_tool.html`, load the blank `eval/audit/claims_audit_v1_overlap.csv` (**40 claims**), label blind, download, then run `scripts/audit_validate.py --audit eval/audit/claims_audit_v1.csv --overlap <downloaded.csv> --out docs/reports/P1-audit.md`. Do not edit the 200-row primary labels. No model work remains; the optional `gemini-3.8-flash` reference comparison never becomes silver.
-- **Last updated:** 2026-11-16 by DeepSeek V4.1 Flash Free (verification + status cleanup)
+- **Next action:** P1 is closed. Start P2 at `docs/phases/P2-cost-cascade/TODO.md` with the first unclaimed task, using the frozen 22 dev / 23 test paper split. The P2 small tier (`gemini-3.1-flash-lite`) and bulk labeler (Gemma 4 26B/31B) remain **Proposed**; do not switch models or begin that spend path without owner approval. The optional `gemini-3.8-flash` reference comparison never becomes silver.
+- **Last updated:** 2026-11-16 by DeepSeek V4.1 Flash Free (P1-11 agreement closed; P1 complete)
 - **Build-ready gate:** `docs/reports/D0-readiness.md`
 
 ## Day-0 status (2026-11-14 close-out)
@@ -47,12 +47,12 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 - V1's stack is still running from `D:\AI-Projects\schimesh` on 7474/7887; V2 uses host ports 7475/7888 so both coexist.
 
 **Owner/local blockers**
-- ✅ Push: `p1` is pushed at `a8d6d85` (same as `origin/p1`); local `main` is 11 commits ahead of `origin/main` and was not merged or pushed. CI status is not available locally (`gh` is not installed).
+- ✅ Push: `p1` and `main` are kept in sync and pushed at checkpoints; CI status is not available locally (`gh` is not installed).
 - ✅ Contact emails, Groq key, Neo4j password, and V2 Neo4j are configured locally; no secret values are tracked.
-- ⛔ P1-10: prices, the $3 cap, and the Groq SDK are now in place. The paid run is blocked by the Groq free-tier limit (TPM 8000 / TPD 200,000): the sample contains prompts above 8,000 tokens and the daily budget cannot cover 100 papers. Owner decision required before any workaround.
+- ✅ P1-10: closed 2026-11-15 on the Gemini free tier (100 papers / 765 claims; $0 real spend). The old Groq TPM blocker is historical.
 - ✅ P1-06: Retraction Watch CC0 verified on Crossref’s Metadata Retrieval page and owner-approved; loader/linker and coverage report committed.
 - ✅ P1-08/P1-09: closed with exact counts and a full store load; the remaining coverage caveat is recorded above and in `docs/reports/P1-corpus-coverage.md`.
-- ⛔ P1-11/P3-03: owner labeling time (P1-11 also needs a 7-day relabel gap).
+- ✅ P1-11: closed 2026-11-16 (independent 40-claim overlap; κ not estimable). ⛔ P3-03: owner labeling (later phase).
 - ⚪ Can wait: B5 weekly hours; B6 `_private/` backup risk; P5 licence/release/outreach.
 
 **Recorded facts**
@@ -64,7 +64,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | Phase | Status | Gate result | Notes |
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
-| P1 Foundation | **Gate passed** | precision 96.5% ≥ 90% (Wilson 93.0–98.3%) | P1-01..P1-10, P1-12 `[x]`; P1-11 labels done, relabel due 2026-11-22 |
+| P1 Foundation | **Complete** | precision 96.5% ≥ 90% (Wilson 93.0–98.3%); independent overlap raw 100%, κ not estimable | P1-01..P1-12 `[x]`; no `NOT_A_CLAIM` rows in the 40-claim overlap |
 | P2 Cost cascade | Not started | — | |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
@@ -98,11 +98,11 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 | P1-10 Gemini validation (n=1 paper) | 0 claims; 2 attempts, both HTTP 504 `DEADLINE_EXCEEDED` at ~119 s; thinking medium, max output 16,384 | `eval/silver/claims_v1/gemini_pilot_v2/run_report.json` (untracked, partial) |
 | **P1-10 Flash-Lite baseline (n=100 papers)** | **100 papers, 765 claims**; 88.7% verbatim; 0 parse failures; 97 span + 11 unknown-section rejects; 697,734 prompt / 142,057 completion (0 thinking); $0.564459 list price; $0.005645/paper, $0.000738/accepted claim; output 62.9% of cost; mean 6,448 ms / p95 15,490 ms; 120 of 450 requests; prompt gap -8.7% | `eval/silver/claims_v1/baseline_flashlite/run_report.md` |
 | P1-10 3.8 Flash reference (n=5, not baseline) | 74 claims; 100% verbatim; 0 failures; 28,087 prompt / 22,073 completion (9,177 thinking); $0.103838 list ($0.001403/claim); latency mean 196,588 ms, p95 290,982 ms; 17/18 requests | `eval/reference/claims_v1/flash38/run_report.md` (see `REFERENCE_ONLY.md`) |
-| **P1 baseline report (PRD gate)** | `docs/reports/P1-baseline.md` — measured extraction, cost, latency, corpus/retraction coverage; audited precision **96.5%** (Wilson 93.0–98.3%; single labeler, agreement pending) | `docs/reports/P1-baseline.md` |
+| **P1 baseline report (PRD gate)** | `docs/reports/P1-baseline.md` — measured extraction, cost, latency, corpus/retraction coverage; audited precision **96.5%** (Wilson 93.0–98.3%; independent overlap raw 100%, κ not estimable) | `docs/reports/P1-baseline.md` |
 | **P1-11 official audit export** | 200 claims from 45 papers (≤5/paper), seed 20261114, 22 dev / 23 test | `eval/audit/claims_audit_v1.csv` (+ `.summary.json`) |
-| **P1-11 audited precision (gold)** | **96.5%** (Wilson 93.0–98.3%; cluster bootstrap 94.0–98.6%); 193 CORRECT, 7 NOT_A_CLAIM, 0 distorted/unsupported/duplicate; single labeler | `docs/reports/P1-audit.md` |
+| **P1-11 audited precision (gold)** | **96.5%** (Wilson 93.0–98.3%; cluster bootstrap 94.0–98.6%); 193 CORRECT, 7 NOT_A_CLAIM, 0 distorted/unsupported/duplicate; independent 40-claim overlap **40/40 CORRECT**, raw 100%, κ not estimable (all one class) | `docs/reports/P1-audit.md` |
 | Evidence-span normalization | Strict 7/28 (25.0%) rejects → normalized 3/28 (10.7%) on the Groq pilot; 4 hyphen variants fixed, 2 merged tails and 1 case-only remain rejected | `docs/eval/EVIDENCE_SPANS.md` |
-| P1-11 audit tooling | HTML labeler (no network), exact-column overlap export (20%), strict validator + existing metrics; **200 primary labels in; 40-row overlap still blank; tool browser smoke test not run by agent** | `eval/audit/README.md` |
+| P1-11 audit tooling | HTML labeler (no network), exact-column overlap export (20%), strict validator + existing metrics; **200 primary labels in; 40/40 second-labeler overlap labelled; tool browser smoke test not run by agent** | `eval/audit/README.md` |
 
 ## Open questions for owner
 - **Push:** resolved 2026-11-15 — local `main` was fast-forwarded to `ab2dbfe`; the agent does not push. The owner pushes when ready.
@@ -110,18 +110,26 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - **Live data:** contact emails and Neo4j are configured locally; confirm the addresses are the ones to use for polite-pool requests. Never paste values in chat.
 - **Retraction Watch:** resolved 2026-11-14. Crossref’s canonical Metadata Retrieval page lists the database as CC0; owner approved use and the acquisition method (REST lookups + pinned GitLab CSV snapshot; no raw CSV committed). Recorded in `docs/DATA_SOURCES.md`.
 - **Sub-topic:** resolved 2026-11-14 — ADR-0012 accepted (`(HSC) Medicine - Infectious Disease`), with the exact-count stop condition and PMID-gap reporting. Oncology deferred to its own ADR as a held-out transfer corpus.
-- **Labeling:** P1-11 primary labels are done; the remaining 40-claim blind overlap (or a second labeler) is due on/after 2026-11-22. P3-03 still needs ~3–6 hours of owner labeling.
+- **Labeling:** P1-11 and its agreement step are complete (independent second labeler, 2026-11-16). P3-03 still needs ~3–6 hours of owner labeling.
 - **ADR renumbering:** confirm ADR-0008 (scale) and ADR-0009 (Day-0) are the intended final numbers.
 - **Local tooling:** no GNU `make` on this host; equivalent Python commands are used. Hook environments must be built with the system **Python 3.12** (`py -3.12 -m pre_commit install --install-hooks`), because the 3.11 venv's base at `D:\` breaks virtualenv; `secret-scan` runs inside a pre-commit env, so it no longer depends on the host's broken bare `python`. `py -3.12 -m pre_commit run --all-files` passes every hook; CI uses Ubuntu. See `docs/LOCAL_SETUP.md`.
 - **Provider SDK adapters:** the approved Groq adapter is `src/axion/llm/groq.py` (`groq==1.7.0`); Gemini/Anthropic remain deferred. Offline tests still use the scripted provider.
 
 ## Blocked tasks
 - ✅ P1-10: closed 2026-11-15 — measured baseline 100 papers / 765 claims on `gemini-3.5-flash-lite`, $0 real spend.
-- P1-11: labels are in and precision is computed (96.5%). Remaining: the blind **40-claim (20%)** overlap relabel **on/after 2026-11-22** (≥10% requirement) or a second labeler on `claims_audit_v1_overlap.csv`; then `audit_validate.py --overlap` reports raw agreement + κ.
-- P1-12: follows from P1-11 (and the full P1-10 run).
+- ✅ P1-11: closed 2026-11-16 — independent 40-claim overlap labelled; raw agreement 100%, κ not estimable (all one class; no `NOT_A_CLAIM` rows).
+- ✅ P1-12: closed 2026-11-16 — gate report and audit report regenerated with the agreement result.
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-16 — DeepSeek V4.1 Flash Free — P1-11 agreement closed; P1 complete
+- Owner supplied `eval/audit/claims_audit_v1_overlap_labelled.csv`: 40 rows, `labeler=friend`, rubric v2, all `CORRECT`. The agent created or changed no labels.
+- `scripts/audit_validate.py --overlap` reports **n=200, precision 96.5%, Wilson 93.0–98.3%**; agreement **n=40, raw 100.0%, Cohen's κ not estimable** because both label sets used only `CORRECT`. The overlap contains none of the 7 `NOT_A_CLAIM` rows, so it does not estimate agreement on the error class. `docs/reports/P1-audit.md` and `docs/reports/P1-baseline.md` state this caveat.
+- Code: `render_markdown` now distinguishes independent-second-labeler from self-agreement and reports undefined κ as **not estimable**; `build_p1_report.py --overlap` folds in the second labels; tests cover the degenerate case and the report path.
+- Docs: P1-11 marked `[x]`, phase exit checklist closed, ADR-0016 **Accepted**, and the PRD/rubric/context agreement wording updated. P1 gate is final at 96.5%.
+- Verification: **306 passed, 2 skipped**; ruff check/format, strict mypy, and all **8/8** pre-commit hooks clean. No LLM calls; real spend remains **$0**.
+- Next: start P2; the small-tier and bulk-labeler choices in ADR-0019 remain **Proposed** and need owner approval.
+
 ### 2026-11-16 — DeepSeek V4.1 Flash Free — P1 verification + status cleanup
 - Verified clean at `67555ac`: `p1 = main = origin/p1 = origin/main`; **304 passed, 2 skipped**; ruff check/format, strict mypy, and all 8 pre-commit hooks pass; `scripts/build_p1_report.py` regenerates `docs/reports/P1-baseline.md` with no diff; `scripts/audit_validate.py` confirms **n=200, precision 96.5%, Wilson 93.0–98.3%**; primary CSV has 0 blank labels and 0 non-CORRECT rows without a note; the 40-row overlap file is entirely blank.
 - No labels were created or changed and no LLM calls were made. Corrected stale docs that still said "No labels exist"/"0 claims labelled", and refreshed the P1 status, next action, and pacing text.

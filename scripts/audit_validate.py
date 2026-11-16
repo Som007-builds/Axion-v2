@@ -134,14 +134,27 @@ def main(argv: list[str] | None = None) -> int:
         print("breakdown: " + ", ".join(f"{label}={breakdown[label]}" for label in LABELS))
         agreement = metrics["agreement"]
         if isinstance(agreement, dict):
+            kappa = (
+                f"{float(agreement['kappa']):.4f}"
+                if agreement.get("kappa_defined", True)
+                else "not estimable (degenerate)"
+            )
             print(
                 f"agreement: n={agreement['n']} raw={float(agreement['raw_agreement']):.4f} "
-                f"kappa={float(agreement['kappa']):.4f}"
+                f"kappa={kappa}"
             )
     if args.out:
+        source = f"python scripts/audit_validate.py --audit {args.audit}"
+        if args.overlap:
+            source += f" --overlap {args.overlap}"
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(
-            render_markdown(metrics, source=f"--audit {args.audit}"), encoding="utf-8"
+            render_markdown(
+                metrics,
+                source=source,
+                agreement_kind="independent" if args.overlap else "self",
+            ),
+            encoding="utf-8",
         )
         print(f"wrote {args.out}", file=sys.stderr)
     return 0

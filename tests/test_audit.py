@@ -220,6 +220,25 @@ def test_metrics_agreement_uses_relabels() -> None:
     assert isinstance(agreement, dict)
     assert agreement["n"] == 3
     assert agreement["raw_agreement"] == pytest.approx(2 / 3)
+    assert agreement["kappa_defined"] is True
+
+
+def test_metrics_flag_degenerate_single_label_agreement() -> None:
+    rows = [
+        _labelled_row("p1:1", "CORRECT", "CORRECT"),
+        _labelled_row("p2:1", "CORRECT", "CORRECT"),
+    ]
+    metrics = compute_metrics(rows)
+    agreement = metrics["agreement"]
+    assert isinstance(agreement, dict)
+    assert agreement["kappa_defined"] is False
+    report = render_markdown(
+        metrics, source="--audit x.csv --overlap y.csv", agreement_kind="independent"
+    )
+    assert "Agreement (independent second labeler)" in report
+    assert "not estimable" in report
+    assert "does not estimate" in report
+    assert "agreement on any error class" in report
 
 
 def test_metrics_ignore_blank_relabel_and_flag_unknown_labels() -> None:

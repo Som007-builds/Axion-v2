@@ -166,7 +166,7 @@
   - **Secret-scan hook:** runs in a pre-commit-managed Python env (the host's bare `python` is a broken `D:\` shim). Hook envs are built with the system Python 3.12 (`py -3.12 -m pre_commit install --install-hooks`); documented in `docs/LOCAL_SETUP.md`. All hooks pass; no `SKIP=` used.
   - done: 2026-11-15 | evidence: run report and manifest above; PRD gate report `docs/reports/P1-baseline.md`; audit export `eval/audit/claims_audit_v1.csv` (200 claims / 45 papers, ≤5 per paper, seed 20261114); `302 passed, 2 skipped`; ruff, ruff format, strict mypy, and pre-commit (incl. secret scan) clean.
 
-### [!] P1-11 — Claim audit (human)
+### [x] P1-11 — Claim audit (human)
 - depends: P1-10
 - what: Draw seeded sample >=200 claims; label per AUDIT_RUBRIC; relabel 10% after >=7 days; commit labels with provenance; freeze dev/test split.
 - acceptance: eval/audit/claims_audit_v1.csv committed; precision + Wilson CI + agreement computed by script. (Owner labels; agent prepares export and scripts.)
@@ -178,11 +178,12 @@
     - `eval/audit/claims_audit_v1.template.csv` (header only) and `eval/audit/README.md` (procedure and provenance rules).
     - Blocked on the human steps only: the owner needs a claims JSONL from P1-10, ~3–6 hours to label ≥200 claims, and a ≥7-day gap to relabel 10%.
     - **2026-11-15 tooling update:** `eval/audit/claim_audit_tool.html` is a single-file blind labeler (no network/dependencies; keys `1`-`5`, `N`, `Z`, arrows; autosave; exact-column CSV download; span-missing warning); `scripts/audit_validate.py` enforces allowed labels/notes/no-unlabelled and calls the existing precision/Wilson/breakdown/κ metrics; `scripts/audit_sample.py --overlap-out` emits a seeded 20% second-labeler subset. The inline JS was syntax-checked with `node --check`, but **no interactive browser test was completed**; `eval/audit/tool_smoke_test.csv` is the owner smoke fixture. **No claims were labelled.**
-    - The pilot export `eval/audit/claims_audit_v1_pilot.csv` has only **21 claims**, below the 200 minimum; it is a tooling fixture, not the official audit. ADR-0016 Proposed records the agreement choice (≥7-day self-relabel or independent 20% second labeler).
+    - The pilot export `eval/audit/claims_audit_v1_pilot.csv` has only **21 claims**, below the 200 minimum; it is a tooling fixture, not the official audit. ADR-0016 (Accepted 2026-11-16) records the agreement choice (≥7-day self-relabel or independent 20% second labeler).
     - **2026-11-15 export rule change (ADR-0018 Accepted):** the official export is seeded, capped at **5 claims per paper**, and must cover **≥40 distinct papers**; `scripts/audit_sample.py` and the runner's automatic export use `sample_claims_by_paper`, and the export summary records claims, papers, and the observed per-paper maximum. Metrics now report a **paper-level cluster bootstrap** interval alongside Wilson, with the dependence limitation stated in the rendered report. Tooling only — **no labels exist**.
   - **2026-11-15 export ready:** P1-10 produced the official export `eval/audit/claims_audit_v1.csv` (**200 claims from 45 papers**, ≤5 per paper, seed 20261114, 22 dev / 23 test papers, all label fields blank) with `eval/audit/claims_audit_v1.summary.json`. The seeded 20% second-labeler subset is `eval/audit/claims_audit_v1_overlap.csv` (40 claims, verified subset). Tooling is no longer blocked; only owner labeling remains.
   - **2026-11-15 labels in (owner):** 193 `CORRECT`, 7 `NOT_A_CLAIM`, each non-CORRECT row notes; **precision 96.5%** (Wilson 95% 93.0–98.3%), cluster bootstrap 94.0–98.6%; `docs/reports/P1-audit.md` written by `scripts/audit_validate.py`.
-  - done (labels + metrics): 2026-11-15 | remaining: blind 10% relabel on/after **2026-11-22** (or a second labeler on `claims_audit_v1_overlap.csv`) and `--overlap` κ. | unblocks: P1-12 gate review (already passed).
+  - 2026-11-15 checkpoint: labels in; precision 96.5%; the agreement step was still pending.
+  - done: 2026-11-16 | evidence: an independent second labeler (`friend`) labelled the seeded **40-claim (20%)** overlap on 2026-11-16; **40/40 CORRECT**, raw agreement **100%**. Cohen's κ is **not estimable** because both label sets used only `CORRECT`; the overlap contains none of the 7 `NOT_A_CLAIM` rows, so it does not estimate agreement on the error class. `scripts/audit_validate.py --overlap` wrote `docs/reports/P1-audit.md`; primary precision remains **96.5%** (Wilson 93.0-98.3%).
 
 ### [x] P1-12 — Baseline report + gate review
 - depends: P1-11
@@ -198,6 +199,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-16 — DeepSeek V4.1 Flash Free — P1-11 closed with the independent 40-claim overlap (40/40 CORRECT; raw 100%; κ not estimable/degenerate; no `NOT_A_CLAIM` rows in the overlap); P1-01..P1-12 complete, gate PASS at 96.5% — next: start P2, but the small-tier and bulk-labeler choices in ADR-0019 remain Proposed
 - 2026-11-15 — DeepSeek V4.1 Flash Free — ADR-0017 accepted; Gemini adapter/pricing/pacing/ledger/normalization implemented and tested (286 passed, 2 skipped; ruff/format/mypy clean); 5-paper Gemini pilot blocked by repeated `gemini-3.8-flash` HTTP 503 while `gemini-3.5-flash-lite` works — next: retry the large model later without changing the baseline, then finish the pilot and sample
 - 2026-11-15 — DeepSeek V4.1 Flash Free — filled Groq prices, set $3 cap, pinned `groq==1.7.0`, added adapter + reasoning ledger; paid pilot stopped at 1 paper on TPM 8000 (request 12,111); built audit HTML/validator/overlap export, no labels — next: owner decides limit/provider/sampling, then finish pilot + seeded sample + ≥200-claim export
 - 2026-11-14 — DeepSeek V4.1 Flash Free — P1-06 closed (RW loader/linker, citations client, coverage report) and P1-07 closed (5-candidate feasibility spike, report, ADR-0012 Proposed); P1-09 rewrite decided (ADR-0011) — next: owner approves ADR-0012 or names an alternative, then resume P1-08
@@ -208,7 +210,7 @@
 - 2026-11-09 — DeepSeek V4.1 Flash Free — P1-01 and P1-02 complete and merged — next: P1-03
 
 ## Phase exit checklist
-- [ ] All tasks `[x]` or `[-]` with ADR
-- [ ] Gate criteria evaluated honestly (see PRD)
-- [ ] `docs/PROGRESS.md` phase table and headline numbers updated
-- [ ] Report committed in `docs/reports/`
+- [x] All tasks `[x]` or `[-]` with ADR
+- [x] Gate criteria evaluated honestly (see PRD)
+- [x] `docs/PROGRESS.md` phase table and headline numbers updated
+- [x] Report committed in `docs/reports/`

@@ -47,7 +47,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(
-            render_markdown(metrics, source=f"--audit {args.audit}"), encoding="utf-8"
+            render_markdown(
+                metrics, source=f"python scripts/audit_metrics.py --audit {args.audit}"
+            ),
+            encoding="utf-8",
         )
         print(f"wrote {args.out}", file=sys.stderr)
     return 0

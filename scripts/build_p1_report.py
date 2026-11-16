@@ -17,6 +17,7 @@ from axion.ingest.corpus import read_manifest
 
 DEFAULT_MANIFEST = Path("docs/reports/P1-corpus-manifest.json")
 DEFAULT_AUDIT = Path("eval/audit/claims_audit_v1.csv")
+DEFAULT_OVERLAP = Path("eval/audit/claims_audit_v1_overlap_labelled.csv")
 DEFAULT_RUN_REPORT = Path("eval/silver/claims_v1/baseline_flashlite/run_report.json")
 DEFAULT_OUT = Path("docs/reports/P1-baseline.md")
 NOT_MEASURED = "NOT YET MEASURED"
@@ -39,6 +40,32 @@ def _load_run_report(path: Path) -> dict[str, object] | None:
     except ValueError:
         return None
     return data if isinstance(data, dict) else None
+
+
+def _load_audit_metrics(
+    audit_path: Path, overlap_path: Path | None
+) -> tuple[list[dict[str, str]], dict[str, object]]:
+    """Read primary labels and, when supplied, fold in second-labeler overlap."""
+    rows = read_audit(audit_path)
+    if overlap_path is not None and overlap_path.exists():
+        overlap_rows = read_audit(overlap_path)
+        by_id = {row.get("claim_id", ""): row for row in overlap_rows}
+        primary_ids = {row.get("claim_id", "") for row in rows}
+        extra = sorted(set(by_id) - primary_ids)
+        if extra:
+            raise AuditError(
+                "overlap CSV contains claim ids not in the primary audit: " + ", ".join(extra[:5])
+            )
+        for row in rows:
+            other = by_id.get(row.get("claim_id", ""))
+            if other is None:
+                continue
+            label = (other.get("label") or "").strip()
+            if label:
+                if (row.get("relabel_label") or "").strip():
+                    raise AuditError(f"{row.get('claim_id', '?')}: relabel_label already filled")
+                row["relabel_label"] = label
+    return rows, compute_metrics(rows)
 
 
 def _corpus_section(manifest_path: Path) -> list[str]:
@@ -177,21 +204,23 @@ def _run_sections(run: dict[str, object] | None) -> list[str]:
     ]
 
 
-def _audit_section(audit_path: Path) -> list[str]:
+def _audit_section(audit_path: Path, overlap_path: Path | None = None) -> list[str]:
     if not audit_path.exists():
         return [
             "## Claim audit",
             "",
             f"- Audit file `{audit_path}`: **{NOT_MEASURED}**.",
             "- Precision and Wilson CI cannot be reported until the owner labels "
-            "≥200 claims and relabels 10% after ≥7 days.",
+            "≥200 claims and completes the agreement step.",
             "",
         ]
     try:
-        rows = read_audit(audit_path)
-        metrics = compute_metrics(rows)
+        rows, metrics = _load_audit_metrics(audit_path, overlap_path)
     except AuditError as exc:
         return ["## Claim audit", "", f"- Audit not usable yet: {exc}", ""]
+    agreement_present = isinstance(metrics.get("agreement"), dict)
+    use_overlap = overlap_path is not None and overlap_path.exists()
+    agreement_kind = "independent" if use_overlap and agreement_present else "self"
     overall = metrics["overall"]
     assert isinstance(overall, dict)
     breakdown = metrics["breakdown"]
@@ -222,21 +251,31 @@ def _audit_section(audit_path: Path) -> list[str]:
         )
     agreement = metrics.get("agreement")
     if isinstance(agreement, dict):
-        lines.append(
-            f"- Self-agreement: raw {_pct(agreement['raw_agreement'])}, "
-            f"Cohen's κ {float(agreement['kappa']):.3f} (n={agreement['n']})"
+        label = "Independent agreement" if agreement_kind == "independent" else "Self-agreement"
+        kappa = (
+            f"{float(agreement['kappa']):.3f}"
+            if agreement.get("kappa_defined", True)
+            else "not estimable (degenerate)"
         )
+        lines.append(
+            f"- {label}: raw {_pct(agreement['raw_agreement'])}, "
+            f"Cohen's κ {kappa} (n={agreement['n']})"
+        )
+        if not agreement.get("kappa_defined", True):
+            lines.append(
+                "- Agreement caveat: both label sets used a single label, so the "
+                "overlap does not test agreement on the non-claim error class."
+            )
     else:
         lines.append(
-            "- Self-agreement: **pending** — "
-            f"{relabelled} relabel rows filled; the blind 10% relabel is due ≥7 days "
-            "after labeling."
+            "- Agreement: **pending** — "
+            f"{relabelled} relabel rows filled; the blind overlap is still blank."
         )
     lines.append("")
     return lines
 
 
-def _gate_section(metrics: dict[str, object] | None) -> list[str]:
+def _gate_section(metrics: dict[str, object] | None, *, agreement_kind: str = "self") -> list[str]:
     if metrics is None:
         return [
             "## Gate decision",
@@ -258,10 +297,23 @@ def _gate_section(metrics: dict[str, object] | None) -> list[str]:
         f"- Interval: Wilson {_pct(overall['ci_low'])} to {_pct(overall['ci_high'])}.",
     ]
     if not isinstance(agreement, dict):
-        lines.append(
-            "- Caveat: self-consistency agreement is still pending (blind relabel "
-            "due ≥7 days after labeling), so the figure is single-labeler."
+        lines.append("- Caveat: agreement is still pending, so the figure is single-labeler.")
+    else:
+        kind = "inter-annotator" if agreement_kind == "independent" else "self"
+        kappa = (
+            f"{float(agreement['kappa']):.3f}"
+            if agreement.get("kappa_defined", True)
+            else "not estimable (degenerate)"
         )
+        lines.append(
+            f"- Agreement: {kind}, raw {_pct(agreement['raw_agreement'])}, "
+            f"Cohen's κ {kappa} (n={agreement['n']})."
+        )
+        if not agreement.get("kappa_defined", True):
+            lines.append(
+                "- Caveat: the overlap contains only `CORRECT` labels, so it does not "
+                "validate the 7 `NOT_A_CLAIM` calls; κ is undefined."
+            )
     lines.append("")
     return lines
 
@@ -273,12 +325,13 @@ def build_report(
     ledger_path: Path | None,
     out_path: Path,
     run_report_path: Path | None = DEFAULT_RUN_REPORT,
+    overlap_path: Path | None = None,
 ) -> str:
     run = _load_run_report(run_report_path) if run_report_path else None
     metrics: dict[str, object] | None = None
     if audit_path.exists():
         try:
-            metrics = compute_metrics(read_audit(audit_path))
+            _, metrics = _load_audit_metrics(audit_path, overlap_path)
         except AuditError:
             metrics = None
     corpus = read_manifest(manifest_path).counts if manifest_path.exists() else None
@@ -302,14 +355,46 @@ def build_report(
         assert isinstance(latency, dict)
         p95_latency = f"{int(float(latency.get('p95') or 0)):,} ms"
 
+    agreement = metrics.get("agreement") if metrics is not None else None
+    agreement_kind = (
+        "independent"
+        if overlap_path is not None and overlap_path.exists() and isinstance(agreement, dict)
+        else "self"
+    )
+    limitations = [
+        "- The audit covers 200 claims from a seeded paper sample; claims within a "
+        "paper are not independent, hence the paper-level cluster bootstrap.",
+        "- Silver labels are teacher output and are never used for evaluation; gold "
+        "labels live only in `eval/audit/`.",
+        "- Generation config is fixed by ADR-0019 and not tuned against this audit.",
+    ]
+    if isinstance(agreement, dict):
+        limitations.insert(
+            0,
+            "- Primary labels are from one labeler; agreement is reported on the "
+            "seeded overlap subset.",
+        )
+        if not agreement.get("kappa_defined", True):
+            limitations.insert(
+                1,
+                "- The overlap contains only `CORRECT` labels, so it does not validate "
+                "the `NOT_A_CLAIM` calls and κ is undefined.",
+            )
+    else:
+        limitations.insert(
+            0,
+            "- Single labeler until the agreement step lands; agreement is reported by "
+            "`scripts/audit_validate.py`.",
+        )
+
     lines = [
         "# P1 baseline report",
         "",
         "> Generated by `python scripts/build_p1_report.py` (`make report`).",
-        "> Values are read from the run report, corpus manifest, and audit file.",
+        "> Values are read from the run report, corpus manifest, audit file, and overlap file.",
         f"> Anything not produced yet is marked **{NOT_MEASURED}**.",
         "",
-        *_gate_section(metrics),
+        *_gate_section(metrics, agreement_kind=agreement_kind),
         "## Headline metrics",
         "",
         "| Metric | Value | Source |",
@@ -323,17 +408,11 @@ def build_report(
         f"{'see corpus section' if corpus else NOT_MEASURED} | manifest |",
         "",
         *_run_sections(run),
-        *_audit_section(audit_path),
+        *_audit_section(audit_path, overlap_path),
         *_corpus_section(manifest_path),
         "## Limitations",
         "",
-        "- Single labeler until the blind relabel lands; agreement is reported by "
-        "`scripts/audit_validate.py`.",
-        "- The audit covers 200 claims from a seeded paper sample; claims within a "
-        "paper are not independent, hence the paper-level cluster bootstrap.",
-        "- Silver labels are teacher output and are never used for evaluation; gold "
-        "labels live only in `eval/audit/`.",
-        "- Generation config is fixed by ADR-0019 and not tuned against this audit.",
+        *limitations,
         "",
         "## Reproduction",
         "",
@@ -345,6 +424,7 @@ def build_report(
         "--silver-dir eval/silver/claims_v1/baseline_flashlite "
         "--run-id p1-10-flashlite-s20261114-n100",
         "python scripts/audit_validate.py --audit eval/audit/claims_audit_v1.csv "
+        "--overlap eval/audit/claims_audit_v1_overlap_labelled.csv "
         "--out docs/reports/P1-audit.md",
         "```",
         "",
@@ -359,6 +439,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--audit", type=Path, default=DEFAULT_AUDIT)
+    parser.add_argument("--overlap", type=Path, default=DEFAULT_OVERLAP)
     parser.add_argument("--run-report", type=Path, default=DEFAULT_RUN_REPORT)
     parser.add_argument("--ledger", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
@@ -369,6 +450,7 @@ def main(argv: list[str] | None = None) -> int:
         ledger_path=args.ledger,
         out_path=args.out,
         run_report_path=args.run_report,
+        overlap_path=args.overlap,
     )
     print(f"report: {args.out}", flush=True)
     return 0

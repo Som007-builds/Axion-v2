@@ -207,7 +207,7 @@ axion-v2/
 - Label every machine output a **hypothesis**; keep provenance to the source span.
 - Report sample size and a confidence interval (Wilson for proportions) with every rate.
 - Keep audit sets, labeling rubric, and label files in-repo (`eval/`, `docs/eval/`); keep label provenance (who/when).
-- Self-consistency check: re-label ≥10% of an audit set after ≥7 days; report agreement.
+- Agreement check: re-label ≥10% of an audit set after ≥7 days, or use an independent second labeler on a ≥20% blind overlap; report raw agreement and Cohen's κ.
 - Never tune on the audit set used for final reporting; maintain a dev split and a frozen test split.
 - Publish negative results. Never claim a number the repo cannot regenerate.
 - Distinguish **silver** (machine/heuristic) from **gold** (human-audited) labels everywhere.

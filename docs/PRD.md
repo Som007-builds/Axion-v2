@@ -54,7 +54,7 @@ V1 components per migration map; Europe PMC REST API; Retraction Watch data via 
 - **P1.8 Ingest corpus.** 2k–5k papers **total, including retracted sources and all discoverable citers of those sources** (hard cap ~5,000; owner decision 2026-11-14), so blast radius is computable. Zero LLM cost.
 - **P1.9 Stores.** Neo4j schema v2 (constraints/indexes), Chroma collections, idempotent loaders; tests with ephemeral/mocked stores.
 - **P1.10 Baseline extractor.** Structured claim extraction with provenance, one large model, all target sections, via `LLMClient`. Cap run by budget guard; `--dry-run` first. Persist outputs as candidate **silver** labels with provenance (`teacher model/version`, `prompt version`, `run_id`); they are not gold and cannot be used to evaluate students.
-- **P1.11 Audit.** Draw a random sample of ≥200 claims (seeded), label per `docs/eval/AUDIT_RUBRIC.md`, re-label 10% after ≥7 days; commit labels.
+- **P1.11 Audit.** Draw a random sample of ≥200 claims (seeded), label per `docs/eval/AUDIT_RUBRIC.md`, complete the agreement step (blind self-relabel after ≥7 days or independent 20% second-labeler overlap); commit labels.
 - **P1.12 Baseline report + gate review.** Generate `docs/reports/P1-baseline.md` via script; ratify or revise provisional targets in `CONTEXT.md §6` via ADR.
 
 ### Acceptance criteria
@@ -62,7 +62,7 @@ V1 components per migration map; Europe PMC REST API; Retraction Watch data via 
 - Ledger shows 100% of LLM calls with `stage`, model `tier`, and escalation links; report script reproduces cost tables.
 - Corpus meets or ADR-justifies minimums; baseline report committed.
 - Baseline outputs have a silver-label manifest with teacher/prompt/run provenance; they are not treated as gold.
-- Audit labels + CI committed; self-consistency agreement reported.
+- Audit labels + CI committed; agreement statistic reported.
 
 ### Metrics
 Claim precision (+95% CI), cost/paper, tokens/paper, p50/p95 latency, parse coverage, retraction linkage coverage.

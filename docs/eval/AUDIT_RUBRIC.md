@@ -28,12 +28,12 @@ Edge case: a claim that is correct but with an imprecise span → `UNSUPPORTED_S
 1. Export sample with: `claim_id`, claim text, section, evidence span, paper title/PMCID, ±1 surrounding paragraph.
 2. Label in a spreadsheet/CSV; do not look at model confidence while labeling.
 3. Write a one-line note for every non-`CORRECT` label.
-4. After **≥7 days**, re-label a random 10% blind; compute agreement (raw % and Cohen's κ).
+4. Complete one agreement path: after **≥7 days**, re-label a random 10% blind; or have an independent second labeler label the seeded 20% overlap blind. Compute agreement (raw % and Cohen's κ).
 5. Commit labels with: labeler id, date, rubric version.
 
 ## 5. Reporting
-- Report `n`, precision, **Wilson 95% CI**, failure breakdown, and self-agreement.
-- State the limitations: single labeler, domain/sub-topic coverage, sample size.
+- Report `n`, precision, **Wilson 95% CI**, failure breakdown, and agreement (self or independent).
+- State the limitations: primary labeling is single-labeler; note whether the agreement subset contains every error class; domain/sub-topic coverage; sample size.
 - Label provenance: **gold** (human-audited). Anything not human-audited is **silver** and must be marked so.
 
 ## 6. Silver vs. gold
