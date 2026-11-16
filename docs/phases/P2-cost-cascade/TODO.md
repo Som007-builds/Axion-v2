@@ -54,7 +54,7 @@ to every task below; task IDs are unchanged.
   - done: 2026-11-16 | evidence: commit `6033b07`; `python scripts/ablate.py --config baseline` → precision **0.965** (193/200 exact), retention **1.000**, dev **0.961165**, test **0.969072**, unverifiable **45.1%**, cost **$0.005644590/paper** vs the P1 run report **$0.005645**, 0 calls (replay); `baseline_check` → `precision_matches: true`, `retention_complete: true`.
   - verification 2026-11-16 (Buffy): `ruff check .` clean; `ruff format --check .` 91 files formatted; `mypy src/axion` clean (46 files); `pytest -q` **316 passed, 2 skipped** (306 before + 10 in `tests/test_ablation.py`); pre-commit **8/8** on the commit. No LLM calls; real spend remained **$0**.
 
-### [~] P2-02 — Lever: section targeting
+### [x] P2-02 — Lever: section targeting
 - depends: P2-01
 - what: Restrict extraction to configurable sections; measure delta cost, aligned precision, retention of gold baseline claims, unverifiable rate, and claim yield.
 - acceptance: Isolated ablation row in results table.
@@ -64,7 +64,11 @@ to every task below; task IDs are unchanged.
     - Planned command (free tier, billing off, $0 real spend):
       `AXION_DRY_RUN=false python scripts/run_baseline_extraction.py --execute --sections core --run-id p2-02-sections-core-s20261114-n100 --silver-dir eval/silver/claims_v1/sections_core --out docs/reports/P2-02-sections-core --audit-out eval/audit/p2-02-sections-core.csv`
       (the `--audit-out` override keeps the official `claims_audit_v1.csv` untouched).
-  - done: — | evidence: —
+  - done: 2026-11-16 | evidence: commit pending (see below); config `eval/ablation/configs/sections-core.json`, run `p2-02-sections-core-s20261114-n100`, report row in `docs/reports/P2-ablation.md`.
+  - **Measured (free tier, $0 real spend, 283 ledgered requests incl. retries):** 93 of 96 planned papers completed (3 lost to repeated 503/`SSLV3_ALERT_BAD_RECORD_MAC`, all recorded), **428 accepted claims (4.60/paper, 105 rejects)**. Cost **$0.002460613/paper vs $0.005644590 baseline = −56.4%**. Aligned precision dev **92.9%** [81.0–97.5], test **96.3%** [81.7–99.3]. **Retention 34.5%** (dev 40.8%, test 27.8%); unverifiable **59.7%**.
+  - **Interpretation (negative result as a standalone lever):** precision survives within tolerance on the frozen test split (−0.6 pt), but retention collapses. Cause measured, not guessed: only **57 of 200 gold claims (28.5%)** sit in abstract/results/conclusion, because the gold sample is dominated by Methods/Introduction claims. The lever therefore buys 56% of the cost by discarding two thirds of the audited output; it is not a viable operating point alone and must be judged inside the P2-07 combination. The 59.5% retention gap is *not* recall — absolute recall remains unmeasured.
+  - **Caveat:** `paper_count` in the config is **93**, the papers the ledger cost actually covers — not the 100 planned (3 papers failed permanently), so the $/paper figure is not diluted.
+  - 2026-11-16 Buffy: the run was interrupted repeatedly by provider 503 spikes; each stop was the documented three-consecutive-failure checkpoint, and every resume skipped completed papers (no duplicate work, no duplicate claims). Verification: `ruff check .` clean, `ruff format --check .` clean, `mypy src/axion` clean (47 files), `pytest -q` **324 passed / 2 skipped**.
 
 ### [-] P2-03 — Lever: sentence-level claim filter (superseded)
 - depends: P2-01
@@ -157,7 +161,7 @@ to every task below; task IDs are unchanged.
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
-- (empty)
+- 2026-11-16 — Buffy — P2-01 committed and verified; P2-02 section targeting measured (−56.4% $/paper, retention 34.5% → negative result standalone) — next: P2-03a teacher silver labelling (needs owner sign-off on sample size/dry-run)
 
 ## Phase exit checklist
 - [ ] All tasks `[x]` or `[-]` with ADR

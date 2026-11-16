@@ -19,6 +19,7 @@
 | Config | Papers | Claims | Claims/paper | $/paper | Dev precision | Dev retention | Test precision | Test retention | Unverifiable | Matching | Notes |
 | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |
 | `baseline` | 100 | 765 | 7.65 | $0.005644590 | 96.1% [90.4-98.5] | 100.0% | 96.9% [91.3-98.9] | 100.0% | 45.1% | sentence | P1 frozen baseline replay: gemini-3.5-flash-lite, all sections, prompt v1 |
+| `sections-core` | 93 | 428 | 4.60 | $0.002460613 | 92.9% [81.0-97.5] | 40.8% | 96.3% [81.7-99.3] | 27.8% | 59.7% | sentence | P2-02 section targeting: abstract/results/conclusion only, gemini-3.5-flash-lite, prompt v1 |
 
 ## Detail
 
@@ -27,6 +28,9 @@
 | `baseline` | dev | 103 | 103 | 100.0% | 103 | 99 | 222 | 111 | 0.564459 | 100 | 0 |
 | `baseline` | test | 97 | 97 | 100.0% | 97 | 94 | 159 | 98 | 0.564459 | 100 | 0 |
 | `baseline` | all | 200 | 200 | 100.0% | 200 | 193 | 381 | 209 | 0.564459 | 100 | 0 |
+| `sections-core` | dev | 103 | 42 | 40.8% | 42 | 39 | 100 | 45 | 0.228837 | 90 | 3 |
+| `sections-core` | test | 97 | 27 | 27.8% | 27 | 26 | 86 | 30 | 0.228837 | 90 | 3 |
+| `sections-core` | all | 200 | 69 | 34.5% | 69 | 65 | 186 | 75 | 0.228837 | 90 | 3 |
 
 ## Baseline tolerance
 
