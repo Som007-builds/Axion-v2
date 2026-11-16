@@ -16,6 +16,8 @@ data/
 eval/silver/**/*.jsonl
 eval/reference/**/*.jsonl
 eval/audit/claims_audit_v1_pilot*.csv
+# regenerable ablation scores; the report and configs are committed
+eval/ablation/results/
 
 # python
 __pycache__/
