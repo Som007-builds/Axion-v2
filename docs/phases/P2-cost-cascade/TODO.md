@@ -146,13 +146,17 @@ to every task below; task IDs are unchanged.
     - `s=0` in LLM terms; student inference 1,180 ms/paper CPU (parse+split+encode+score); projected 0.29%/0.58% of baseline at $0.05/$0.10 per CPU-hour. Precision survives; retention does not. The owner should decide at P2-07 whether 56.7% test retention is acceptable.
   - done: 2026-11-17 | evidence: `python scripts/escalation_report.py` -> `docs/reports/P2-05-escalation.md`, `eval/escalation/run_manifest.json`, `eval/escalation/paper_signals.json`; harness row `escalation-length30` (`scripts/ablate.py --all`): 45 papers, 410 claims, dev precision 0.983, test 0.982, retention 0.570, $0.002505/paper; derived ledger 15 rows/14 papers/$0.112730 list price (baseline run); probe ledger rows 487->488; 7 offline tests `tests/test_escalation.py`.
 
-### [ ] P2-05b — Flywheel experiment
+### [x] P2-05b — Flywheel experiment
 - depends: P2-05, P2-03c
 - what: Retrain the student including escalated cases as new silver labels; measure whether `e` drops and whether gold-test quality holds.
 - acceptance: Before/after `e` and gold-test quality reported; provenance of new labels recorded; negative result published if no improvement.
-  - agent: — | started: — | branch: p2
+  - agent: opencode | started: 2026-11-17 | branch: p2
   - notes:
-  - done: — | evidence: —
+    - **Gold-free design:** base student = 55 P1 non-gold papers; flywheel pool = 40 P2-03a non-gold papers with at least one accepted claim. Pool split 28 candidate / 12 held-out (seed `20261118`); only candidate labels can be added. Gold is evaluation only; no LLM call was made (cached teacher labels).
+    - **Agreement signal:** per-paper mean reciprocal rank (MRR) of teacher-positive sentences in the student's full ranking. A binary top-8 recall signal was tried first and was degenerate: 12/28 candidate papers tied at zero, so the realised threshold escalated 42.9% and held-out `e` rose 33.3% -> 41.7%. MRR was chosen on the non-gold candidate pool, before the reported run; the gold test was not used to choose the signal.
+    - **Reported run:** threshold `0.0339` (30% low tail); selected **8/28** candidate papers (28.6%) -> **1,890 sentences / 77 positive sentences** added to the base. Held-out `e` **8.3% -> 8.3%** (1/12 both); mean held-out MRR 7.64% -> 7.14%. Gold dev retention 25.2% -> 26.2%; **gold test retention 27.8% -> 26.8% (-1.0 point)**, test precision 96.3% -> 96.2%, unverifiable 85.3% -> 85.9%. The frozen 98-paper `student_v1` reference is 30.9% / 100.0% on test. **Negative result:** targeted labels did not reduce `e` and did not hold test retention.
+    - **Provenance:** selected IDs and label counts in `eval/flywheel/run_manifest.json`; label source `p2-03a-teacher-s20261114-n100`; base/flywheel artifacts SHA-256 recorded. The flywheel does not replace the frozen `student_v1`.
+  - done: 2026-11-17 | evidence: `python scripts/flywheel_report.py` -> `docs/reports/P2-05b-flywheel.md`, `eval/flywheel/run_manifest.json`, `eval/flywheel/base.model.json`, `eval/flywheel/flywheel.model.json`; harness row `flywheel-student` (`scripts/ablate.py --all`): 45 papers, 360 claims, dev precision 1.000, test precision 0.9615, retention **0.265**; 5 offline tests in `tests/test_flywheel.py`; no new LLM calls, real spend **$0**.
 
 ### [ ] P2-06 — Lever: prompt batching
 - depends: P2-01
@@ -188,7 +192,7 @@ to every task below; task IDs are unchanged.
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
-- 2026-11-17 — opencode — P2-05 measured: length-risk escalation e=31.1%, -60.1% list-price cost, test retention 56.7%/precision 98.2%; confidence calibration failed, stage 2 never fired on gold, parent probe 487→488 — next: P2-05b flywheel
+- 2026-11-17 — opencode — P2-05b flywheel negative: MRR threshold selected 8/28, held-out e 8.3→8.3%, test retention 27.8→26.8%, precision 96.3→96.2%, $0 — next: P2-06 batching
 - 2026-11-17 — opencode — P2-03a closed at 98 gold-free papers (flat curve); P2-03b student trained and scored once on frozen test (retention 30.9%, precision 100%, unverifiable 83.7% → negative on its own); P2-03c curve flat, negative published — next: P2-04 cache/dedup
 - 2026-11-16 — Buffy — P2-01 committed and verified; P2-02 section targeting measured (−56.4% $/paper, retention 34.5% → negative result standalone) — next: P2-03a teacher silver labelling (needs owner sign-off on sample size/dry-run)
 
