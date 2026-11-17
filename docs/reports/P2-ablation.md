@@ -22,6 +22,7 @@
 | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |
 | `baseline` | 100 | 765 | 7.65 | $0.005644590 | $0.009902789 | 96.1% [90.4-98.5] | 100.0% | 96.9% [91.3-98.9] | 100.0% | 100.0% | 45.1% | sentence | P1 frozen baseline replay: gemini-3.5-flash-lite, all sections, prompt v1 |
 | `sections-core` | 93 | 428 | 4.60 | $0.002460613 | $0.006730500 | 92.9% [81.0-97.5] | 40.8% | 96.3% [81.7-99.3] | 27.8% | 59.6% | 59.7% | sentence | P2-02 section targeting: abstract/results/conclusion only, gemini-3.5-flash-lite, prompt v1 |
+| `student-minilm` | 45 | 360 | 8.00 | - | - | 100.0% [87.1-100.0] | 25.2% | 100.0% [88.6-100.0] | 30.9% | 28.1% | 84.4% | sentence | Claim-sentence student (student-v1-minilm-lr): frozen MiniLM + logistic head, top-8 sentences/paper; no LLM calls |
 
 ## Detail
 
@@ -33,6 +34,9 @@
 | `sections-core` | dev | 103 | 42 | 40.8% | 37 | 25 | 67.6% | 42 | 39 | 100 | 45 | 0.228837 | 90 | 3 |
 | `sections-core` | test | 97 | 27 | 27.8% | 20 | 9 | 45.0% | 27 | 26 | 86 | 30 | 0.228837 | 90 | 3 |
 | `sections-core` | all | 200 | 69 | 34.5% | 57 | 34 | 59.6% | 69 | 65 | 186 | 75 | 0.228837 | 90 | 3 |
+| `student-minilm` | dev | 103 | 26 | 25.2% | 37 | 11 | 29.7% | 26 | 26 | 176 | 26 | - | 0 | 0 |
+| `student-minilm` | test | 97 | 30 | 30.9% | 20 | 5 | 25.0% | 30 | 30 | 184 | 30 | - | 0 | 0 |
+| `student-minilm` | all | 200 | 56 | 28.0% | 57 | 16 | 28.1% | 56 | 56 | 360 | 56 | - | 0 | 0 |
 
 ## Baseline tolerance
 
