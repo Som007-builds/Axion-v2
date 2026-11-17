@@ -183,30 +183,37 @@ to every task below; task IDs are unchanged.
   - **Gate status:** passes the literal PRD criterion (≥50% savings, ≤2 points precision loss). Retention 56.7% is the weak point, so adoption depends on the owner's ADR-0021 decision; if ≥90% retention were required, **no measured row passes**.
   - **Negative rows carried into the report:** `sections-core` (retention 27.8%), `batching` (−37.7%, fails the cost target, yield halved), `student-minilm` and `flywheel-student` (no provider cost, ~30% retention).
 
-### [ ] P2-08 — Lock config, regression tests, report
+### [x] P2-08 — Lock config, regression tests, report
 - depends: P2-07, P2-09
 - what: Lock chosen config; tests for ledger logging and determinism; write docs/reports/P2-cascade.md including negative results, measured `e` and `s`, and a separately labeled projection section.
 - acceptance: Report regenerable; measured/projected values separated; gate decision recorded in PROGRESS.
-  - agent: — | started: — | branch: p2
+  - agent: Buffy | started: 2026-11-17 | branch: p2
   - notes:
-  - done: — | evidence: —
+    - Config locked as **proposed**, not adopted: `src/axion/config/p2_operating_point.yaml` carries identifiers only (policy version, fraction, k, models, prompt) — the measured numbers stay in the reports so they cannot drift in two places. `tests/test_p2_operating_point.py` asserts it still matches `escalation.POLICY_VERSION`/`RISK_SIGNAL`/`ESCALATION_FRACTION`, that both stage models are priced, that the stage-1 prompt loads, and that the projection script is deterministic (two runs byte-identical).
+  - done: 2026-11-17 | evidence: `docs/reports/P2-cascade.md`, `src/axion/config/p2_operating_point.yaml`, `tests/test_p2_operating_point.py` (5 tests), `docs/phases/P2-cost-cascade/HANDOFF.md`; gate recorded in `docs/PROGRESS.md` as **P2 COMPLETE — gate review needed**; ruff/format/mypy clean, pytest green.
 
-### [ ] P2-09 — Cost projection script + report section
+### [x] P2-09 — Cost projection script + report section
 - depends: P2-05, P2-07
 - what: Add `scripts/cost_model.py` that reads ledger measurements and projects to `N` papers (e.g., 1M, 20M) with ranges and sensitivity to `s`, `e`, tokens/paper, and prices. Output separates MEASURED from PROJECTED and prints assumptions.
 - acceptance: Script reproduces the projection section; no hand-typed ledger numbers; assumptions and ranges printed; projection is never presented as a measurement.
-  - agent: — | started: — | branch: p2
+  - agent: Buffy | started: 2026-11-17 | branch: p2
   - notes:
-  - done: — | evidence: —
+    - 2026-11-17 Buffy: reads the baseline cost/tokens from the ledger, `e` and the stage-1 cost from `eval/escalation/run_manifest.json`, and prices from `src/axion/config/pricing.yaml`. No number is typed into the script; it prints MEASURED and PROJECTED in separate sections.
+  - done: 2026-11-17 | evidence: `python scripts/cost_model.py` → `docs/reports/P2-projection.md`; summarised in `docs/reports/P2-cascade.md`.
+  - **Measured inputs it reads (never types):** baseline `$0.005644590/paper`, 8,398 tokens/paper, `e`=31.1%, `s`=0.29%, stage-1 `$0.002505111/paper`, teacher cost per escalated paper `$0.007998925` (derived `(net−s)/e`), zero-claim 10.2%, stage-2 unit `$0.010560142`.
+  - **Projection at the measured `e`, stage 2 included:** 20M papers → **$56,807** vs baseline **$112,892** (−49.7%); `e`=5% → $9,408 (−91.7%); `e`=50% → $91,096 (−19.3%). Labelled PROJECTED throughout, assumptions printed.
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
 - 2026-11-17 — opencode — P2-05b flywheel negative: MRR threshold selected 8/28, held-out e 8.3→8.3%, test retention 27.8→26.8%, precision 96.3→96.2%, $0 — next: P2-06 batching
 - 2026-11-17 — opencode — P2-03a closed at 98 gold-free papers (flat curve); P2-03b student trained and scored once on frozen test (retention 30.9%, precision 100%, unverifiable 83.7% → negative on its own); P2-03c curve flat, negative published — next: P2-04 cache/dedup
+- 2026-11-17 — Buffy — P2-07 frontier (2 rows pass the literal gate) + ADR-0022 Proposed (`escalation-length30`, −55.6%, retention 56.7%); P2-09 projection ($56,807 at 20M vs $112,892, −49.7%); P2-08 config locked **proposed** + 5 regression tests + `P2-cascade.md` + HANDOFF — **P2 COMPLETE — gate review needed**
 - 2026-11-16 — Buffy — P2-01 committed and verified; P2-02 section targeting measured (−56.4% $/paper, retention 34.5% → negative result standalone) — next: P2-03a teacher silver labelling (needs owner sign-off on sample size/dry-run)
 
 ## Phase exit checklist
-- [ ] All tasks `[x]` or `[-]` with ADR
-- [ ] Gate criteria evaluated honestly (see PRD)
-- [ ] `docs/PROGRESS.md` phase table and headline numbers updated
-- [ ] Report committed in `docs/reports/`
+- [x] All tasks `[x]` or `[-]` with ADR (P2-03 dropped via ADR-0008)
+- [x] Gate criteria evaluated honestly (see PRD) — `docs/reports/P2-cascade.md`; literal gate PASS on two rows, retention caveat stated, owner decision pending on ADR-0021/0022
+- [x] `docs/PROGRESS.md` phase table and headline numbers updated
+- [x] Report committed in `docs/reports/` (`P2-cascade.md`, `P2-frontier.md`, `P2-projection.md`, per-lever reports)
+- [x] `docs/phases/P2-cost-cascade/HANDOFF.md` written
+- [ ] Owner decision on ADR-0021 (retention definition) and ADR-0022 (operating point) — **P2 COMPLETE — gate review needed.**

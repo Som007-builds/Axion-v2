@@ -73,7 +73,7 @@ Legend: ✅ done · ⛔ owner/local blocker · ⚪ deferred.
 | :-- | :-- | :-- | :-- |
 | Day 0 | Agent close-out complete; owner items pending | — | CI confirmation, paid pricing/budget, Retraction Watch terms, labeling time |
 | P1 Foundation | **Complete** | precision 96.5% ≥ 90% (Wilson 93.0–98.3%); independent overlap raw 100%, κ not estimable | P1-01..P1-12 `[x]`; no `NOT_A_CLAIM` rows in the 40-claim overlap |
-| P2 Cost cascade | In progress | - | P2-01/02/03a/03b/03c/04/05/05b `[x]`; section targeting -56.4% cost but retention 34.5%; student is a **negative result** (test retention 30.9%, precision 100.0%); cache proven at $0, dedup only 1.15%; length-risk escalation **-60.1% cost, test retention 56.7%, precision 98.2%**, confidence calibration negative; flywheel **negative** (e 8.3%→8.3%, test retention 27.8%→26.8%) |
+| P2 Cost cascade | **Complete — gate review needed** | literal gate PASS on 2 rows (≥50% savings within 2 precision points); best is `escalation-length30` **−55.6% $/paper at 98.2% test precision but 56.7% retention** | All 12 live tasks `[x]` (P2-03 dropped via ADR-0008). ADR-0021/0022 **Proposed**; no measured row reaches 90% retention. Report: `docs/reports/P2-cascade.md` |
 | P3 Blast radius | Not started | — | |
 | P4 Demo | Not started | — | |
 | P5 Release | Not started | — | |
@@ -88,9 +88,9 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 ## Headline numbers (update when measured; each must cite its report)
 | Metric | Value | Source report |
 | :-- | :-- | :-- |
-| Claim extraction precision (±95% CI) | — | |
-| Baseline cost per paper | — | |
-| Cost per paper after cascade | — | |
+| Claim extraction precision (±95% CI) | 96.5% (Wilson 93.0–98.3%) | `docs/reports/P1-audit.md` |
+| Baseline cost per paper | $0.005644590 | `docs/reports/P2-ablation.md` (baseline row) |
+| Cost per paper after cascade | $0.002505111 (−55.6%), retention 56.7% | `docs/reports/P2-frontier.md` |
 | Dependency false-alarm reduction vs citation-level | — | |
 | $/retraction analyzed | — | |
 | JATS citation-context coverage (12 CC BY fixtures) | 12/12 papers, 1,133/1,133 contexts resolved | `docs/reports/P1-jats-coverage.md` |
@@ -130,6 +130,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-17 — Buffy — P2-09 projection, P2-08 lock/report, phase closed for review
+- **P2-09:** `scripts/cost_model.py` → `docs/reports/P2-projection.md`. Reads baseline cost/tokens (ledger + ablation), `e`/`s`/stage-1 cost/stage-2 unit (escalation manifest); **no typed-in numbers**. MEASURED and PROJECTED sections separated. At measured `e`=31.1% with stage 2: **20M papers → $56,807 vs baseline $112,892 (−49.7%)**; `e`=5% → $9,408, `e`=50% → $91,096.
+- **P2-08:** config locked as **proposed** in `src/axion/config/p2_operating_point.yaml` (identifiers only, no measured numbers, so nothing drifts); 5 regression tests assert it matches `escalation.POLICY_VERSION`/`RISK_SIGNAL`/`ESCALATION_FRACTION`, that both stage models are priced, the stage-1 prompt loads, and the projection is deterministic (byte-identical across runs). Phase report `docs/reports/P2-cascade.md` and `docs/phases/P2-cost-cascade/HANDOFF.md` written.
+- **Gate:** literal PRD criterion passes on two rows; the deciding caveat is retention (56.7% best). Exit checklist complete except the owner's ADR-0021/0022 decision. **P2 COMPLETE — gate review needed.**
+- Verification: ruff/format clean (117 files), mypy clean (53 files), pytest **374 passed / 2 skipped**. Real spend **$0**; no model or lever adopted.
+- Next: owner decision on ADR-0021/ADR-0022, then P3. Not merged to `main` and the `p2` branch is retained until the gate decision is recorded.
+
 ### 2026-11-17 — Buffy — P2-07 frontier and operating-point ADR
 - `scripts/frontier.py` → `docs/reports/P2-frontier.md` from the six measured rows plus the escalation/student manifests: **no new LLM call, no new label**. Reports `e` and `s` per row, a 2-D Pareto frontier on cost vs test precision, and the literal PRD gate verdict per row.
 - **Two rows pass** the literal gate: `sections-core` (−56.4%, retention 27.8%) and `escalation-length30` (−55.6%, test precision 98.2%, retention 56.7%, `e`=31.1%, `s`=0.29% under an assumed $0.05/CPU-hour).
