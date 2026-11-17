@@ -381,6 +381,41 @@ calls). Rows with a different section set remain comparable because the core def
 config, not per configuration. Promotion to Accepted is the owner's call, together with any change to
 the gate wording.
 
+## ADR-0022 — P2 operating point: length-risk escalation
+
+**Date:** 2026-11-17 — **Status:** Proposed (agent recommendation; owner approval required before P2-08
+locks it, and before P3 uses it).
+
+**Context.** Six measured P2 rows exist (`docs/reports/P2-frontier.md`): baseline, `sections-core`,
+`batching`, `student-minilm`, `escalation-length30`, `flywheel-student`. Three levers are negatives on
+their own — section targeting and batching buy cost by emitting far fewer claims, and the student
+retains ~30% of audited output. The literal PRD §P2 gate (≥50% savings within 2 points of baseline
+precision) is passed by **two** rows: `sections-core` (−56.4%, test precision 96.3%, test retention
+**27.8%**) and `escalation-length30` (−55.6%, test precision 98.2%, test retention **56.7%**).
+
+**Decision (proposed).** The P2 operating point is **`p2-05-length30-v1`**: the frozen
+`student-v1-minilm-lr` on every paper (0 LLM calls), the longest **30%** of papers replaying the
+frozen `gemini-3.5-flash-lite` teacher, and `gemini-3.8-flash` only for an escalated paper with no
+accepted claim (which did not trigger on gold; projected 3.2% of papers).
+
+Measured: **$0.002505111/paper (−55.6%)**, test precision **98.2%**, retention test **56.7%**
+(core 50.9%), **`e = 31.1%`**, **`s = 0.29%`** of baseline cost at an **ASSUMED** $0.05/CPU-hour and
+measured 1,192 ms/paper. Selection rule: among gate-passing rows, the one that retains the most
+audited output; cheapest-only would select `sections-core` at 27.8% retention, which reads less
+rather than works better.
+
+**Alternatives considered:** `sections-core` (marginally cheaper, half the retention); `batching`
+(fails the cost target at −37.7% and halves yield); `student-minilm`/`flywheel-student` (no provider
+cost but ~30% retention, and they still need escalation to be a pipeline); baseline (no savings).
+
+**Consequences and open points.** The gate is judged on precision **and** agreement with baseline;
+`escalation-length30` clears precision but retains 56.7%, so the gate verdict depends on the
+ADR-0021 definition the owner has not yet approved. Savings exclude stage 2, which is projected to
+add $0.000335/paper (54.8% savings) and was never measured at scale. `s` is a priced compute
+assumption, not a bill. P2-08 must lock this configuration only after the owner accepts ADR-0021 and
+this ADR; if the owner instead requires ≥90% retention, **no measured row passes** and the honest
+outcome is the negative result plus the best frontier point.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title
