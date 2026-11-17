@@ -79,6 +79,8 @@ class AblationConfig(BaseModel):
     paper_count: int | None = Field(default=None, ge=1)
     ledgers: tuple[str, ...] = ()
     notes: str = ""
+    # Student rows have no LLM cost; inference time is the measured resource.
+    inference_ms_per_paper: float | None = Field(default=None, ge=0)
 
     def canonical(self) -> str:
         return json.dumps(self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
@@ -148,6 +150,7 @@ class ConfigScore(BaseModel):
     cost_per_core_claim_usd: str | None
     cache_hits: int
     calls: int
+    inference_ms_per_paper: float | None = None
     by_split: dict[str, SplitScore]
     overall: SplitScore
 
@@ -530,6 +533,7 @@ def evaluate_config(
         cost_per_core_claim_usd=None if per_core is None else f"{per_core:.9f}",
         cache_hits=cost.cache_hits,
         calls=cost.calls,
+        inference_ms_per_paper=config.inference_ms_per_paper,
         by_split=by_split,
         overall=overall,
     )

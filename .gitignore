@@ -18,6 +18,8 @@ eval/reference/**/*.jsonl
 eval/audit/claims_audit_v1_pilot*.csv
 # regenerable ablation scores; the report and configs are committed
 eval/ablation/results/
+# student claims contain source sentences; regenerate with scripts/train_student.py
+eval/student/runs/
 
 # python
 __pycache__/
