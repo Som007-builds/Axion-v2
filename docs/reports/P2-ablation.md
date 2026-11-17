@@ -21,6 +21,7 @@
 | Config | Papers | Claims | Claims/paper | $/paper | $/core claim | Dev precision | Dev retention | Test precision | Test retention | Core retention | Unverifiable | Matching | Notes |
 | :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- | :-- |
 | `baseline` | 100 | 765 | 7.65 | $0.005644590 | $0.009902789 | 96.1% [90.4-98.5] | 100.0% | 96.9% [91.3-98.9] | 100.0% | 100.0% | 45.1% | sentence | P1 frozen baseline replay: gemini-3.5-flash-lite, all sections, prompt v1 |
+| `batching` | 100 | 389 | 3.89 | $0.003518380 | $0.011727933 | 97.0% [84.7-99.5] | 32.0% | 97.2% [85.8-99.5] | 37.1% | 52.6% | 57.7% | sentence | P2-06 prompt batching: up to 3 papers per call, gemini-3.5-flash-lite, batch prompt v1 |
 | `escalation-length30` | 45 | 410 | 9.11 | $0.002505111 | $0.003887241 | 98.3% [91.0-99.7] | 57.3% | 98.2% [90.4-99.7] | 56.7% | 50.9% | 71.2% | sentence | P2-05 escalation replay: student top-8 on the shortest 70% of papers; frozen flash-lite teacher output on the longest 30%; list price of the escalated calls only |
 | `flywheel-student` | 45 | 360 | 8.00 | - | - | 100.0% [87.5-100.0] | 26.2% | 96.2% [81.1-99.3] | 26.8% | 29.8% | 85.6% | sentence | P2-05b flywheel: base 55 P1 + low-agreement P2-03a papers; frozen MiniLM + logistic head, top-8; no LLM calls |
 | `sections-core` | 93 | 428 | 4.60 | $0.002460613 | $0.006730500 | 92.9% [81.0-97.5] | 40.8% | 96.3% [81.7-99.3] | 27.8% | 59.6% | 59.7% | sentence | P2-02 section targeting: abstract/results/conclusion only, gemini-3.5-flash-lite, prompt v1 |
@@ -33,6 +34,9 @@
 | `baseline` | dev | 103 | 103 | 100.0% | 37 | 37 | 100.0% | 103 | 99 | 222 | 111 | 0.564459 | 100 | 0 |
 | `baseline` | test | 97 | 97 | 100.0% | 20 | 20 | 100.0% | 97 | 94 | 159 | 98 | 0.564459 | 100 | 0 |
 | `baseline` | all | 200 | 200 | 100.0% | 57 | 57 | 100.0% | 200 | 193 | 381 | 209 | 0.564459 | 100 | 0 |
+| `batching` | dev | 103 | 33 | 32.0% | 37 | 19 | 51.4% | 33 | 32 | 91 | 33 | 0.351838 | 43 | 0 |
+| `batching` | test | 97 | 36 | 37.1% | 20 | 11 | 55.0% | 36 | 35 | 103 | 49 | 0.351838 | 43 | 0 |
+| `batching` | all | 200 | 69 | 34.5% | 57 | 30 | 52.6% | 69 | 67 | 194 | 82 | 0.351838 | 43 | 0 |
 | `escalation-length30` | dev | 103 | 59 | 57.3% | 37 | 20 | 54.1% | 59 | 58 | 220 | 62 | 0.112730 | 14 | 0 |
 | `escalation-length30` | test | 97 | 55 | 56.7% | 20 | 9 | 45.0% | 55 | 54 | 190 | 56 | 0.112730 | 14 | 0 |
 | `escalation-length30` | all | 200 | 114 | 57.0% | 57 | 29 | 50.9% | 114 | 112 | 410 | 118 | 0.112730 | 14 | 0 |

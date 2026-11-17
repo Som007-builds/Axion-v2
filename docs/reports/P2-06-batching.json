@@ -1,0 +1,33 @@
+{
+  "attribution_failure_rate": 0.0,
+  "attribution_failures": 0,
+  "batch_size": 3,
+  "batches": 43,
+  "calls": 1,
+  "claims": 15,
+  "cost_usd": "0.351838",
+  "finished_at": "2026-11-17T10:23:33+00:00",
+  "pacific_date": "2026-11-17",
+  "papers": 3,
+  "parse_failure_rate": 0.0,
+  "parse_failures": 0,
+  "per_batch": [
+    {
+      "claims": 15,
+      "completion_tokens": 1959,
+      "papers": [
+        "PMC10606841",
+        "PMC8264269",
+        "PMC7976659"
+      ],
+      "prompt_tokens": 21120,
+      "prompt_tokens_estimate": 21926,
+      "status": "ok"
+    }
+  ],
+  "prompt_tokens_estimated": 744544,
+  "prompt_version": "claim-extraction-batch-v1",
+  "run_id": "p2-06-batch3-s20261114-n100",
+  "span_failures": 0,
+  "stopped_reason": null
+}

@@ -158,13 +158,17 @@ to every task below; task IDs are unchanged.
     - **Provenance:** selected IDs and label counts in `eval/flywheel/run_manifest.json`; label source `p2-03a-teacher-s20261114-n100`; base/flywheel artifacts SHA-256 recorded. The flywheel does not replace the frozen `student_v1`.
   - done: 2026-11-17 | evidence: `python scripts/flywheel_report.py` -> `docs/reports/P2-05b-flywheel.md`, `eval/flywheel/run_manifest.json`, `eval/flywheel/base.model.json`, `eval/flywheel/flywheel.model.json`; harness row `flywheel-student` (`scripts/ablate.py --all`): 45 papers, 360 claims, dev precision 1.000, test precision 0.9615, retention **0.265**; 5 offline tests in `tests/test_flywheel.py`; no new LLM calls, real spend **$0**.
 
-### [ ] P2-06 — Lever: prompt batching
+### [x] P2-06 — Lever: prompt batching
 - depends: P2-01
 - what: Batch sentences/sections per call within token limits; measure parse-failure rate.
 - acceptance: Isolated ablation row; failure rate reported.
-  - agent: — | started: — | branch: p2
+  - agent: opencode | started: 2026-11-17 | branch: p2
   - notes:
-  - done: — | evidence: —
+    - **Design:** the frozen baseline is one paper per call, so the tested lever is a new batch prompt (`claim-extraction-batch-v1`) that packs several papers into one call with explicit `=== PAPER <id> ===` delimiters and asks for a per-claim `paper_id`. The baseline prompt stays frozen. Batches of 3 papers on the 45 gold papers (15 calls) keep output well under 16,384 tokens and stay inside the 15 RPM / 450 RPD free tier. Cost is token-based, so the expected saving is only the shared instruction overhead; the real question is whether attribution/parse failures stay low.
+  - done: 2026-11-17 | evidence: run `p2-06-batch3-s20261114-n100`; `python scripts/batching_report.py` → `docs/reports/P2-06-batching.md`; harness row `batching` via `python scripts/ablate.py --all`; 6 offline tests in `tests/test_batching.py`.
+  - **Measured (free tier, $0 real):** 100/100 papers, **389 claims (3.89/paper vs baseline 7.65)**, **127 requests incl. retries vs 120 baseline**, 84 failed requests, **0 parse failures, 0 `unknown_paper` attribution failures**, 50 verbatim-span rejects, list price **$0.351838** = **$0.003518380/paper vs $0.005644590 = −37.7%**. Quality: dev precision 97.0%, test 97.2%, **retention 34.5%** (test 37.1%), core retention **52.6%**, unverifiable 57.7%.
+  - **Negative result.** The saving is not efficiency: output tokens dominate baseline cost (62.9%), so halving claim yield is what halves the bill. Two secondary findings: (a) batching introduced **no** attribution or parse failures, so the expected failure mode did not appear; (b) the operational win did not materialise either — 43 batches became 127 requests because retries cost more than the packing saved, slightly *worse* than the baseline's 120. Do not adopt batching on this evidence; keep the row for P2-07.
+  - **Caveat:** the 3-paper batch reaches 43 batches rather than 34 because greedy packing splits on the 24K-token ceiling; the dry run predicted −2.6% prompt tokens (744,544 vs 764,084), and the realised drop is dominated by shorter output.
 
 ### [ ] P2-07 — Combine, sweep, frontier
 - depends: P2-02..P2-06

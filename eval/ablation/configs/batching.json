@@ -1,0 +1,12 @@
+{
+  "name": "batching",
+  "description": "P2-06 prompt batching: up to 3 papers per call, gemini-3.5-flash-lite, batch prompt v1",
+  "kind": "teacher_run",
+  "claims_path": "eval/silver/claims_v1/batching/silver_claims.jsonl",
+  "matching": "sentence",
+  "run_ids": ["p2-06-batch3-s20261114-n100"],
+  "paper_ids_path": "eval/silver/claims_v1/batching/papers_processed.jsonl",
+  "paper_count": 100,
+  "ledgers": ["data/ledger.sqlite3"],
+  "notes": "Batched variant of the frozen baseline; baseline prompt v1 unchanged."
+}
