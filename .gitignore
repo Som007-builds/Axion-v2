@@ -20,6 +20,9 @@ eval/audit/claims_audit_v1_pilot*.csv
 eval/ablation/results/
 # student claims contain source sentences; regenerate with scripts/train_student.py
 eval/student/runs/
+# escalation claims and the derived cost ledger are regenerable
+eval/escalation/claims_merged.jsonl
+eval/escalation/ledger.sqlite3
 
 # python
 __pycache__/
