@@ -37,6 +37,7 @@ from axion.eval.audit import (
     sample_claims_by_paper,
     write_export,
 )
+from axion.eval.cost_estimate import read_paper_id_file
 from axion.extract.baseline import (
     DEFAULT_MAX_CALLS,
     DEFAULT_MAX_CLAIMS,
@@ -50,6 +51,12 @@ from axion.extract.baseline import (
 )
 from axion.extract.claims import PROMPT_VERSION
 from axion.extract.prompting import PromptError
+from axion.extract.sections import (
+    DEFAULT_SECTION_SETS_PATH,
+    SectionSetError,
+    load_section_sets,
+    section_sets_sha256,
+)
 from axion.ingest.corpus import read_manifest, read_papers_csv
 from axion.llm.client import LLMClient, RetryPolicy
 from axion.llm.gemini import GeminiAdapter
@@ -668,6 +675,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=20261114)
     parser.add_argument("--cache-dir", type=Path, default=None)
     parser.add_argument("--prompt-version", default=PROMPT_VERSION)
+    parser.add_argument(
+        "--sections",
+        default="all",
+        help="named section set from --section-sets (default: all, the P1 baseline)",
+    )
+    parser.add_argument("--section-sets", type=Path, default=DEFAULT_SECTION_SETS_PATH)
+    parser.add_argument(
+        "--exclude-paper-ids",
+        type=Path,
+        action="append",
+        default=None,
+        help=(
+            "CSV/txt of paper_ids to exclude from the sample (repeatable); gold papers "
+            "must be listed here for teacher labelling"
+        ),
+    )
     parser.add_argument("--max-claims", type=int, default=DEFAULT_MAX_CLAIMS)
     parser.add_argument("--max-calls", type=int, default=DEFAULT_MAX_CALLS)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
@@ -709,6 +732,15 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = read_manifest(args.manifest)
     papers = read_papers_csv(args.manifest.parent / Path(manifest.files.papers_csv).name)
+    exclude_ids: set[str] = set()
+    for path in args.exclude_paper_ids or []:
+        exclude_ids |= read_paper_id_file(path)
+    try:
+        section_table = load_section_sets(args.section_sets)
+        section_set = section_table.require(args.sections)
+    except SectionSetError as exc:
+        print(f"section-set error: {exc}", flush=True)
+        return 1
     settings = Settings()
     billing = args.billing or settings.llm_billing
     thinking_level = args.thinking_level or DEFAULT_THINKING_LEVEL
@@ -724,6 +756,8 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             prompt_version=args.prompt_version,
             max_claims=args.max_claims,
+            include_sections=section_set.include,
+            exclude_paper_ids=frozenset(exclude_ids),
         )
     except PromptError as exc:
         print(f"prompt error: {exc}", flush=True)
@@ -740,6 +774,13 @@ def main(argv: list[str] | None = None) -> int:
     report_json.write_text(
         json.dumps(
             {
+                "excluded_paper_ids": sorted(exclude_ids),
+                "section_set": {
+                    "name": section_set.name,
+                    "include": list(section_set.include),
+                    "description": section_set.description,
+                    "file_sha256": section_sets_sha256(args.section_sets),
+                },
                 "plan": {
                     "requested": report.requested,
                     "with_text": report.with_text,
@@ -759,6 +800,7 @@ def main(argv: list[str] | None = None) -> int:
         encoding="utf-8",
     )
     print(
+        f"sections={section_set.name} include={list(section_set.include)} "
         f"planned={report.with_text} prompt_tokens={estimate.prompt_tokens_total:,} "
         f"expected_claims@5={estimate.expected_claims_by_scenario.get('5', 0):,.0f}",
         flush=True,

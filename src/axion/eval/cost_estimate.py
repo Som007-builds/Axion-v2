@@ -8,12 +8,15 @@ count; the report labels it as an estimate.
 
 from __future__ import annotations
 
+import csv
+import json
 import math
 import random
 import re
 import statistics
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 from axion.ingest.corpus import CorpusPaper
 from axion.parse.jats import ParsedPaper
@@ -77,6 +80,54 @@ def sample_papers(
     if size >= len(ordered):
         return ordered
     return random.Random(seed).sample(ordered, size)
+
+
+def read_paper_id_file(path: Path) -> set[str]:
+    """Read paper IDs from a CSV with a `paper_id` column, JSONL, or one ID per line.
+
+    Used to exclude gold and already-labelled papers from a teacher sample; the
+    format is detected from the first line so a gold CSV, a `papers_processed`
+    JSONL, or a plain ID list all work without conversion.
+    """
+    text = path.read_text(encoding="utf-8")
+    first_line = text.splitlines()[0] if text.strip() else ""
+    if first_line.lstrip().startswith("{"):
+        return {
+            str(json.loads(line)["paper_id"])
+            for line in text.splitlines()
+            if line.strip() and json.loads(line).get("paper_id")
+        }
+    if "paper_id" in first_line.casefold():
+        return {
+            row["paper_id"].strip()
+            for row in csv.DictReader(text.splitlines())
+            if row.get("paper_id")
+        }
+    return {line.strip() for line in text.splitlines() if line.strip()}
+
+
+def sample_papers_excluding(
+    papers: Sequence[CorpusPaper],
+    size: int,
+    *,
+    seed: int = DEFAULT_SEED,
+    exclude: frozenset[str] = frozenset(),
+) -> list[CorpusPaper]:
+    """Nested seeded sample: a prefix of one seeded permutation, minus ``exclude``.
+
+    Nested means a 100-paper draw contains the 50-paper draw, so learning-curve
+    increments never re-label a paper that an earlier budget already covered.
+    The gold audit's papers (and any already-labelled papers) are removed before
+    the draw, so a P2 training sample can never contain a gold paper.
+    """
+    if size < 1:
+        raise ValueError("sample size must be at least 1")
+    eligible = sorted(
+        (paper for paper in papers if paper.pmcid not in exclude),
+        key=lambda paper: paper.pmcid,
+    )
+    permutation = random.Random(seed).sample(eligible, len(eligible))
+    return permutation[:size]
 
 
 _SENTENCE_END = re.compile(r"[.!?]+(?:\s+|$)")

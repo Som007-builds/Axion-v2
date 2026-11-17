@@ -1,0 +1,26 @@
+# P2 operating point — PROPOSED, not adopted.
+#
+# This file names the configuration chosen by docs/reports/P2-frontier.md; the
+# measured numbers behind it live in that report and in the ablation rows, not
+# here, so they cannot drift out of date in two places. Promotion to "adopted"
+# is the owner's decision (ADR-0022, and ADR-0021 for the retention definition).
+status: proposed
+adr: ADR-0022
+policy_version: p2-05-length30-v1
+
+student:
+  # Frozen encoder + logistic head; local inference, no provider call.
+  artifact: eval/student/student_v1.model.json
+  k: 8
+
+escalation:
+  risk_signal: sentence_count
+  fraction: 0.30
+
+stage1:
+  model: gemini-3.5-flash-lite
+  prompt_version: claim-extraction-v1
+
+stage2:
+  model: gemini-3.8-flash
+  trigger: no_accepted_claim

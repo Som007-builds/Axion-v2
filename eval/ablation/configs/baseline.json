@@ -1,0 +1,12 @@
+{
+  "name": "baseline",
+  "description": "P1 frozen baseline replay: gemini-3.5-flash-lite, all sections, prompt v1",
+  "kind": "replay",
+  "claims_path": "eval/silver/claims_v1/baseline_flashlite/silver_claims.jsonl",
+  "matching": "sentence",
+  "run_ids": ["p1-10-flashlite-s20261114-n100"],
+  "paper_ids_path": "eval/silver/claims_v1/baseline_flashlite/papers_processed.jsonl",
+  "paper_count": 100,
+  "ledgers": ["data/ledger.sqlite3"],
+  "notes": "No new LLM calls. Replays the frozen P1 silver run for the harness tolerance check."
+}

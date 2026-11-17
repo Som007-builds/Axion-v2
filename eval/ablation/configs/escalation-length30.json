@@ -1,0 +1,17 @@
+{
+  "name": "escalation-length30",
+  "description": "P2-05 escalation replay: student top-8 on the shortest 70% of papers; frozen flash-lite teacher output on the longest 30%; list price of the escalated calls only",
+  "kind": "replay",
+  "claims_path": "eval/escalation/claims_merged.jsonl",
+  "matching": "sentence",
+  "run_ids": [
+    "p1-10-flashlite-s20261114-n100"
+  ],
+  "paper_ids_path": "eval/escalation/gold_papers.jsonl",
+  "paper_count": 45,
+  "ledgers": [
+    "eval/escalation/ledger.sqlite3"
+  ],
+  "notes": "Length-risk escalation, e=0.30; student compute 0 LLM calls; stage 2 (3.8-flash) never fired on gold and is projected separately.",
+  "inference_ms_per_paper": 1192.0723777670487
+}

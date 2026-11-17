@@ -83,6 +83,14 @@ JATS variety; retracted-paper full-text availability; rate limits; labeling time
 ### Objective
 Cut cost per paper by **≥60%** (stretch 80%) at ≤2 points precision loss vs. the P1 baseline, with each lever's contribution measured. The main scale lever is a teacher-distilled student plus rare, calibrated escalation.
 
+> **P2 measurement amendment (2026-11-16, ADR-0020 Proposed):** the gold audit scores the **precision**
+> of 200 baseline claims (45 papers, 22 dev / 23 test) and cannot measure absolute recall. P2 quality
+> is therefore reported as three separate numbers — aligned precision on gold dev/test, **retention**
+> of the gold baseline claims (agreement relative to the baseline's own output, not recall), and
+> ledger cost — plus the **unverifiable** rate for output that aligns with no gold row. Training
+> excludes all gold papers. Silver labelling is a seeded corpus sample sized by the measured learning
+> curve because free-tier daily caps forbid corpus-wide labelling. Task IDs and the gate are unchanged.
+
 ### Rationale
 This is the cost half of the thesis and the number a publisher-side stakeholder will care about. LLM-on-every-paper does not scale; the escalation rate `e` and student cost ratio `s` are the quantities that determine whether the layered approach works.
 

@@ -23,6 +23,7 @@ repos:
         additional_dependencies:
           - google-genai==2.8.0
           - groq==1.7.0
+          - numpy==2.4.6
           - pydantic==2.10.4
           - pydantic-settings==2.7.0
           - PyYAML==6.0.2

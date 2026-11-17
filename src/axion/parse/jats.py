@@ -486,6 +486,32 @@ def _sentence_spans(text: str) -> list[tuple[int, int]]:
     return spans
 
 
+def split_sentences(text: str) -> list[str]:
+    """Split prose into sentences with the same boundary rule as contexts.
+
+    Public because evaluation aligns claims and student selections to the
+    sentence that contains them; the rule must match the parser's.
+    """
+    return [
+        segment
+        for segment in (text[start:end].strip() for start, end in _sentence_spans(text))
+        if segment
+    ]
+
+
+def sentence_bounds(text: str) -> list[tuple[int, int]]:
+    """Sentence character spans, trimmed of surrounding whitespace."""
+    bounds: list[tuple[int, int]] = []
+    for start, end in _sentence_spans(text):
+        while start < end and text[start].isspace():
+            start += 1
+        while end > start and text[end - 1].isspace():
+            end -= 1
+        if end > start:
+            bounds.append((start, end))
+    return bounds
+
+
 def _sentence_index(spans: list[tuple[int, int]], position: int) -> int:
     for index, (start, end) in enumerate(spans):
         if start <= position < end:

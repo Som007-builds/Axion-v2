@@ -1,0 +1,12 @@
+{
+  "name": "sections-core",
+  "description": "P2-02 section targeting: abstract/results/conclusion only, gemini-3.5-flash-lite, prompt v1",
+  "kind": "teacher_run",
+  "claims_path": "eval/silver/claims_v1/sections_core/silver_claims.jsonl",
+  "matching": "sentence",
+  "run_ids": ["p2-02-sections-core-s20261114-n100"],
+  "paper_ids_path": "eval/silver/claims_v1/sections_core/papers_processed.jsonl",
+  "paper_count": 93,
+  "ledgers": ["data/ledger.sqlite3"],
+  "notes": "Section set `core` from src/axion/config/section_sets.yaml; free tier, list price ledgered, real spend $0."
+}

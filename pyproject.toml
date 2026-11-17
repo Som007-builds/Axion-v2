@@ -35,6 +35,13 @@ store = [
 embeddings = [
   "sentence-transformers==3.3.1",
 ]
+# P2 student training. Install CPU-only torch first (docs/LOCAL_SETUP.md);
+# sentence-transformers otherwise pulls a multi-GB CUDA build on some hosts.
+train = [
+  "numpy==2.4.6",
+  "scikit-learn==1.9.1",
+  "sentence-transformers==3.3.1",
+]
 
 [project.scripts]
 axion-cost-report = "axion.llm.cli:main"
@@ -59,6 +66,11 @@ select = ["B", "E", "F", "I", "RUF", "SIM", "UP"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.ruff.lint.per-file-ignores]
+# The P2 report builder is mostly long Markdown prose; wrapping every string
+# would make the template harder to read than the 100-column limit is worth.
+"scripts/escalation_report.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

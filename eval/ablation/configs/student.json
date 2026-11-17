@@ -1,0 +1,13 @@
+{
+  "name": "student-minilm",
+  "description": "Claim-sentence student (student-v1-minilm-lr): frozen MiniLM + logistic head, top-8 sentences/paper; no LLM calls",
+  "kind": "student_run",
+  "claims_path": "eval/student/runs/student_v1/claims.jsonl",
+  "matching": "sentence",
+  "run_ids": [],
+  "paper_ids_path": null,
+  "paper_count": 45,
+  "ledgers": [],
+  "notes": "Compute-only row; cost is not in the LLM ledger. Inference time is measured on CPU.",
+  "inference_ms_per_paper": 1273.464
+}

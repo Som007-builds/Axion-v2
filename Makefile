@@ -1,4 +1,4 @@
-.PHONY: lint typecheck test report day0-check
+.PHONY: lint typecheck test report day0-check ablate ablate-report
 
 PYTHON ?= python
 
@@ -17,3 +17,9 @@ day0-check:
 
 report:
 	$(PYTHON) scripts/build_p1_report.py
+
+ablate:
+	$(PYTHON) scripts/ablate.py --all
+
+ablate-report:
+	$(PYTHON) scripts/ablate.py --all --report docs/reports/P2-ablation.md

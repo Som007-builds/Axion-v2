@@ -1,0 +1,13 @@
+{
+  "name": "flywheel-student",
+  "description": "P2-05b flywheel: base 55 P1 + low-agreement P2-03a papers; frozen MiniLM + logistic head, top-8; no LLM calls",
+  "kind": "student_run",
+  "claims_path": "eval/flywheel/claims.jsonl",
+  "matching": "sentence",
+  "run_ids": [],
+  "paper_ids_path": null,
+  "paper_count": 45,
+  "ledgers": [],
+  "notes": "Compute-only row; the flywheel adds cached teacher labels for non-gold papers; cold CPU timing is recorded in eval/flywheel/run_manifest.json.",
+  "inference_ms_per_paper": null
+}
