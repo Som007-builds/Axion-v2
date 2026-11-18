@@ -130,6 +130,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-18 — Buffy — ADR-0024 Proposed: uniform-only wave 2
+- Owner accepted wave 2 = **150 rows, uniform only**, drawn from the remaining pool with equal inclusion probability, same per-source handling as ADR-0023's uniform frame, split inherited from the frozen source assignment, cues not used as filter or stratum. Recorded as **ADR-0024 (Proposed)** with the 77-positive target and the stop rule.
+- Rule and weights: pool **5,967** contexts (6,117 − 150), π = 150/5,967 = **0.025137**, weight **39.78**, cap **8 rows/source**; truncated sources listed in the wave-2 report.
+- Stop rule: after wave 2 the metrics script reports **positives per split**, the **updated weighted base rate with a Wilson interval**, and the **extra rows still needed for the 0.80 case** (77 positives). A shortfall is reported instead of starting wave 3.
+- Wave 1 is not redrawn; no overlap file is built until the owner's wave-2 labels return (Amendment C applies).
+- Next: build the wave-2 packet, then extend the metrics script with the combined wave-1 + wave-2 report.
+
 ### 2026-11-18 — Buffy — Amendment C: overlap isolation and negative floor
 - ADR-0023 gained **Amendment C** (owner instruction): from wave 2 the labeler-1 export is never shared with labeler 2 (blind HTML/CSV only), the returned export is checked against the blinded subset, and an overlap needs **≥15 negative rows** or the report declares negative-side κ not estimable.
 - Wave 1 is recorded as **not meeting the isolation rule** (its export sat in `eval/audit/p3-03/` beside labeler 2's packet), so its 31/31 agreement stays consistency only; the owner declined the test-retest for now.

@@ -643,6 +643,52 @@ rows (below the 15-row floor), wave 1's 31/31 agreement is recorded as **consist
 established reliability**, and the negative side is reported as a count. The owner declined the 10-row
 blind test-retest for now (2026-11-18); that remains the cheap way to harden this result later.
 
+## ADR-0024 — Wave 2: a uniform-only top-up of 150 rows, and the stop rule
+
+**Date:** 2026-11-18 — **Status:** Proposed. The owner instructed this draw on 2026-11-18; the status stays
+Proposed until the owner accepts it against the wave-2 evidence.
+
+**Context.** Wave 1 (ADR-0023) returned **25 positives**: 7 from the 30-row uniform slice (**23.3%**,
+Wilson 95% [11.8%, 40.9%]) and 18 from 120 cue-enriched rows (**15.0%**, [9.7%, 22.5%]). The cues did
+**not** beat a uniform draw, so the enrichment premise is unsupported, and the uniform base rate is far
+above the 20-row pilot's 10%. A decision-grade recall read needs ~30 positives; a 0.70 lower bound at
+observed recall 0.80 needs **77** (`scripts/dependency_metrics.py`).
+
+**Decision.**
+
+1. **Wave 2 is 150 rows drawn uniformly at random from the pool remaining after wave 1** —
+   6,117 − 150 = **5,967 contexts** — with **equal inclusion probability**
+   π = 150/5,967 = **0.025137** and nominal weight **39.78** per row. No cue filter, no cue stratum, and
+   no section stratification.
+2. **Per-source handling follows ADR-0023's uniform rule:** the same cap of **8 rows per source**,
+   applied to the wave-2 draw. Sources truncated by the cap are listed in the wave-2 report and their
+   weights stay nominal — the same approximation §2 of ADR-0023 already records for the uniform frame.
+3. **Split inheritance, frozen.** ADR-0023 §3 assigns every source paper to dev or test before any
+   detector exists, so each wave-2 row **inherits its source's split**. Nothing is redrawn, and no
+   context can change split.
+4. **Wave 1 is not redrawn.** Its rows, weights, split and labels are unchanged, and the two waves are
+   additive because inclusion probability and split are properties of the row.
+5. **Target and stop rule.** Wave 2 aims to add ~35 positives at the measured 23.3%, taking the total to
+   ~60 and clearing the ~30-positive decision-grade bar. **After wave 2, the metrics script must report:**
+   positives per split (dev/test), the **updated weighted base rate with a Wilson interval**, and the
+   **extra rows still needed for the 0.80-observed-recall case** (77 positives). If wave 2 falls short,
+   that shortfall is reported — no wave 3 starts without a new owner decision.
+6. **No overlap is built yet.** The second-labeler overlap for wave 2 is built only from the owner's
+   returned wave-2 export, and under ADR-0023 Amendment C: labeler 1's file is never shared with
+   labeler 2, the export is checked against the blinded subset, and the overlap needs ≥15 negative rows
+   or the report declares negative-side κ not estimable.
+
+**Why uniform again.** Wave 1's uniform slice is the only unbiased estimate the project has, and it is
+the cheapest source of positives per labelled row at the measured rates (22 extra rows for the
+remaining 5 positives vs 34 enriched). Drawing uniformly makes wave 2 do two jobs at once: it tightens
+the base-rate interval and it supplies positives.
+
+**Consequences and risks.** The base rate gains 150 uniform rows (30 → 180), the positives-per-split
+check exposes any dev/test imbalance, and no cue evidence enters the sample. Cost is 50–112 minutes of
+owner labeling at the pilot pace (20–45 s/row); the owner's recorded pace will replace that arithmetic.
+**Risk:** if 23.3% is optimistic, wave 2 yields fewer than 35 positives, and the stop rule reports the
+shortfall rather than starting another wave on an assumption.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

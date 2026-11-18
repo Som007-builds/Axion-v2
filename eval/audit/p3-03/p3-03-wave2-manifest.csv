@@ -1,0 +1,151 @@
+row_id,ctx_id,citer_pmcid,source_pmcid,section,section_bucket,frame,stratum,inclusion_prob,weight,cue_score,cues,linked,split,overlap,text_bearing
+P3W2-001,PMC4311446:p6:c7,PMC4311446,PMC3012077,Background,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-002,PMC4574011:p31:c34,PMC4574011,PMC3175175,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-003,PMC9265961:p4:c32,PMC9265961,PMC3175175,1. Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-004,PMC5748557:p2:c29,PMC5748557,PMC3543937,1. Introduction,Introduction,uniform,uniform,0.02513826,39.78,1,comparison,true,dev,false,true
+P3W2-005,PMC10423064:p2:c0,PMC10423064,PMC3544391,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-006,PMC5634428:p3:c3,PMC5634428,PMC3544391,INTRODUCTION,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-007,PMC8044679:p10:c8,PMC8044679,PMC3544391,Discussion and conclusion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-008,PMC4549931:p54:c40,PMC4549931,PMC3898637,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-009,PMC4528088:p9:c55,PMC4528088,PMC4172096,HIV Laboratory Testing,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-010,PMC6868267:p22:c34,PMC6868267,PMC4706981,Results and Discussion,Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-011,PMC8047528:p10:c31,PMC8047528,PMC4735122,Background,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-012,PMC6775362:p43:c22,PMC6775362,PMC4783700,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-013,PMC8801939:p17:c32,PMC8801939,PMC4783700,Results > Peripheral 5-HT Deficiency Improves Survival Rate of Septic Mice and Alleviates Sepsis-Induced Acute Lung Injury,Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-014,PMC8221875:p11:c25,PMC8221875,PMC5594526,2. Materials and Methods > 2.5. In Vitro Antimalarial Evaluation of the Leaf Latex of Aloe weloensis,Methods,uniform,uniform,0.02513826,39.78,1,method_word,true,dev,false,true
+P3W2-015,PMC7392417:p0:c0,PMC7392417,PMC6537736,,Unsectioned,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-016,PMC7211641:p33:c34,PMC7211641,PMC7133645,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-017,PMC7219381:p16:c26,PMC7219381,PMC7133645,Organisation > Mode of delivery,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-018,PMC7235990:p12:c54,PMC7235990,PMC7133645,"3. Maternal Outcomes: Are Pregnant Women, once Infected with COVID-19, at Risk for Developing More Severe Disease?",Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-019,PMC7319759:p27:c52,PMC7319759,PMC7133645,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-020,PMC7373040:p7:c94,PMC7373040,PMC7133645,Coronavirus infections and perinatal outcomes,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-021,PMC7528416:p25:c56,PMC7528416,PMC7133645,RESULTADOS,Results,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-022,PMC7528828:p7:c5,PMC7528828,PMC7133645,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-023,PMC8266025:p15:c29,PMC8266025,PMC7133645,Results > Obstetrics outcomes,Results,uniform,uniform,0.02513826,39.78,1,based_on,false,dev,false,true
+P3W2-024,PMC7297930:p11:c38,PMC7297930,PMC7185795,Antiviral Drugs > Favipiravir > Mechanisms,Other,uniform,uniform,0.02513826,39.78,1,comparison,true,dev,false,true
+P3W2-025,PMC7352097:p35:c82,PMC7352097,PMC7185795,Therapies in clinical trials for ARDS > Antiviral therapies/strategies > Favipiravir,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-026,PMC7716986:p18:c67,PMC7716986,PMC7185795,"2. Antinfective Drugs > 2.4 Ribavirin, favipinavir and umifenovir",Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-027,PMC7962087:p23:c63,PMC7962087,PMC7185795,"Results > Blocking the HCoV proliferation process is the key to identify effective drugs against the virus > Inhibition of replication, transcription and translation > Essential NSPs",Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-028,PMC8059985:p7:c15,PMC8059985,PMC7185795,Introduction,Introduction,uniform,uniform,0.02513826,39.78,1,numeric_effect,true,dev,false,true
+P3W2-029,PMC8195694:p20:c638,PMC8195694,PMC7185795,Results > Study characteristics,Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-030,PMC8335450:p9:c36,PMC8335450,PMC7185795,Results > Overview of randomized results,Results,uniform,uniform,0.02513826,39.78,1,comparison,true,dev,false,true
+P3W2-031,PMC8373586:p17:c155,PMC8373586,PMC7185795,FDA-approved drugs as SARS-CoV-2 inhibitors,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-032,PMC7428686:p7:c30,PMC7428686,PMC7195270,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-033,PMC7305505:p27:c33,PMC7305505,PMC7255293,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-034,PMC7355822:p21:c127,PMC7355822,PMC7255293,4. Therapies in Development > 4.3. Experimental Therapy: Hydroxychloroquine/Chloroquine,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-035,PMC7476961:p32:c151,PMC7476961,PMC7255293,Treatment opportunities for COVID-19 > Antiprotozoal drugs > Chloroquine and hydroxychloroquine,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-036,PMC7662457:p19:c70,PMC7662457,PMC7255293,Chloroquine and hydroxychloroquine,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-037,PMC8178939:p17:c113,PMC8178939,PMC7255293,Anti-malarial compounds > Chloroquine and hydroxychloroquine,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-038,PMC8248582:p25:c12,PMC8248582,PMC7255293,Results,Results,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-039,PMC8640856:p25:c30,PMC8640856,PMC7255293,DISCUSSION,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-040,PMC9629893:p5:c6,PMC9629893,PMC7255293,INTRODUCTION,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-041,PMC7529115:p6:c27,PMC7529115,PMC7255429,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-042,PMC10606841:p17:c30,PMC10606841,PMC7332909,4. Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-043,PMC7677378:p19:c17,PMC7677378,PMC7332909,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-044,PMC8024942:p11:c48,PMC8024942,PMC7332909,ACE2 and TMPRSS2 tissue distribution and correlation with clinical presentation > Extrapulmonary involvement and host factor expression,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-045,PMC8206885:p24:c31,PMC8206885,PMC7332909,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-046,PMC8333042:p31:c38,PMC8333042,PMC7332909,Discussion > Dysbiosis,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-047,PMC8579921:p18:c48,PMC8579921,PMC7332909,DISCUSSION,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-048,PMC7601505:p41:c115,PMC7601505,PMC7397951,4. Discussion > 4.1. Limitations and Biases,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-049,PMC7877635:p7:c8,PMC7877635,PMC7397951,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-050,PMC8052132:p19:c210,PMC8052132,PMC7493721,Results > Characteristics of RP patients > Sample types of nucleic acid test,Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-051,PMC7995638:p7:c33,PMC7995638,PMC7511064,Considerations for managing acute stroke during the pandemic > Impact on Stroke-Related Outcomes,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-052,PMC8912998:p72:c246,PMC8912998,PMC7518605,Vitamin D and COVID-19,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-053,PMC10054853:p4:c15,PMC10054853,PMC7658558,1. Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-054,PMC13092616:p41:c212,PMC13092616,PMC7658558,Vaccination acceptance and sociocultural factors > Demographic factors and vaccine acceptance,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-055,PMC8823557:p29:c54,PMC8823557,PMC7658558,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-056,PMC9536059:p25:c219,PMC9536059,PMC7658558,3 Results > 3.4 Interpersonal trust and personal attributes of the potential vaccinee,Results,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-057,PMC9536059:p25:c264,PMC9536059,PMC7658558,3 Results > 3.4 Interpersonal trust and personal attributes of the potential vaccinee,Results,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-058,PMC9566371:p34:c32,PMC9566371,PMC7658558,4. Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-059,PMC8036758:p9:c49,PMC8036758,PMC7658591,2. Results and Discussion > 2.1. Distinctive Change in Trend after Face Covering Mandate,Results,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-060,PMC8000386:p3:c85,PMC8000386,PMC7660968,1. Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-061,PMC8372227:p26:c98,PMC8372227,PMC7758313,Potential Benefits of Children’s Pets During the Pandemic > Psychological Influences,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-062,PMC9868493:p4:c9,PMC9868493,PMC7813558,Introduction > Background,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-063,PMC8906381:p31:c24,PMC8906381,PMC7868769,DISCUSSION,Discussion,uniform,uniform,0.02513826,39.78,0,,false,dev,false,true
+P3W2-064,PMC11078872:p4:c7,PMC11078872,PMC8012664,Theoretical background and hypothesis development > COVID-19 stress and life well-being,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-065,PMC8722471:p3:c9,PMC8722471,PMC8012664,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-066,PMC8828294:p10:c52,PMC8828294,PMC8012664,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-067,PMC8960919:p3:c9,PMC8960919,PMC8053079,Introduction > Contributing Factors to Teacher Burnout,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-068,PMC8509048:p27:c145,PMC8509048,PMC8138022,5. Vitamin D and COVID-19: Summary of the Evidence > 5.3. Clinical Trials,Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-069,PMC8618389:p35:c90,PMC8618389,PMC8138022,4. Discussion > 4.4. Vitamin D and COVID-19,Discussion,uniform,uniform,0.02513826,39.78,1,comparison,true,dev,false,true
+P3W2-070,PMC9864223:p19:c107,PMC9864223,PMC8138022,2. Results and Discussion > 2.3. Vitamin D Supplementation,Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-071,PMC9914919:p13:c36,PMC9914919,PMC8138022,3. Results,Results,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-072,PMC9244909:p15:c52,PMC9244909,PMC8164343,Materials and Methods > In Vitro Anti-SARS-CoV-2 and Cytotoxic Bioactivities Assay of DDI,Methods,uniform,uniform,0.02513826,39.78,1,method_word,true,dev,false,true
+P3W2-073,PMC9244909:p2:c6,PMC9244909,PMC8164343,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-074,PMC9907022:p14:c80,PMC9907022,PMC8164343,Materials and Methods > Biological Evaluation Methodology > In-vitro anti-SARS-CoV-2 and cytotoxic bioactivities multiassay of the nominated aminothiadiazoles,Methods,uniform,uniform,0.02513826,39.78,2,based_on;method_word,true,dev,false,true
+P3W2-075,PMC8598952:p8:c54,PMC8598952,PMC8203399,New therapeutic options > Antivirals: target the virus at the early stage of infection,Other,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-076,PMC10026875:p2:c5,PMC10026875,PMC8437699,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,false,dev,false,false
+P3W2-077,PMC9123826:p42:c147,PMC9123826,PMC8538446,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-078,PMC9368024:p83:c937,PMC9368024,PMC8538446,"7. Melatonin Regulates SARS-CoV-2-Mediated Crosstalk between the Epitranscriptome and Transcriptome via m6A Modifications and LINE1 Suppression > 7.2. Melatonin Suppresses LINE1 Derepression via Antioxidant-Dependent and -Independent Mechanisms > 7.2.4. Melatonin Enhances Complex I Functions, Reduces Oxidative Stress, and Regulates DNA Damage Response Elements to Restrain L1 Retrotransposition",Other,uniform,uniform,0.02513826,39.78,0,,true,dev,false,true
+P3W2-079,PMC12988663:p12:c38,PMC12988663,PMC3182330,Pathobiology,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-080,PMC3632588:p15:c70,PMC3632588,PMC3353995,Discussion > IFNβ and mutant p53 – the clinical standpoint,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-081,PMC7278985:p16:c93,PMC7278985,PMC3353995,1. An Immunological Precedent for p53 Function > 1.3. Mutant p53 Supports and Alters Components of the Tumour Milieu > 1.3.1. Cancer-Associated Fibroblasts Work with Altered and Mutant p53 to Promote Inflammation and Tumorigenesis,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-082,PMC9760505:p27:c91,PMC9760505,PMC3919151,Results > Theme 1: Access > Structural inequity (n = 11),Results,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-083,PMC6018652:p42:c185,PMC6018652,PMC3974783,Further recommendations,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-084,PMC4932650:p3:c11,PMC4932650,PMC4260183,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-085,PMC6558161:p21:c73,PMC6558161,PMC4509652,Prevention of L. infantum Infection in Dogs > The in vitro Cell Proliferation Assay—CPA,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-086,PMC5115708:p22:c43,PMC5115708,PMC4512769,Materials and Methods > Other model parameters,Methods,uniform,uniform,0.02513826,39.78,1,inference_connector,true,test,false,true
+P3W2-087,PMC9530884:p16:c25,PMC9530884,PMC5105142,HPV VACCINE‐INDUCED CNS DAMAGE IN EXPERIMENTAL MICE > Mouse model of “HANS” by Nakajima's group,Other,uniform,uniform,0.02513826,39.78,1,comparison,true,test,false,true
+P3W2-088,PMC10266366:p2:c9,PMC10266366,PMC5350485,Background:,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-089,PMC7450280:p34:c59,PMC7450280,PMC5350485,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-090,PMC7450280:p39:c91,PMC7450280,PMC5350485,Discussion,Discussion,uniform,uniform,0.02513826,39.78,1,prior_finding,true,test,false,true
+P3W2-091,PMC12574894:p39:c56,PMC12574894,PMC5426594,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-092,PMC11688302:p4:c2,PMC11688302,PMC6188107,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-093,PMC8005980:p3:c25,PMC8005980,PMC6206025,1. Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-094,PMC10972883:p2:c7,PMC10972883,PMC6477741,Introduction > OPC incidence is increasing,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-095,PMC7601742:p23:c27,PMC7601742,PMC6477741,4. Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-096,PMC8074094:p7:c34,PMC8074094,PMC6744681,2. RSV Disease Activity across Tropical Asia,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-097,PMC7366221:p48:c276,PMC7366221,PMC7102549,7. Therapeutic Challenge for Inflammation Control in SARS-CoV-2 > 7.2. Chloroquine/Hydroxychloroquine,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-098,PMC7558250:p29:c79,PMC7558250,PMC7102549,Emerging anti-viral therapeutic options > Endosomal function inhibitors,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-099,PMC7662033:p46:c92,PMC7662033,PMC7102549,Discussion > Clinical evidence of the efficacy of CQ and HCQ in the treatment of COVID-19,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-100,PMC7844210:p38:c374,PMC7844210,PMC7102549,Potential Therapeutics > Anti-inflammatory Therapies,Other,uniform,uniform,0.02513826,39.78,1,method_word,true,test,false,true
+P3W2-101,PMC8015872:p26:c98,PMC8015872,PMC7102549,Blocking the Virus-Cell Membrane Fusion > Chloroquine Phosphate (CQ) and Hydroxychloroquine (HCQ),Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-102,PMC8133889:p5:c7,PMC8133889,PMC7102549,Introduction > How does HCQ act in immune-mediated pathologies and COVID-19?,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-103,PMC9381013:p13:c32,PMC9381013,PMC7102549,Results > Effectiveness of Antiviral Therapy > Hydroxychloroquine,Results,uniform,uniform,0.02513826,39.78,1,numeric_effect,true,test,false,true
+P3W2-104,PMC9785070:p20:c40,PMC9785070,PMC7102549,4. Methodology > 4.3. Definitions,Methods,uniform,uniform,0.02513826,39.78,1,based_on,true,test,false,true
+P3W2-105,PMC7114482:p48:c75,PMC7114482,PMC7125763,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-106,PMC7261039:p23:c72,PMC7261039,PMC7127013,Results > Follow-up,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,true
+P3W2-107,PMC8072087:p16:c45,PMC8072087,PMC7136698,Methods,Methods,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-108,PMC7276742:p15:c77,PMC7276742,PMC7151464,RESULTS,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-109,PMC7313049:p31:c585,PMC7313049,PMC7151464,4. Discussion > 4.2. Clinical Findings in Pregnant Women,Discussion,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-110,PMC7350364:p20:c13,PMC7350364,PMC7151464,3. Results > 3.1. Included Studies,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-111,PMC7365544:p20:c57,PMC7365544,PMC7151464,Other pregnancy experience,Other,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-112,PMC8127295:p22:c107,PMC8127295,PMC7151464,Results > Main histopathological reported findings of Covid-19 related lung disease > Interstitial cell involvement,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-113,PMC8127295:p24:c150,PMC8127295,PMC7151464,Results > Main histopathological reported findings of Covid-19 related lung disease > Alveolar edema,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-114,PMC7254021:p8:c29,PMC7254021,PMC7175452,Deep learning in X-Ray image prognosis,Other,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-115,PMC7829098:p16:c44,PMC7829098,PMC7175452,Related Works,Other,uniform,uniform,0.02513826,39.78,1,method_word,false,test,false,false
+P3W2-116,PMC8086786:p27:c36,PMC8086786,PMC7175452,Results > Performance of Radiologists > Risk of Bias and Applicability,Results,uniform,uniform,0.02513826,39.78,2,based_on;method_word,false,test,false,false
+P3W2-117,PMC8449225:p57:c53,PMC8449225,PMC7175452,Simulation results > State-of-the-art evaluations,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-118,PMC9555268:p3:c17,PMC9555268,PMC7195325,,Unsectioned,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-119,PMC10636520:p18:c63,PMC10636520,PMC7206931,Alert > Research,Other,uniform,uniform,0.02513826,39.78,1,comparison,true,test,false,true
+P3W2-120,PMC7256508:p5:c27,PMC7256508,PMC7206931,Covid-19 and underlying CV risk,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-121,PMC7832665:p0:c3,PMC7832665,PMC7206931,,Unsectioned,uniform,uniform,0.02513826,39.78,1,method_word,true,test,false,true
+P3W2-122,PMC7868677:p7:c23,PMC7868677,PMC7206931,COVID-19 > The pathology of SARS-CoV-2,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-123,PMC7927948:p1:c1,PMC7927948,PMC7206931,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-124,PMC8282334:p26:c32,PMC8282334,PMC7206931,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-125,PMC8958113:p13:c21,PMC8958113,PMC7206931,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-126,PMC9618450:p27:c58,PMC9618450,PMC7206931,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-127,PMC7362854:p35:c145,PMC7362854,PMC7255131,Concluding remarks > Post datum,Other,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-128,PMC8665316:p7:c29,PMC8665316,PMC7255131,Background,Introduction,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-129,PMC9229216:p28:c54,PMC9229216,PMC7272237,4. Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-130,PMC10496921:p41:c65,PMC10496921,PMC7346803,Discussion,Discussion,uniform,uniform,0.02513826,39.78,1,comparison,true,test,false,true
+P3W2-131,PMC7911386:p18:c182,PMC7911386,PMC7346803,4. Impact of Obesity and T2D in COVID-19 Patients > 4.1. Clinical Characteristics of Obese/T2D Patients with COVID-19,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-132,PMC8963971:p3:c15,PMC8963971,PMC7346803,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-133,PMC9940469:p14:c16,PMC9940469,PMC7346803,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-134,PMC7833669:p14:c865,PMC7833669,PMC7415129,Results > CSF protein,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-135,PMC7981271:p14:c28,PMC7981271,PMC7415129,Results,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-136,PMC9255497:p2:c5,PMC9255497,PMC7476769,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-137,PMC8431323:p33:c469,PMC8431323,PMC7528734,4. Discussion,Discussion,uniform,uniform,0.02513826,39.78,1,inference_connector,false,test,false,true
+P3W2-138,PMC8458789:p21:c77,PMC8458789,PMC7528734,Hintergrund > Bereitschaft zur COVID-19-Impfung unter Beschäftigten im Gesundheitswesen,Other,uniform,uniform,0.02513826,39.78,0,,false,test,false,true
+P3W2-139,PMC9186279:p29:c199,PMC9186279,PMC7528734,Results > Factors Associated with Covid-19 Vaccine Acceptance,Results,uniform,uniform,0.02513826,39.78,0,,false,test,false,true
+P3W2-140,PMC9985521:p6:c30,PMC9985521,PMC7674579,Introduction and background,Introduction,uniform,uniform,0.02513826,39.78,1,based_on,false,test,false,false
+P3W2-141,PMC9914919:p13:c39,PMC9914919,PMC7829645,3. Results,Results,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-142,PMC8150546:p35:c209,PMC8150546,PMC7942165,2. Macrolide Classes > 2.3. Antivirals and Antiparasitics > 2.3.2. Mechanism of Action > Inhibition of Nuclear Transport,Other,uniform,uniform,0.02513826,39.78,0,,false,test,false,false
+P3W2-143,PMC8335450:p13:c67,PMC8335450,PMC8012649,Discussion,Discussion,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-144,PMC10624834:p3:c12,PMC10624834,PMC8050058,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-145,PMC8447552:p45:c52,PMC8447552,PMC8050991,Changing the status quo > It's in the blood!,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-146,PMC10950893:p4:c29,PMC10950893,PMC8226630,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-147,PMC10258745:p5:c5,PMC10258745,PMC8420640,Introduction,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-148,PMC10298200:p11:c28,PMC10298200,PMC8420640,4. Importance of Assessing the Integrity of RCTs Included in Evidence Syntheses,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-149,PMC9218592:p8:c33,PMC9218592,PMC8545328,Literature Review,Other,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
+P3W2-150,PMC9454266:p7:c32,PMC9454266,PMC8545328,Introduction > Comparison to Other COVID-19 Survey Articles,Introduction,uniform,uniform,0.02513826,39.78,0,,true,test,false,true
