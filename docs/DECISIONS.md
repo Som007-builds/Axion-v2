@@ -643,6 +643,13 @@ rows (below the 15-row floor), wave 1's 31/31 agreement is recorded as **consist
 established reliability**, and the negative side is reported as a count. The owner declined the 10-row
 blind test-retest for now (2026-11-18); that remains the cheap way to harden this result later.
 
+**Wave 2 meets the rules (2026-11-18).** Its overlap was built from the returned wave-2 export into
+`eval/audit/p3-03-labeler2/`, a directory that holds only the blind CSV, the labeler HTML and a
+README - no labeler-1 export, no manifest, no selection file (the selection file with per-class
+counts stays in `eval/audit/p3-03/`). It carries **30 rows: 12 `RELIES_ON` + 18 negative** (9
+`MENTIONS`, 9 `UNRELATED`), so the **15-row negative floor is met** and negative-side κ will be
+estimable for this pair. The export is checked against the blinded subset before any comparison.
+
 ## ADR-0024 — Wave 2: a uniform-only top-up of 150 rows, and the stop rule
 
 **Date:** 2026-11-18 — **Status:** Proposed. The owner instructed this draw on 2026-11-18; the status stays
@@ -688,6 +695,88 @@ check exposes any dev/test imbalance, and no cue evidence enters the sample. Cos
 owner labeling at the pilot pace (20–45 s/row); the owner's recorded pace will replace that arithmetic.
 **Risk:** if 23.3% is optimistic, wave 2 yields fewer than 35 positives, and the stop rule reports the
 shortfall rather than starting another wave on an assumption.
+
+**Realised (2026-11-18, `scripts/dependency_wave2.py` + `scripts/dependency_metrics.py`).** The draw was
+150 rows at π = 0.02513826 (weight 39.78), 78 dev / 72 test, 0 contexts shared with wave 1, 5 sources
+truncated by the cap. The owner labelled all 150 in **1 h 35 min = 95 min**, i.e. **38 s/row** — inside
+the 20–45 s/row assumption and at its upper half, so the 50–112 min estimate stands as arithmetic with a
+measured point inside it. Results:
+
+- **12 `RELIES_ON` / 129 `MENTIONS` / 9 `UNRELATED` / 0 skipped: 8.0% positives**, not the ~35 positives
+  (23.3%) the plan expected, so **the risk above materialised**: wave 2 came in under the target.
+- Combined with wave 1: **37 positives over 300 rows**.
+- **The base rate is now heterogeneous, not a single number.** Wave 1 uniform 7/30 = 23.3% [11.8, 40.9];
+  wave 2 uniform 12/150 = 8.0% [4.6, 13.5]. Pooled design-weighted **15.8%** [10.3, 24.9]; pooled
+  unweighted 10.6%. The ~5x difference in design weights is why the two pooled figures disagree. Treated
+  as **provisional**: the 150-row wave-2 slice is the better-measured of the two and wave 1 may be high
+  by chance, but no homogeneity test is claimed.
+- **Stop-rule numbers:** 77 positives are needed for a 0.70 lower bound at observed recall 0.80, so
+  **40 more** are outstanding — about **254** rows at the pooled weighted rate, **379** at the pooled
+  unweighted rate, or **500** at the wave-2 rate alone. Per split: dev 16 `RELIES_ON`/151 rows, test
+  21/149.
+- The text-bearing frame is 232 rows (32 `RELIES_ON`) and the stub stratum 68 rows (5 `RELIES_ON`).
+- The second-labeler overlap was built from the returned export under Amendment C: **30 rows, 12
+  `RELIES_ON` + 18 negative** (9 `MENTIONS`, 9 `UNRELATED`), floor met, blind files isolated in
+  `eval/audit/p3-03-labeler2/` with no labeler-1 file present.
+
+**Stop rule, applied.** No wave 3 starts from this ADR. The realised rate is ~8–11%, not 23%, so hitting
+77 positives needs 254–500 more labelled rows — a decision for the owner, and a larger cost than wave 1
+and wave 2 combined. Options are recorded in `docs/PROGRESS.md`: accept a decision-grade read at ~37–60
+positives, extend uniformly toward 77, or narrow the claim to a stratified subset.
+
+## ADR-0025 — Wave 3 (if any) grows the gold **test** set, and the alternative is to narrow the claim
+
+2026-11-18 · **Proposed**
+
+**Context.** P3-04 measured the three baselines on the 300 labelled rows and froze the test result
+(`eval/audit/p3-04/p3-04-test-frozen.json`). The text-bearing test frame has **18 `RELIES_ON` rows,
+21 in test overall**, which is the wrong side of thin for a 0.70/0.80 recall gate: the heuristic's
+test recall is 83.3% with a 95% interval of **[60.8%, 94.2%]**, so the lower end sits below the gate
+even though the point estimate clears it. ADR-0024's stop rule fired: 37 positives exist, 77 were the
+target, and the remaining rows are a decision for the owner rather than an automatic next wave.
+
+**Decision.** If a third wave is drawn at all, it is drawn **from test-split sources only, uniformly,
+with design weights** — the frozen source assignment from `scripts/dependency_sample.py` is not
+redrawn, and no dev row is added. The pool is the **2,909 unlabelled contexts in the 129 test-split
+sources** (3,058 contexts total, 149 already labelled), so π = rows / 2,909, weight = 1/π, cap 8
+rows/source (129 × 8 = 1,032 rows are reachable, so every option below is feasible). No cue filter and
+no section stratum: wave 2 showed the cue frame does not beat the uniform draw.
+
+| Option | Extra test positives | Rows | π | Weight | Rows at 8.0% | Rows at 15.8% | Labeling time at 38 s/row |
+| :-- | --: | --: | --: | --: | --: | --: | --: |
+| Reach **40** test positives | +19 | — | — | — | **238** | **121** | 2 h 31 min / 1 h 17 min |
+| Reach **77** test positives | +56 | — | — | — | **700** | **355** | 7 h 23 min / 3 h 45 min |
+| Same rows, as π | | 238 / 700 / 121 / 355 | 0.0818 / 0.2406 / 0.0416 / 0.1220 | 12.22 / 4.16 / 24.03 / 8.20 | | | |
+
+The two rate columns are the **measured** uniform rates: 8.0% is wave 2's own rate (n = 150, the
+better-measured slice) and 15.8% is the pooled design-weighted rate over all 180 uniform rows. They
+differ by ~2x, which is why the row count is a range rather than a number; the 8.0% column is the
+planning assumption and the 15.8% column is the optimistic one. Times use the owner's **measured
+38 s/row**, not the 20–45 s arithmetic from ADR-0023.
+
+**Alternatives, and the default.** The owner may instead **narrow the gate claim**, which costs no
+labeling time:
+
+- replace "0.70 lower bound at 0.80 observed recall" with a reported recall **interval** at the
+  operating point the detector actually reaches, plus the false-alarm contrast against the
+  citation-level floor;
+- state the gate as a **false-alarm reduction at fixed recall**, which 21 test positives can carry,
+  rather than as an absolute recall floor that they cannot;
+- pool dev + test (37 positives) **only** with the explicit caveat that dev tuned the heuristic, so
+  the pooled number is optimistic by construction and cannot be the headline.
+
+**Consequences and guardrails.**
+
+- Wave 3 extends the **test** set after P3-04's freeze. The frozen P3-04 numbers stay as published;
+  re-scoring a baseline on the extended test set is a **new evaluation** (the P3-05 gate) and must be
+  declared with both denominators in the same report. Nothing is silently re-frozen.
+- Wave 3 rows carry a different π from the existing test rows, so every metric must use each row's own
+  weight; averaging the two inclusion probabilities would bias the base rate.
+- The gold test set stays owner-labelled. The second-labeler overlap for any wave 3 packet follows
+  Amendment C: blind files in their own directory, ≥15 negative rows, the export checked against the
+  blinded subset before comparison.
+- **Default if the owner does nothing:** no wave 3, and the P3-05 gate is reported with the narrowed
+  claim above. That is a legitimate outcome, not a failure — the measurement is what the labels support.
 
 ## ADR template
 ```
