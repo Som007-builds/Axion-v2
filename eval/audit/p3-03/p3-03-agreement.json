@@ -1,0 +1,87 @@
+{
+  "agree": 31,
+  "cohen_kappa": 1.0,
+  "confusion": {
+    "MENTIONS": {
+      "MENTIONS": 3,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "RELIES_ON": {
+      "MENTIONS": 0,
+      "RELIES_ON": 25,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "UNRELATED": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 3,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "insufficient_context": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "skip": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    }
+  },
+  "degenerate": true,
+  "design_weighted_kappa": 1.0,
+  "disagreements": [],
+  "kappa_ci95": [
+    1.0,
+    1.0
+  ],
+  "labeler_1": [
+    "Soham"
+  ],
+  "labeler_2": [
+    "friend"
+  ],
+  "negative_rows": 6,
+  "notes": [
+    "kappa is conditioned on labeler 1: labeler 1's labels chose these rows",
+    "6 negative rows: negative-class agreement is the least stable part",
+    "the overlap is positive-heavy, so kappa is depressed relative to a balanced design",
+    "degenerate: zero discordant pairs, so kappa is exactly 1 and the bootstrap interval cannot move; this cannot separate genuine reliability from a shared heuristic or from labeler 2 having seen labeler 1's labels"
+  ],
+  "pabak": 1.0,
+  "per_class": {
+    "MENTIONS": {
+      "agreed": 3,
+      "rows": 3
+    },
+    "RELIES_ON": {
+      "agreed": 25,
+      "rows": 25
+    },
+    "UNRELATED": {
+      "agreed": 3,
+      "rows": 3
+    },
+    "insufficient_context": {
+      "agreed": 0,
+      "rows": 0
+    },
+    "skip": {
+      "agreed": 0,
+      "rows": 0
+    }
+  },
+  "positive_prevalence_labeler_1": 0.8065,
+  "raw_agreement": 1.0,
+  "rows": 31
+}

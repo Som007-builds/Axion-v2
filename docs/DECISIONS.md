@@ -556,6 +556,17 @@ consequences are recorded here rather than discovered later:
   `Soham`** — never the agent-style string, in the label export, the overlap selection file, the
   reports and this ADR. No label value was altered and no agent created a label.
 
+**Agreement, measured (2026-11-18).** `python scripts/dependency_agreement.py` on the 31-row overlap,
+labeler 1 `Soham` and labeler 2 `friend`: **raw agreement 31/31 = 100%**, Cohen's κ **1.000**, PABAK
+1.000, design-weighted κ 1.000. **κ is degenerate**: there are zero discordant pairs, so the bootstrap
+interval is the single point 1.00 and the number cannot separate genuine rubric reliability from (a) a
+shared cue heuristic, (b) labeler 2 having seen labeler 1's labels, or (c) both readers applying the
+same "corroboration is not dependency" reading. It is recorded as **consistency, not established
+reliability**, and a blind test-retest of a small subset is the cheap check that would distinguish
+those explanations. The 6 negative rows remain the fragile side: one disagreement there moves that
+side by ~17 points. Report: `docs/reports/P3-03-agreement.md`; machine summary:
+`eval/audit/p3-03/p3-03-agreement.json`.
+
 ### Amendment B — the 34 title-only stub rows are a pre-registered reporting stratum
 
 **Measured on the committed wave (recounted from the packet, not from memory).** Of 150 wave rows,
