@@ -130,6 +130,15 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-18 — Buffy — wave-1 metrics measured
+- New `scripts/dependency_metrics.py` (+ `tests/test_dependency_metrics.py`, 7 tests) reports class counts overall and by frame/split, the design-weighted uniform base rate, the Amendment B frames, the cue-enrichment comparison, the positives-needed table and a wave-2 recommendation.
+- **Counts (150 rows):** 25 `RELIES_ON` / 120 `MENTIONS` / 5 `UNRELATED` / 0 `insufficient_context`. Uniform 30: 7/22/1. Enriched 120: 18/98/4. dev 73: 13/58/2. test 77: 12/62/3. Text-bearing 116: 22/92/2. Stub stratum 34: 3/28/3.
+- **Base rate:** uniform **7/30 = 23.3%** (Wilson 95% 11.8-40.9%); enriched **18/120 = 15.0%** (9.7-22.5%). **No measured cue lift** - the enriched point estimate is *lower* than the uniform one and the intervals overlap, so the cues stay unvalidated and cannot be used as a positive filter. 72% of positives sit in the enriched frame, which is 80% of the rows.
+- **Correction:** the stub stratum has **3 `RELIES_ON` of 34**, so Amendment B's assumption that stubs are near-certain negatives is withdrawn (the citing sentence alone sometimes decides it). The stratum stays separate and stays in the weighted base rate.
+- **Plan (computed):** 30 positives clears a 0.70 lower bound at observed recall 0.85 (we have 25, so ~5 more, ~22 uniform rows); 77 positives clears it at 0.80 observed (+52, ~223 uniform rows).
+- Files: `docs/reports/P3-03-wave1-metrics.md`, `eval/audit/p3-03/p3-03-wave1-metrics.json`. No LLM calls, $0.
+- Next: wave-2 frame/size decision (owner) and P3-04 baselines.
+
 ### 2026-11-18 — Buffy — second labeler returned; agreement reported
 - Owner supplied `eval/audit/p3-03/dependency_audit_v1_wave1_overlap2_labelled.csv`: 31/31 rows, labeler `friend`, a note on every row, no blanks. The row set matches the selection file exactly (the script rejects anything else).
 - New `scripts/dependency_agreement.py` (tests: `tests/test_dependency_agreement.py`, 10 tests) validates both exports, confirms the overlap is the blinded subset, and reports raw agreement, Cohen's κ (bootstrap), PABAK, design-weighted κ, the confusion matrix and the disagreement list.

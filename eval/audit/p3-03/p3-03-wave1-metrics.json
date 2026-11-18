@@ -1,0 +1,116 @@
+{
+  "best_frame_for_positives": "uniform",
+  "best_rate": 0.2333,
+  "by_frame": {
+    "enriched": {
+      "MENTIONS": 98,
+      "RELIES_ON": 18,
+      "UNRELATED": 4,
+      "insufficient_context": 0
+    },
+    "uniform": {
+      "MENTIONS": 22,
+      "RELIES_ON": 7,
+      "UNRELATED": 1,
+      "insufficient_context": 0
+    }
+  },
+  "by_split": {
+    "dev": {
+      "MENTIONS": 58,
+      "RELIES_ON": 13,
+      "UNRELATED": 2,
+      "insufficient_context": 0
+    },
+    "test": {
+      "MENTIONS": 62,
+      "RELIES_ON": 12,
+      "UNRELATED": 3,
+      "insufficient_context": 0
+    }
+  },
+  "by_split_frame": {
+    "dev:enriched": {
+      "MENTIONS": 44,
+      "RELIES_ON": 10,
+      "UNRELATED": 2,
+      "insufficient_context": 0
+    },
+    "dev:uniform": {
+      "MENTIONS": 14,
+      "RELIES_ON": 3,
+      "UNRELATED": 0,
+      "insufficient_context": 0
+    },
+    "test:enriched": {
+      "MENTIONS": 54,
+      "RELIES_ON": 8,
+      "UNRELATED": 2,
+      "insufficient_context": 0
+    },
+    "test:uniform": {
+      "MENTIONS": 8,
+      "RELIES_ON": 4,
+      "UNRELATED": 1,
+      "insufficient_context": 0
+    }
+  },
+  "decision_grade_positives": 30,
+  "enriched_rate": {
+    "effective_n": 119.97,
+    "positives": 18,
+    "rows": 120,
+    "unweighted_rate": 0.15,
+    "weighted_rate": 0.1497,
+    "wilson_high": 0.2247,
+    "wilson_low": 0.097
+  },
+  "enriched_share_of_positives": 0.72,
+  "overall": {
+    "MENTIONS": 120,
+    "RELIES_ON": 25,
+    "UNRELATED": 5,
+    "insufficient_context": 0
+  },
+  "plan": {
+    "0.80": {
+      "extra_positives_from_wave1": 52,
+      "extra_rows_at_enriched_rate": 348,
+      "extra_rows_at_uniform_rate": 223,
+      "positives_for_lower_bound_0.70": 77
+    },
+    "0.85": {
+      "extra_positives_from_wave1": 5,
+      "extra_rows_at_enriched_rate": 34,
+      "extra_rows_at_uniform_rate": 22,
+      "positives_for_lower_bound_0.70": 30
+    }
+  },
+  "rows": 150,
+  "rows_for_decision_grade": 22,
+  "rows_for_recall_080": 223,
+  "stub_stratum": {
+    "MENTIONS": 28,
+    "RELIES_ON": 3,
+    "UNRELATED": 3,
+    "insufficient_context": 0,
+    "rows": 34
+  },
+  "text_bearing": {
+    "MENTIONS": 92,
+    "RELIES_ON": 22,
+    "UNRELATED": 2,
+    "insufficient_context": 0,
+    "rows": 116
+  },
+  "uniform_base_rate": {
+    "effective_n": 30.0,
+    "positives": 7,
+    "rows": 30,
+    "unweighted_rate": 0.2333,
+    "weighted_rate": 0.2333,
+    "wilson_high": 0.4093,
+    "wilson_low": 0.1179
+  },
+  "wave2_expected_positives_150_rows": 35.0
+}

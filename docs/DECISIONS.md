@@ -588,11 +588,15 @@ reported as follows:
 4. `text_bearing` (true/false) is added to `p3-03-wave1-manifest.csv` **only**. It is never added to
    the labeler payload or shown to either labeler: the labeler must judge the row as it stands.
 
-**Why a stratum rather than a split.** A stub row shows a title and no evidence, so `RELIES_ON` is not
-plausibly available to any labeler; the rows are near-certain `MENTIONS`/`UNRELATED`. Dropping them from
-the headline flatters precision on the real workload (27% of the weight mass would silently vanish),
-while folding them in lets title-only rows dominate false alarms and dilute recall. Reporting both
-keeps the detector-facing number and the workload-representative number separately honest.
+**Why a stratum rather than a split.** A stub row shows a title and no evidence, so `RELIES_ON`
+looked implausible for it. **That reasoning is now withdrawn by measurement:** 3 of the 34 stubs are
+labelled `RELIES_ON` (8.8%), so a title-only row is not a near-certain negative — the citing sentence
+alone sometimes carries enough to judge the relation. The stratum still stays separate and still stays
+in the weighted base rate, which is exactly what makes the measurement safe to report. Dropping the
+stubs from the headline would flatter precision on the real workload (about 27% of the weight mass
+would vanish), while folding them in lets title-only rows dominate false alarms and dilute recall.
+Reporting both keeps the detector-facing number and the workload-representative number separately
+honest.
 
 ## ADR template
 ```
