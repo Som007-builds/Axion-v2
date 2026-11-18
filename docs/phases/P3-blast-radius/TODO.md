@@ -25,13 +25,14 @@
     - 2026-11-18: received `eval/audit/dependency_pilot_v1_labelled.csv`: 20/20 rows, 20/20 notes, labeler `Soham` (owner responsibility), date `2026-11-18`; labels **16 MENTIONS / 2 RELIES_ON / 2 UNRELATED**, 0 blank. Single labeler, so agreement/κ is not estimable. Two review corrections (`P3P-010`, `P3P-014`) drove the v1.1 corroboration rule. Summary: `docs/reports/P3-01-pilot.md`; metrics: `scripts/dependency_pilot_metrics.py`.
   - done: 2026-11-18 | evidence: `docs/eval/DEPENDENCY_GUIDELINE.md` v1.1; `eval/audit/dependency_pilot_v1_labelled.csv`; `docs/reports/P3-01-pilot.md`; `eval/audit/dependency_pilot_v1.summary.json`; `python scripts/dependency_pilot_metrics.py` → 20 rows / 16 MENTIONS / 2 RELIES_ON / 2 UNRELATED / 0 blank, single-labeler agreement not estimable; `pytest -q` 374 passed / 2 skipped.
 
-### [ ] P3-02 — Candidate generator
+### [~] P3-02 - Candidate generator
 - depends: P3-01
 - what: For each retracted paper, collect all in-corpus citing contexts via JATS xrefs; link to source paper claims; store in Neo4j. No LLM.
 - acceptance: Counts per retracted paper reported; idempotent run.
-  - agent: — | started: — | branch: p3
+  - agent: opencode | started: 2026-11-18 18:20 | branch: p3
   - notes:
-  - done: — | evidence: —
+    - 2026-11-18 18:20: Claiming P3-02. Plan: reuse the deterministic JATS parser and reference matcher, emit stable candidate context IDs, report counts per source, and load idempotently into Neo4j. No LLM calls. The 20-row P3-01 pilot is calibration only and will not be treated as gold or training data.
+  - done: - | evidence: -
 
 ### [ ] P3-03 — Gold labeling set
 - depends: P3-02
