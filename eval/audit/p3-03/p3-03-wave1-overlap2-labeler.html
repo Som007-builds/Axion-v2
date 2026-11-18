@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P3-03 wave 1 second-labeler overlap 2</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1d2430;
+    --muted: #5d6878;
+    --line: #d8dde6;
+    --accent: #1d4ed8;
+    --accent-soft: #e8efff;
+    --relies: #0b6b3a;
+    --relies-soft: #e6f6ed;
+    --mentions: #8a5a00;
+    --mentions-soft: #fff4dc;
+    --unrelated: #8a1c1c;
+    --unrelated-soft: #fdecec;
+    --skip: #5d6878;
+    --skip-soft: #eef1f5;
+    --mark: #fff0a8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11151c;
+      --card: #1a202a;
+      --ink: #e8edf5;
+      --muted: #a8b3c4;
+      --line: #303a49;
+      --accent: #8fb2ff;
+      --accent-soft: #1d2b47;
+      --relies: #7fd6a6;
+      --relies-soft: #123326;
+      --mentions: #f0c46a;
+      --mentions-soft: #34280d;
+      --unrelated: #f3a3a3;
+      --unrelated-soft: #3a1717;
+      --skip: #a8b3c4;
+      --skip-soft: #232b37;
+      --mark: #5a4a00;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 16px 24px;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+  h2 { margin: 0 0 12px; font-size: 18px; }
+  h3 { margin: 20px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .sub { margin: 0; color: var(--muted); font-size: 13px; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .toolbar progress { width: min(240px, 40vw); height: 10px; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar label { font-size: 13px; color: var(--muted); font-weight: 650; }
+  .toolbar input[type="text"] {
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+    width: 160px;
+  }
+  button {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--unrelated); }
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+    gap: 18px;
+    max-width: 1380px;
+    margin: 20px auto;
+    padding: 0 24px 40px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.05);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--skip-soft);
+    color: var(--skip);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .pill.relies { background: var(--relies-soft); color: var(--relies); }
+  .pill.mentions { background: var(--mentions-soft); color: var(--mentions); }
+  .pill.unrelated { background: var(--unrelated-soft); color: var(--unrelated); }
+  .kv { display: flex; gap: 8px; margin: 4px 0; font-size: 14px; }
+  .kv b { flex: 0 0 130px; color: var(--muted); font-weight: 650; }
+  .kv span { min-width: 0; overflow-wrap: anywhere; }
+  blockquote {
+    margin: 0;
+    padding: 12px 14px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  blockquote.abstract { border-left-color: var(--mentions); background: var(--mentions-soft); }
+  .paragraph {
+    max-height: 280px;
+    overflow: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  mark { background: var(--mark); color: var(--ink); padding: 0 1px; border-radius: 2px; }
+  .hint { color: var(--muted); font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .empty { color: var(--muted); font-style: italic; }
+  details.guideline {
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+  }
+  details.guideline summary { cursor: pointer; font-weight: 650; }
+  details.guideline a { color: var(--accent); }
+  details.guideline ol { margin: 10px 0 0 20px; padding: 0; }
+  details.guideline li { margin: 6px 0; }
+  .labelCard { position: sticky; top: 132px; }
+  @media (max-width: 980px) { .labelCard { position: static; } }
+  .buttons { display: grid; gap: 10px; margin: 8px 0 16px; }
+  .buttons button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 15px;
+    border-width: 2px;
+  }
+  .buttons button[data-label="RELIES_ON"] { border-color: color-mix(in srgb, var(--relies) 45%, var(--line)); }
+  .buttons button[data-label="MENTIONS"] { border-color: color-mix(in srgb, var(--mentions) 45%, var(--line)); }
+  .buttons button[data-label="UNRELATED"] { border-color: color-mix(in srgb, var(--unrelated) 45%, var(--line)); }
+  .buttons button[data-label="insufficient_context"] { border-color: var(--line); }
+  .buttons button.active[data-label="RELIES_ON"] { background: var(--relies-soft); border-color: var(--relies); }
+  .buttons button.active[data-label="MENTIONS"] { background: var(--mentions-soft); border-color: var(--mentions); }
+  .buttons button.active[data-label="UNRELATED"] { background: var(--unrelated-soft); border-color: var(--unrelated); }
+  .buttons button.active[data-label="insufficient_context"] { background: var(--skip-soft); border-color: var(--skip); }
+  kbd {
+    font: 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+    background: var(--bg);
+  }
+  label[for="note"] { display: block; margin-bottom: 6px; font-weight: 650; }
+  textarea {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+  }
+  textarea:focus, button:focus-visible, summary:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .rowStatus {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--skip-soft);
+    color: var(--muted);
+    font-size: 13px;
+    min-height: 42px;
+  }
+  .warning {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--mentions-soft);
+    color: var(--mentions);
+    font-size: 13px;
+  }
+  .footerNote { color: var(--muted); font-size: 12px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>P3-03 wave 1 second-labeler overlap 2</h1>
+  <p class="sub">Blind overlap set built from the first labeler's wave-1 labels. Enter your own labeler id before exporting.</p>
+  <div class="toolbar">
+    <label for="labelerId">Your labeler id</label>
+    <input id="labelerId" type="text" autocomplete="off" spellcheck="false" placeholder="type your id">
+    <strong id="progressText">0 / 0</strong>
+    <progress id="progressBar" value="0" max="1"></progress>
+    <span id="progressDetail" class="hint"></span>
+    <span class="spacer"></span>
+    <button id="prevBtn" type="button">← Previous</button>
+    <button id="nextBtn" type="button">Next →</button>
+    <button id="exportBtn" class="primary" type="button">Export CSV</button>
+    <button id="resetBtn" class="danger" type="button">Reset saved progress</button>
+  </div>
+</header>
+<main>
+  <section class="card" aria-live="polite">
+    <div class="meta">
+      <span id="rowCounter">Row</span>
+      <span id="statusPill" class="pill">unlabeled</span>
+    </div>
+    <p id="storageWarning" class="warning" hidden></p>
+    <h2 id="citerTitle">Loading…</h2>
+    <div class="kv"><b>Citing paper</b><span id="citerPmcid"></span></div>
+    <div class="kv"><b>Section</b><span id="section"></span></div>
+    <div class="kv"><b>Marker</b><span id="marker"></span></div>
+    <h3>Citing sentence</h3>
+    <blockquote id="contextText"></blockquote>
+    <h3>Surrounding paragraph</h3>
+    <div id="paragraphText" class="paragraph"></div>
+    <h3>Source paper (A)</h3>
+    <div class="kv"><b>Title</b><span id="sourceTitle"></span></div>
+    <div class="kv"><b>PMCID</b><span id="sourcePmcid"></span></div>
+    <div class="kv"><b>PMID / DOI</b><span id="sourceIds"></span></div>
+    <div class="kv"><b>Retraction</b><span id="retractionIds"></span></div>
+    <h3 id="claimHeading">Source claim text</h3>
+    <blockquote id="sourceClaimText"></blockquote>
+    <details class="guideline">
+      <summary>Decision procedure (short copy) — open the full guideline</summary>
+      <p>
+        <a href="../../docs/eval/DEPENDENCY_GUIDELINE.md" target="_blank" rel="noreferrer">
+          docs/eval/DEPENDENCY_GUIDELINE.md
+        </a>
+      </p>
+      <p><b>RELIES_ON:</b> B's claim/argument is supported by, derived from, or conditional on a specific
+        claim in A. Counterfactual: if A's claim were removed or invalidated, B's assertion would need
+        to change.</p>
+      <p><b>MENTIONS:</b> B cites A, but B's claim does not depend on A's specific claim. Background,
+        credit, topic pointer, standard method/tool, or contrast that B's claim survives.</p>
+      <p><b>UNRELATED:</b> the marker does not actually connect the asserted content to A (reference
+        fragment, misattribution, or no assertion about A).</p>
+      <ol>
+        <li>Resolve the target A. Multiple sources in one marker: label each source separately.</li>
+        <li>Read the sentence, paragraph, and section; do not label from the reference title alone.</li>
+        <li>State B's assertion in this context.</li>
+        <li>Run the counterfactual. Yes → RELIES_ON; no but still refers → MENTIONS; no and not
+          about A → UNRELATED.</li>
+        <li>If the text is genuinely insufficient, use <b>insufficient_context</b>: leave the label
+          blank, write a note, and do not guess.</li>
+      </ol>
+      <p class="hint">Section is not a label, and retraction status is not a label. Corroboration is
+        not dependency.</p>
+    </details>
+  </section>
+  <section class="card labelCard">
+    <h2>Label this context-source edge</h2>
+    <div class="buttons" id="labelButtons">
+      <button type="button" data-label="RELIES_ON"><span>RELIES_ON</span><kbd>1</kbd></button>
+      <button type="button" data-label="MENTIONS"><span>MENTIONS</span><kbd>2</kbd></button>
+      <button type="button" data-label="UNRELATED"><span>UNRELATED</span><kbd>3</kbd></button>
+      <button type="button" data-label="insufficient_context"><span>insufficient_context</span><kbd>4</kbd></button>
+    </div>
+    <label for="note">Note <span class="hint">(short reason; required for non-obvious rows)</span></label>
+    <textarea id="note" rows="4" placeholder="e.g. A's effect size is a premise for B's model; or background-only citation."></textarea>
+    <div id="rowStatus" class="rowStatus">No label selected for this row.</div>
+    <p class="footerNote">
+      Keys: 1/2/3/4 choose a label, ←/→ move rows, 0 clears this row. Autosave is local to this
+      browser; progress resumes where you left off. Export writes the same columns plus your labeler
+      id and the export date.
+    </p>
+  </section>
+</main>
+<script id="packet-data" type="application/json">{"columns": ["row_id", "citer_pmcid", "citer_title", "source_pmcid", "source_title", "source_pmid", "source_doi", "retraction_record_ids", "context_text", "paragraph_text", "section", "marker", "linked", "source_claim_text", "source_abstract", "label", "note", "labeler", "date", "guideline_version"], "rows": [{"row_id": "P3W1-065", "citer_pmcid": "PMC9607422", "citer_title": "Importance of Intermittent Fasting Regimens and Selection of Adequate Therapy on Inflammation and Oxidative Stress in SARS-CoV-2 Infection", "source_pmcid": "PMC8138022", "source_title": "RETRACTED ARTICLE: Impact of daily high dose oral vitamin D therapy on the inflammatory markers in patients with COVID 19 disease", "source_pmid": "34017029", "source_doi": "10.1038/s41598-021-90189-4", "retraction_record_ids": "36619", "context_text": "Ten days of supplementation with 60,000 IU/day of vitamin D in combination with standard treatment significantly reduced IL-6, hsCRP, LDH, ferritin, and Neutrophil/Lymphocyte ratio, in 87 hospitalized COVID-19 patients with vitamin D deficiency (D < 30 ng/m) as compared with the controls, who received standard treatment for 8 to 10 days [49].", "paragraph_text": "Accumulating data highlight the immunomodulatory role of vitamin D, and link hypovitaminosis D (25 OHD ≤ 20 ng/mL) with hyperinflammation (i.e., the so-called “cytokine storm”) and elevated risk of mortality in patients with COVID-19 [43,44,45,46]. Therefore, supplementation with vitamin D is suggested to attenuate the risk of the cytokine storm, and the severity of COVID-19 [43,47]. The impact of vitamin D on inflammatory markers and in response to SARS-CoV-2 infection has been explored in several RCTs (see Table 1). The current state of evidence from RCTs indicates that higher doses of daily intake of vitamin D can reduce the levels of inflammatory markers like IL-6, hsCRP, and time to recovery in COVID-19 patients [48,49]. Ten days of supplementation with 60,000 IU/day of vitamin D in combination with standard treatment significantly reduced IL-6, hsCRP, LDH, ferritin, and Neutrophil/Lymphocyte ratio, in 87 hospitalized COVID-19 patients with vitamin D deficiency (D < 30 ng/m) as compared with the controls, who received standard treatment for 8 to 10 days [49]. Similarly, in a 2-week trial, oral intakes of two different doses of vitamin D3 (5000 IU vs. 1000 IU) resulted in significant decreases in plasma IL-6 versus baseline, with no between group differences, while hsCRP levels remained unchanged in both groups [48]. Furthermore, time required for resolving cough symptoms with D3 supplementation (5000 IU) was significantly shorter compared to the comparison group [48]. Rastogi et al. investigated the effects of high-dose vitamin D supplementation (60,000 IU) as compared with control in 40 SARS-CoV-2 RNA positive individuals. Patients with vitamin D deficiency (25(OH) D < 20 ng/mL) who were positive for SARS-CoV-2 RNA, with mild or no symptoms, significantly improved with regard to viral SARS-CoV-2 RNA clearance (62.5% vs. 20.8%) and fibrinogen levels [50]. In contrast, a single dose of vitamin D was ineffective for lowering inflammatory markers and for the treatment of patients with severe COVID-19 [51,52,53].", "section": "3. The Impact of Dietary Supplements on Inflammatory Markers and in Response to SARS-CoV-2 > 3.1. Vitamins and Minerals", "marker": "49", "linked": "true", "source_claim_text": "COVID 19 is known to cause immune dysregulation and vitamin D is a known immunomodulator.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-073", "citer_pmcid": "PMC9787894", "citer_title": "Recent Advances in Lipid Nanoparticles for Delivery of mRNA", "source_pmcid": "PMC8437699", "source_title": "Why are we vaccinating children against COVID-19?", "source_pmid": "34540594", "source_doi": "10.1016/j.toxrep.2021.08.010", "retraction_record_ids": "37212", "context_text": "Several incidences of acute allergic reactions have been observed since the current emergency use approval of Pfizer’s mRNA COVID-19 vaccine [153]; these were approximately 10 times higher than for the other vaccines.", "paragraph_text": "PEG causes allergic reactions. Studies have shown that PEG is also responsible for allergic reactions to the Pfizer/BioNTech mRNA COVID-19 vaccine and that the trigger for allergic reactions is thought to be due to the IgE of anti-PEGylated lipids. Several incidences of acute allergic reactions have been observed since the current emergency use approval of Pfizer’s mRNA COVID-19 vaccine [153]; these were approximately 10 times higher than for the other vaccines. The source of this allergic reaction may be the production of antibodies to PEG in the body. In recent years, an increasing number of biological drugs also have contained PEG, and more people are developing antibodies against PEG; this may be caused by the use of cosmetics, daily products, or medicines containing PEG.", "section": "6. Problems in Clinical Application of LNP@mRNA > 6.2. Side Effects of PEG", "marker": "153", "linked": "false", "source_claim_text": "", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-031", "citer_pmcid": "PMC8237135", "citer_title": "Current and New Drugs for COVID-19 Treatment and Its Effects on the Liver", "source_pmcid": "PMC7185795", "source_title": "Experimental Treatment with Favipiravir for COVID-19: An Open-Label Control Study☆", "source_pmid": "32346491", "source_doi": "10.1016/j.eng.2020.03.007", "retraction_record_ids": "22995", "context_text": "55.56% p<0.001).66 A phase 3 Russian trial (COVIDFPR 01) using FPR (ClinicalTrials.gov Identifier: NCT04434248) is currently ongoing and includes 330 patients from 30 medical centers across 9 Russian regions.", "paragraph_text": "FPR is a prodrug with excellent bioavailability and has been approved in Japan for the treatment of influenza. FPR undergoes phosphoribosylation to favipiravir-RTP, which is the active form of this drug. It acts via inhibition of RdRp and also gets incorporated into the viral RNA strand, preventing its further extension.64 As the SARS-CoV-2-RdRp complex is at least 10-fold more active than any other viral RdRp known, the adequate dose of FPR for COVID-19 needs to be ascertained.65 The dose usually used in clinical practice is 1,800 mg twice a day on day 1, followed by 800 mg twice a day on days 2–14. An open-label, nonrandomized study conducted in China compared the effect of FPR vs. LPV/r in the treatment of COVID-19. Both groups had also received interferon-alpha (5 million units twice daily) by nasal inhalation. Compared with the LPV/r arm, patients in the FPR arm showed a statistically significant shorter median length of time to viral clearance (4 days vs. 11 days, p<0.001), improvement in chest computed tomography findings at day 14 (91.4% vs. 62.2%, p=0.004) and lower incidence of adverse effects (11.43% vs. 55.56% p<0.001).66 A phase 3 Russian trial (COVIDFPR 01) using FPR (ClinicalTrials.gov Identifier: NCT04434248) is currently ongoing and includes 330 patients from 30 medical centers across 9 Russian regions. A randomized, multicenter, open-labeled clinical trial in Indian patients has just been completed and the results are expected to be published soon.64", "section": "Antivirals > Favipiravir (FPR)", "marker": "66", "linked": "true", "source_claim_text": "There is currently an outbreak of respiratory disease caused by a novel coronavirus.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-069", "citer_pmcid": "PMC10814161", "citer_title": "Antiandrogens as Therapies for COVID-19: A Systematic Review", "source_pmcid": "PMC8326462", "source_title": "Proxalutamide Reduces the Rate of Hospitalization for COVID-19 Male Outpatients: A Randomized Double-Blinded Placebo-Controlled Trial", "source_pmid": "34350193", "source_doi": "10.3389/fmed.2021.668698", "retraction_record_ids": "37573", "context_text": "26% of placebo, p < 0.001 with a RR of 0.09 (95%CI: 0.03–0.27), thus showing a benefit of proxalutamide in newly diagnosed COVID-19 patients [97].", "paragraph_text": "Proxalutamide (200 mg/day) was also tested in newly diagnosed male COVID-19 patients compared to a placebo in a double-blinded RCT to evaluate the 30-day hospitalization rate. Compared to placebo the 30-day hospitalization rate resulted 2.2% vs. 26% of placebo, p < 0.001 with a RR of 0.09 (95%CI: 0.03–0.27), thus showing a benefit of proxalutamide in newly diagnosed COVID-19 patients [97].", "section": "3. Results > 3.4. Randomized Clinical Trials", "marker": "97", "linked": "true", "source_claim_text": "Antiandrogens have demonstrated a protective effect for COVOD-19 patients in observational and interventional studies.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-139", "citer_pmcid": "PMC8627269", "citer_title": "Effectiveness of Remdesivir, Lopinavir/Ritonavir, and Favipiravir for COVID-19 Treatment: A Systematic Review", "source_pmcid": "PMC7829645", "source_title": "Efficacy of favipiravir in COVID-19 treatment: a multi-center randomized study", "source_pmid": "33492523", "source_doi": "10.1007/s00705-021-04956-9", "retraction_record_ids": "34201", "context_text": "No significant difference between combination and tocilizumab (HR 1.28; 95% CI = 0.39–4.23, p = 0.575).Khamis, F et al (2021)2189Moderate -severe COVID-19 pneumonia patientsFavipiravirHydroxychloroquine441st day: 1600 mg twice daily2nd until maximum 10th day 600 mg twice daily10 daysNo significant difference between combination favipiravir with inhaled interferon beta-1b and the standard group in terms of duration hospital stay (7 days vs 7 days with p = 0.948), transfer to ICU (18.2% vs 17.8% with P = 0.960), discharge (65.9% vs 68.9% with P = 0.764) and mortality (11.4% vs 13.3% with P = 0.778).Dabbous, H, M et al (2021)2496Mild to moderateFavipiravirChloroquine48 and 4 patients out from study1st day: 1600 mg twice daily2nd to 10th day: 600 mg twice daily10 daysFavipiravir may be useful in reducing the duration of hospital stay and the mechanical ventilation.No patients in favipiravir group needed mechanical ventilation (p = 0.129)Dabbous, H.", "paragraph_text": "A narrative summary of RCT results is presented in Table 1 to show the main characteristics of the included studies, in which 6 out of the final 15 were assessing the effectiveness of remdesivir, while three of them were focused on lopinavir/ritonavir, and seven studies were evaluating favipiravir.Table 1Clinical Studies That Reported Antiviral Therapy for Treatment COVID-19Author; YearSample SizeStatus of COVID-19 PatientsAntiviral AgentComparatorPopulation/Patients (n)DosageDuration of TreatmentMain FindingsKalil, A. C. et al (2021)171033Moderate- severeRemdesivirBaricitinib/Remdesivir5091st day: 200 mg2 - until hospital discharge or death: 100 mg10 daysPatients treated with the combination recovered on average one day faster than patients given remdesivir alone (median = 7 vs 8 days; recovery rate ratio = 1.16; 95% CI = 1.01 to 1.32, p = 0.03). Fewer 28-day mortality in the combination group (5.1% vs 7.8%; HR = 0.65; 95% CI = 0.39–1.09). Serious side effects were less in the combination group (16% vs 21%).Goldman, J. D. et al (2020)14402SevereRemdesivirN/A3971st day: 200 mg4 or 9 days ahead: 100 mg once daily5 days: 200 patients10 days: 197 patientsAt day 14, patients receiving remdesivir for 10 days had a distribution of clinical status that was not significantly different from those receiving remdesivir for 5 days (p = 0.14). More patients were discharged from hospital (60% vs 52%) and reduced death rate (8% vs 11%) in the 5 day group and the 10 day group.Wang, Y. et al (2020)13237SevereRemdesivirPlacebo1581st day: 200 mg2–10: 100 mg daily10 daysRemdesivir compared with placebo was not significantly increased time it takes for clinical improvement (HR = 1.23; 95% CI = 0.87–1.75), and mortality in serious COVID-19 patients (difference 1.1%; 95% CI = [–8.1 to 10.3])Beigel, J. H. et al (2020)81062Mild - severeRemdesivirPlacebo5411st day: 200 mg2–10: 100 mg daily10 daysRemdesivir was found to be superior to placebo in reducing recovery time in adults hospitalized with COVID-19 (rate ratio for recovery = 1.29; 95% CI = 1.12 to 1.49; p <0.001), lower mortality (HR = 0.73; 95% CI = 0.52 to 1.03) and serious adverse effects are less likely to occur. (24.6% vs 31.6%).Spinner, C. D et al (2021)15584ModerateRemdesivirStandard care10-day course of remdesivir: 1935 day course of remdesivir: 1911st day: 200 mgFollowing days: 100 mg5 days and 10 daysPatients in 5-day remdesivir group had a larger chance of improving their clinical condition than those in the standard care group (OR = 1.65; 95% CI = 1.09–2.48; p = 0.02). Patients receiving 10-day remdesivir group and standard care group had no significant difference (p = 0.18).Pan, H. et al (2021)1611,266N/ARemdesivir and lopinavirStandard careRemdesivir: 2743Lopinavir: 1399Remdesivir:1st day: 200 mg2nd-10th day: 100 mgLopinavir:1st-14th day: 200 mg lopinavir (plus 50 mg ritonavir) BIDRemdesivir: 10 daysLopinavir: 14 daysThere was no effect of remdesivir (RR = 0.95; 95% CI = 0.81–1.11; P = 0.50) or lopinavir (RR = 1.00; 95% CI = 0.79–1.25; P = 0.97) treatment in reducing mortality or early use of mechanical ventilation.Cao, B et al (2020)19199SevereLopinavir/RitonavirStandard care group99400 mg lopinavir - 100 mg ritonavir twice daily14 daysLopinavir-ritonavir treatment had a better effect than the standard care group, but did not make a significant difference by clinical outcome (HR = 1.31; 95% CI, 0.95–1.80; p = 0.09), mortality (19.2% vs 25.0%; 95% CI = −17.3–5.7) in patients with serious COVID-19.Reis, G. et al (2021)18685N/ALopinavir/RitonavirHydroxychloroquine2441st day: 800+200 mg lopinavir/ritonavir, BID.2nd-10th day: 400+100 mg lopinavir/ritonavir, BID.10 daysNo significant difference for COVID-19-associated hospitalization and viral clearance up to day 14 was found from using lopinavir/ritonavir (HR =1.16; 95% CI = 0.53–2.56 and OR = 1.04 and 95% CI, 0.94–1.16) compared with the hydroxychloroquine group (HR = 0.76; 95% CI = 0.30–1.88 and OR = 0.91; 95% CI = 0.82–1.02).Solaymani-Dodaran, M et al (2021)20380Patients based on positive RT-PCRFavipiravirLopinavir/RitonavirHydroxychloroquineFavipiravir (n=193) and Lopinavir/ritonavir (n=187)Favipiravir: 1600 mg and then 600 mg every 8 hours plus Hydroxychloroquine 200 mg BID.The control group: single dose of 400 mg hydroxychloroquine followed by 100 plus 400 lopinavir/ ritonavir BID.1 weekNo significant difference in clinical recovery (HR = 0.94; 95% CI = 0.75–1.17), SpO2 changes during hospitalization (p= 0.46), mortality, intubation and ICU admission between favipiravir and lopinavir/ritonavir. However, lopinavir/ritonavir had more side effects than favipiravir.Lou, Y et al (2021)2230N/AFavipiravirBaloxavir marboxil and the control group (lopinavir/ritonavir or darunavir/cobicistat or arbidol)9First dose: 1600–2200 mgFollowed by 600 mg, three times a day.14 daysThe percentage of patients who became virally negative after 14 days of treatment was 77%, 70%, and 100% in the favipiravir, baloxavir marboxil, and control groups, with medians to clinical improvement being 14 days, 14 days and 15 days, respectively.Zhao, H et al (2021)2326N/AFavipiravirTocilizumab and combination (tocilizumab plus favipiravir)71st day: 1600 mg twice daily.2nd-7th day: 600 mg twice daily.14 daysAt day 14, the cumulative pulmonary lesion remission rate in combination group was significantly higher than the favipiravir group (HR 2.66; 95% CI = 1.08–6.53, p= 0.019). Significant difference was observed between tocilizumab and favipiravir (HR 3.16; 95% CI = 0.62–16.10, p= 0.034). No significant difference between combination and tocilizumab (HR 1.28; 95% CI = 0.39–4.23, p = 0.575).Khamis, F et al (2021)2189Moderate -severe COVID-19 pneumonia patientsFavipiravirHydroxychloroquine441st day: 1600 mg twice daily2nd until maximum 10th day 600 mg twice daily10 daysNo significant difference between combination favipiravir with inhaled interferon beta-1b and the standard group in terms of duration hospital stay (7 days vs 7 days with p = 0.948), transfer to ICU (18.2% vs 17.8% with P = 0.960), discharge (65.9% vs 68.9% with P = 0.764) and mortality (11.4% vs 13.3% with P = 0.778).Dabbous, H, M et al (2021)2496Mild to moderateFavipiravirChloroquine48 and 4 patients out from study1st day: 1600 mg twice daily2nd to 10th day: 600 mg twice daily10 daysFavipiravir may be useful in reducing the duration of hospital stay and the mechanical ventilation.No patients in favipiravir group needed mechanical ventilation (p = 0.129)Dabbous, H. M et al (2021)25100Mild/ moderateFavipiravirHydroxychloroquine501st day: 1600 mg, twice daily2nd-10th day: 600 mg, twice daily10 daysIn mild to moderate patients, no significant differences in clinical benefit between favipiravir and hydroxychloroquine (P = 0.7). In COVID-19 therapy regimens, favipiravir can be an effective and safe alternative to hydroxychloroquine.Udwadia, Z, F et al (2021)26150Mild/ moderateFavipiravirStandard supportive care751st day: 1800 mg twice daily2nd to 14th day: 800 mg twice daily14The addition of favipiravir to supportive therapy may be useful in patients categorized mild to moderate. The median time it takes to stop spreading was 5 days vs 7 days ((95% CI = 4 days, 7 days) vs (95% CI = 5 days, 8 days), p= 0.129), and the median time required for a patient to recover clinically was 3 days vs 5 days ((95% CI = 3 days, 4 days), vs (95% CI = 4 days, 6 days), P = 0.030).Abbreviations: HR, hazard Ratio; RR, rate ratio; OR, odds ratio; 95% CI, 95% of confidence interval; N/A, not available; SpO2, oxygen saturation; ICU, intensive care unit; RT-PCR, reverse transcription polymerase chain reaction.", "section": "Result > Antiviral Therapy for COVID-19 Treatments", "marker": "24", "linked": "true", "source_claim_text": "No specific antiviral drugs have been approved for the treatment of COVID-19.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-087", "citer_pmcid": "PMC7375972", "citer_title": "Approaching coronavirus disease 2019: Mechanisms of action of repurposed drugs with potential activity against SARS-CoV-2", "source_pmcid": "PMC7102549", "source_title": "Hydroxychloroquine and azithromycin as a treatment of COVID-19: results of an open-label non-randomized clinical trial", "source_pmid": "32205204", "source_doi": "10.1016/j.ijantimicag.2020.105949", "retraction_record_ids": "59596", "context_text": "All patients treated with both drugs showed negative nasopharyngeal SARS-CoV-2 PCR conversion compared to 57.1% of those treated with hydroxychloroquine as single agent and 12.5% of the untreated ones [62].", "paragraph_text": "The first published demonstration of a possible additional benefit deriving from the association of azithromycin with hydroxychloroquine was provided by the results of a French open-label single-arm study with 26 cases treated daily with 600 mg of hydroxychloroquine; six of them also received azithromycin (500 mg on the first day followed by 250 mg daily) to prevent bacterial infection. All patients treated with both drugs showed negative nasopharyngeal SARS-CoV-2 PCR conversion compared to 57.1% of those treated with hydroxychloroquine as single agent and 12.5% of the untreated ones [62]. The results of a French retrospective non-randomized study in a total of 1061 patients treated for at least 3 days with hydroxychloroquine plus azithromycin showed that early treatment with this drug combination was well-tolerated and associated with a very low fatality rate (0.9%) [63]. The mechanism underlying the potential azithromycin activity against SARS-CoV-2 still needs to be clarified; recently, it has been hypothesized that this antibiotic might inhibit CD147, a glycosylated transmembrane protein that would serve as additional receptor for SARS-CoV-2 cell invasion [64]. Furthermore, azithromycin might stimulate immune responses against the virus by inducing the synthesis of type I and III interferons, as demonstrated in epithelial cells collected from patients with chronic obstructive pulmonary disease [65]. As mentioned above, a number of clinical trials are currently evaluating azithromycin mostly in combination with hydroxychloroquine for the treatment of COVID-19 or as prophylaxis.", "section": "Anti-SARS-CoV-2 drugs: mechanisms of action, approved indications, biological rationale for their use as anti-viral agents > Drugs that interfere with SARS-CoV-2 entry > Chloroquine and hydroxychloroquine with or without azithromycin", "marker": "[62]", "linked": "true", "source_claim_text": "Chloroquine and hydroxychloroquine have been found to be efficient on SARS-CoV-2, and reported to be efficient in Chinese COV-19 patients.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-104", "citer_pmcid": "PMC8785935", "citer_title": "VGGCOV19-NET: automatic detection of COVID-19 cases from X-ray images using modified VGG19 CNN architecture and YOLO algorithm", "source_pmcid": "PMC7175452", "source_title": "RETRACTED ARTICLE: Deep learning system to screen coronavirus disease 2019 pneumonia", "source_pmid": "38624372", "source_doi": "10.1007/s10489-020-01714-3", "retraction_record_ids": "24847", "context_text": "[38] classified three classes with 86.7% accuracy on chest CT images with the ResNet model.", "paragraph_text": "Butt et al. [38] classified three classes with 86.7% accuracy on chest CT images with the ResNet model. Ying et al. [39] classified COVID-19 with 94% accuracy with the DRE-Net CNN model from chest CT images. Zheng et al. [40] diagnosed COVID-19 with 90.1% accuracy from chest CT images with the 3D deep CNN model. Harmon et al. [7] detected COVID-19 with 90.8% accuracy using the Densnet-121 CNN architecture on a total of 2724 CT images, 1029 of which were COVID-19 positive. Waheed et al. [10] stated that it is difficult to collect X-ray images because the epidemic is new, and they proposed a method to produce synthetic X-ray images. They suggested that when synthetic X-ray images produced by this method are added to the data set, the model performance increases.", "section": "Literature review", "marker": "38", "linked": "false", "source_claim_text": "", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-042", "citer_pmcid": "PMC10016932", "citer_title": "Origin, transmission, diagnosis and management of coronavirus disease 2019 (COVID-19)", "source_pmcid": "PMC7255293", "source_title": "RETRACTED: Hydroxychloroquine or chloroquine with or without a macrolide for treatment of COVID-19: a multinational registry analysis", "source_pmid": "32450107", "source_doi": "10.1016/S0140-6736(20)31180-6", "retraction_record_ids": "23529", "context_text": "The anti-malarial drugs, hydroxychloroquine and chloroquine, showed promising results in early in vitro study.69 However, the most robust and recent study in patients with COVID-19 have not shown unequivocal evidence of benefits for the treatment with hydroxychloroquine or chloroquine.70–72 In fact, the largest analysis to date of the risks and benefits of treating COVID-19 patients with these anti-malarial drugs was unable to confirm a benefit of hydroxychloroquine or chloroquine, when used alone or with a macrolide, on in-hospital outcomes for COVID-19.70 Besides, this study of 96 000 hospitalised patients on six continents found that those who received the drugs had a significantly higher risk of death and an increased frequency of ventricular arrhythmias compared with those who did not use it.70", "paragraph_text": "The anti-malarial drugs, hydroxychloroquine and chloroquine, showed promising results in early in vitro study.69 However, the most robust and recent study in patients with COVID-19 have not shown unequivocal evidence of benefits for the treatment with hydroxychloroquine or chloroquine.70–72 In fact, the largest analysis to date of the risks and benefits of treating COVID-19 patients with these anti-malarial drugs was unable to confirm a benefit of hydroxychloroquine or chloroquine, when used alone or with a macrolide, on in-hospital outcomes for COVID-19.70 Besides, this study of 96 000 hospitalised patients on six continents found that those who received the drugs had a significantly higher risk of death and an increased frequency of ventricular arrhythmias compared with those who did not use it.70", "section": "Management", "marker": "70", "linked": "false", "source_claim_text": "", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-111", "citer_pmcid": "PMC7220578", "citer_title": "RAS-Inhibition in Zeiten der COVID-19-Pandemie — aktuelle ESH-Empfehlungen", "source_pmcid": "PMC7206931", "source_title": "Cardiovascular Disease, Drug Therapy, and Mortality in Covid-19", "source_pmid": "32356626", "source_doi": "10.1056/NEJMoa2007621", "retraction_record_ids": "23530", "context_text": "Ebenso zeigten drei Anfang Mai 2020 im The New England Journal of Medicine publizierte, große Observationsstudien, dass Angiotensin-converting-Enzyme(ACE)-Hemmer (ACEI) und Angiotensin-Rezeptor-Blocker (ARB) weder das Risiko erhöhen, an COVID-19 zu erkranken, noch das Risiko, dass eine COVID-19-Erkrankung einen schweren Verlauf nimmt [3, 4, 5].", "paragraph_text": "Hierzu hat sich nun die ESH COVID-19 Task Force geäußert [1]. Aufgrund der hohen Prävalenz der Hypertonie ist es wenig überraschend, dass diese auch gehäuft bei schweren Verläufen von COVID-19 auftritt. Die wichtigere Frage, ob Hypertonie ein unabhängiger Risikofaktor für schwere Verläufe ist, muss durch sorgfältige, risikoadjustierte und kontrollierte Studien erfolgen. Eine aktuelle Studie aus China fand in einer multifaktoriellen Analyse keine Hinweis auf einen Zusammenhang zwischen Hypertonie und tödlichem Ausgang [2]. Ebenso zeigten drei Anfang Mai 2020 im The New England Journal of Medicine publizierte, große Observationsstudien, dass Angiotensin-converting-Enzyme(ACE)-Hemmer (ACEI) und Angiotensin-Rezeptor-Blocker (ARB) weder das Risiko erhöhen, an COVID-19 zu erkranken, noch das Risiko, dass eine COVID-19-Erkrankung einen schweren Verlauf nimmt [3, 4, 5].", "section": "", "marker": "3", "linked": "true", "source_claim_text": "Coronavirus disease 2019 (Covid-19) may disproportionately affect people with cardiovascular disease.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-034", "citer_pmcid": "PMC8627269", "citer_title": "Effectiveness of Remdesivir, Lopinavir/Ritonavir, and Favipiravir for COVID-19 Treatment: A Systematic Review", "source_pmcid": "PMC7185795", "source_title": "Experimental Treatment with Favipiravir for COVID-19: An Open-Label Control Study☆", "source_pmid": "32346491", "source_doi": "10.1016/j.eng.2020.03.007", "retraction_record_ids": "22995", "context_text": "An article showed that favipiravir has a tolerable safety profile in terms of total and serious side effects compared to other drugs used for short-term treatment.51 The early viral clearance contributed to an increase in chest CT at Day 14.52 Favipiravir also showed encouraging results with a significant decrease in the duration of viral clearance.53", "paragraph_text": "Favipiravir has been shown to be effective against positive-stranded RNA viruses, for example, norovirus and flavivirus. Therefore, it has antiviral activity against SARS-CoV-2.50 The results showed that favipiravir has the advantage of improving the clinical status of COVID-19 patients. Also, it showed better results when used alongside supportive therapy, therefore it is used for mild to moderate patients. In addition, it was evident that Favipiravir showed a favorable outcome when combined with tocilizumab and supportive therapy. Several references have also shown that favipiravir alone might result in similar clinical improvement comparable to hydroxychloroquine.21,25 Favipiravir induces viral clearance within 7 days and contributes to clinical improvement within 14 days, and it has strong potential in the treatment of COVID-19, especially in patients with mild-to-moderate disease. An article showed that favipiravir has a tolerable safety profile in terms of total and serious side effects compared to other drugs used for short-term treatment.51 The early viral clearance contributed to an increase in chest CT at Day 14.52 Favipiravir also showed encouraging results with a significant decrease in the duration of viral clearance.53", "section": "Discussion", "marker": "52", "linked": "true", "source_claim_text": "There is currently an outbreak of respiratory disease caused by a novel coronavirus.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-046", "citer_pmcid": "PMC7462881", "citer_title": "Meeting the Challenge of Scientific Dissemination in the Era of COVID-19: Toward a Modular Approach to Knowledge-Sharing for Radiation Oncology", "source_pmcid": "PMC7255293", "source_title": "RETRACTED: Hydroxychloroquine or chloroquine with or without a macrolide for treatment of COVID-19: a multinational registry analysis", "source_pmid": "32450107", "source_doi": "10.1016/S0140-6736(20)31180-6", "retraction_record_ids": "23529", "context_text": "In a recent example, to combat initial shortfalls of personal protective equipment (PPE), Twitterati on social media forums began to discuss the practicability of radiation as a method for PPE sterilization and reuse.12 , 13 Within days, pilot protocols were developed and a preprint generated to use laboratory biosafety cabinets as a method to stretch dangerously short supplies of previously disposable PPE for health care workers.14 Near simultaneous efforts were made by other groups at ultraviolet-based sterilization and were disseminated directly via university website.15 At present, none of the relevant scientific content from these works has yet been credentialed as peer-reviewed.1 Nonetheless, in the heart of the PPE shortage, decisions were actively being made how best to reuse life-saving PPE with these prereview data from radiation oncologists.", "paragraph_text": "The value of preprints for near-immediate dissemination of research findings, their ease of use, their ability to circumvent traditional journal politics and dominant narratives, and their accompanying lack of restrictions before knowledge-sharing has been highlighted even further with COVID-19, with 32% of the National Institutes of Health (NIH) Office of Portfolio Analysis represented as preprints, whereas the PubMed/preprint ratio was at 3% as of last year. In the interval since COVID-19 became a global pandemic, the preprint phenomenon appears, anecdotally, to have grown substantially within radiation oncology. In a recent example, to combat initial shortfalls of personal protective equipment (PPE), Twitterati on social media forums began to discuss the practicability of radiation as a method for PPE sterilization and reuse.12 , 13 Within days, pilot protocols were developed and a preprint generated to use laboratory biosafety cabinets as a method to stretch dangerously short supplies of previously disposable PPE for health care workers.14 Near simultaneous efforts were made by other groups at ultraviolet-based sterilization and were disseminated directly via university website.15 At present, none of the relevant scientific content from these works has yet been credentialed as peer-reviewed.1 Nonetheless, in the heart of the PPE shortage, decisions were actively being made how best to reuse life-saving PPE with these prereview data from radiation oncologists. Without preprints, we would not know these findings even existed in a timely enough fashion to consider for practice during an acute PPE shortage.", "section": "Preprints: Accelerated Research Transmission in a Pandemic", "marker": "1", "linked": "false", "source_claim_text": "", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-091", "citer_pmcid": "PMC8435122", "citer_title": "Candidate antiviral drugs for COVID-19 and their environmental implications: a comprehensive analysis", "source_pmcid": "PMC7102549", "source_title": "Hydroxychloroquine and azithromycin as a treatment of COVID-19: results of an open-label non-randomized clinical trial", "source_pmid": "32205204", "source_doi": "10.1016/j.ijantimicag.2020.105949", "retraction_record_ids": "59596", "context_text": "It was found that, compared to control, HCQ with and without azithromycin was significantly more effective in eliminating viral nasopharyngeal transport (as measured by the polymerase chain reaction), showing good results in 3 to 6 days in patients with COVID-19 (Gautret et al. 2020b). In day 6 post-inclusion, virological clearance with HCQ versus control was 70.0% against 12.5%, respectively (p = 0.001).", "paragraph_text": "The first human trial using chloroquine as a treatment involved more than 100 COVID-19 patients. It showed that chloroquine is superior in reducing the duration of symptoms and exacerbation of pneumonia (Sahraei et al. 2020). Radiological improvement and promotion of negative viral seroconversion were found without any serious negative effects. Due to this early positive result, China incorporated chloroquine in its guidelines as an option to prevent and treat COVID-19 pneumonia. The second human study conducted with HCQ was a non-randomized trial (n = 36). It was found that, compared to control, HCQ with and without azithromycin was significantly more effective in eliminating viral nasopharyngeal transport (as measured by the polymerase chain reaction), showing good results in 3 to 6 days in patients with COVID-19 (Gautret et al. 2020b). In day 6 post-inclusion, virological clearance with HCQ versus control was 70.0% against 12.5%, respectively (p = 0.001). Additionally, virological clearance at day 6 post-inclusion in HCQ with azithromycin, HCQ alone, and control group was 100%, 57.1%, and 12.5% respectively (p < 0.001). This study indicates a synergistic effect of azithromycin with HCQ. Although there is not much available evidence until now, due to the COVID-19 pandemic situation, institutions worldwide have already acknowledged the use of chloroquine and HCQ in COVID-19 treatment (Touret and de Lamballerie 2020).", "section": "Mechanism of action of the candidate antiviral drugs against SARS-CoV-2 > SARS-CoV-2 protease inhibitors > Chloroquine", "marker": "2020b", "linked": "true", "source_claim_text": "Chloroquine and hydroxychloroquine have been found to be efficient on SARS-CoV-2, and reported to be efficient in Chinese COV-19 patients.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-138", "citer_pmcid": "PMC8398077", "citer_title": "Antiviral Therapeutic Approaches for SARS-CoV-2 Infection: A Systematic Review", "source_pmcid": "PMC7829645", "source_title": "Efficacy of favipiravir in COVID-19 treatment: a multi-center randomized study", "source_pmid": "33492523", "source_doi": "10.1007/s00705-021-04956-9", "retraction_record_ids": "34201", "context_text": "Although the differences were not statistically significant, those receiving favipiravir had a shorter duration of hospital stay (p = 0.06), lower mortality rates (p = 1.00) and none of them required mechanical ventilation (p = 0.118) [72].", "paragraph_text": "In Egypt, the authors Dabbous et al. found in their RCT promising results regarding the use of favipiravir when compared to chloroquine. Although the differences were not statistically significant, those receiving favipiravir had a shorter duration of hospital stay (p = 0.06), lower mortality rates (p = 1.00) and none of them required mechanical ventilation (p = 0.118) [72].", "section": "3. Results > 3.3. Favipiravir > 3.3.1. Efficacy", "marker": "72", "linked": "true", "source_claim_text": "No specific antiviral drugs have been approved for the treatment of COVID-19.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-033", "citer_pmcid": "PMC8332739", "citer_title": "Combined Therapy of Ciclosporin Plus Favipiravir in the Management of Patients with Severe COVID-19, not Responding to Dexamethasone: A non-Controlled Prospective Trial", "source_pmcid": "PMC7185795", "source_title": "Experimental Treatment with Favipiravir for COVID-19: An Open-Label Control Study☆", "source_pmid": "32346491", "source_doi": "10.1016/j.eng.2020.03.007", "retraction_record_ids": "22995", "context_text": "It is currently being used as an off-label regimen for COVID-19 with the mentioned dosing regimen in the methods section based on the available published evidence [19].", "paragraph_text": "Another main point to consider is that we began administering ciclosporin almost five days after admission. The antiviral and immunomodulatory effects of ciclosporin might be achieved if it is administered earlier. Considering the drug interactions between ciclosporin and dexamethasone, as well as the potential fluctuations in serum concentrations of both medications, we decided to discontinue dexamethasone and administer ciclosporin in patients who did not respond to dexamethasone after five days. Favipiravir was continued for 14 days or until the patient was discharged. No documented interaction between ciclosporin and favipiravir was found. Favipiravir selectively prevents the replication of viral genomes by interacting with RNA-dependent RN polymerase (RdRp) [18]. It is currently being used as an off-label regimen for COVID-19 with the mentioned dosing regimen in the methods section based on the available published evidence [19].", "section": "Discussion", "marker": "[19]", "linked": "true", "source_claim_text": "There is currently an outbreak of respiratory disease caused by a novel coronavirus.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-056", "citer_pmcid": "PMC8473437", "citer_title": "Comprehensive literature review on the radiographic findings, imaging modalities, and the role of radiology in the COVID-19 pandemic", "source_pmcid": "PMC7470341", "source_title": "Lung ultrasound score in establishing the timing of intubation in COVID-19 interstitial pneumonia: A preliminary retrospective observational study", "source_pmid": "32881950", "source_doi": "10.1371/journal.pone.0238679", "retraction_record_ids": "24914", "context_text": "This scoring system became useful as it helps to predict the prognosis of patients based on other clinical features and co-morbidities[66].", "paragraph_text": "Another scoring system used for COVID-19 is known as the MuLBSTA score, which looks at key components such as multi-lobar infiltration, hypo-lymphocytosis, bacterial coinfection, smoking history, hypertension, and age. Five points are assigned for multi-lobar infiltration, 4 points if the lymphocyte count is less than or equal to 0.8 × 109/L, 4 points for bacterial infiltration that is confirmed by lab results or on CT, 3 points for those who are currently smoking (2 for those who have previously been smokers), 2 points for hypertension, and 1 point for age above 60-years-old. A total score of 12 was used as the cut-off; those with scores between 0 and 11 were considered low risk while those with a score of ≥ 12 are considered high-risk patients. Those who are in the high-risk category are more likely to require intensive care unit treatment or were more likely to die due to the infection. This scoring system became useful as it helps to predict the prognosis of patients based on other clinical features and co-morbidities[66]. A retrospective study by Ma et al[71] (n = 330), showed that the ROC curve analysis on the MuLBSTA early warning scoring system for severe COVID-19 patients has an accuracy of 92.7% (95%CI: 89.2% to 96.3%), sensitivity of 65.1%, and specificity of 95.4%. These outcomes indicate that MuLBSTA is a good early warning system for severe COVID-19 patients.", "section": "MULBSTA SCORING SYSTEM", "marker": "66", "linked": "true", "source_claim_text": "To investigate the role of lung ultrasound score (LUS) in assessing intubation timing for patients with severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) pneumonia.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-007", "citer_pmcid": "PMC7086963", "citer_title": "Characterization of avian paramyxovirus type 6 isolated from a Eurasian teal in the intersection of migratory flyways in Russia", "source_pmcid": "PMC3037383", "source_title": "Experimental Infection of Mice with Avian Paramyxovirus Serotypes 1 to 9", "source_pmid": "21347313", "source_doi": "10.1371/journal.pone.0016776", "retraction_record_ids": "24803", "context_text": "We used BALB/c mice as an animal model that supports replication of all of the APMVs in the respiratory tract except for APMV-5, which failed to cause detectable infection [8].", "paragraph_text": "We used BALB/c mice as an animal model that supports replication of all of the APMVs in the respiratory tract except for APMV-5, which failed to cause detectable infection [8]. Viral replication occurred mostly in the upper and lower respiratory tracts. We found no significant replication in organs and no clinical signs of disease or death. Together with of ICPI and IVPI tests on chickens, the results suggest that APMV6-455 has low pathogenic potential. Such results obtained using this animal model should be useful for risk assessment of APMV-6.", "section": "", "marker": "8", "linked": "true", "source_claim_text": "The nine serotypes of avian paramyxoviruses (APMVs) are frequently isolated from domestic and wild birds worldwide.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-058", "citer_pmcid": "PMC9489065", "citer_title": "Current evidence for COVID-19 therapies: a systematic literature review", "source_pmcid": "PMC7543820", "source_title": "Hydroxychloroquine in the Treatment of COVID-19: A Multicenter Randomized Controlled Study", "source_pmid": "32828135", "source_doi": "10.4269/ajtmh.20-0873", "retraction_record_ids": "39037", "context_text": "Four trials (n=194–665) reported no significant impact of hydroxychloroquine, with or without azithromycin, on reducing the need for ventilation or improving other respiratory outcomes compared with standard care, in patients with COVID-19 of a range of severities [33, 40, 45, 53] (figure 4b and supplementary table 4).", "paragraph_text": "Four trials (n=194–665) reported no significant impact of hydroxychloroquine, with or without azithromycin, on reducing the need for ventilation or improving other respiratory outcomes compared with standard care, in patients with COVID-19 of a range of severities [33, 40, 45, 53] (figure 4b and supplementary table 4). Among two trials (n=78 and n=18) of bromhexine plus standard versus standard care alone, one reported significantly reduced numbers of patients with COVID-19 of unspecified severity requiring intensive mechanical ventilation with bromhexine (2.6% versus 23.1%; p=0.007) [47] (figure 4b). The other trial showed a numerical but nonsignificant trend towards reduced need for oxygen therapy with bromhexine (16.7% versus 33.3%; p=0.11) versus standard care, in patients with mild or moderate COVID-19 [55] (figure 4b).", "section": "Results > Need for ventilation > Antimalarial and mucolytic drugs", "marker": "45", "linked": "true", "source_claim_text": "The COVID-19 pandemic is showing an exponential growth, mandating an urgent need to develop an effective treatment.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-117", "citer_pmcid": "PMC8576114", "citer_title": "Prevalence and Clinical Implications of COVID-19 Myocarditis", "source_pmcid": "PMC7206931", "source_title": "Cardiovascular Disease, Drug Therapy, and Mortality in Covid-19", "source_pmid": "32356626", "source_doi": "10.1056/NEJMoa2007621", "retraction_record_ids": "23530", "context_text": "Thus, several recent observational studies showed that there was no significant difference between patients treated with ACEi or ARB and those who discontinue these medications and, therefore, is generally recommended to initiate or continue these drugs during and beyond the disease.66 , 67", "paragraph_text": "Patients who develop HF from COVID-19 myocarditis should be treated with guideline-directed medical therapy, including ACE inhibitors, angiotensin receptor blockers (ARBs), or angiotensin receptor-neprilysin inhibitors (ARNi), β-blockers and diuretics.65 Because of their mechanism of action, there was initial concern that treating patients with COVID-19 with ACEi, ARB, and ARNi would worsen clinical outcomes. Thus, several recent observational studies showed that there was no significant difference between patients treated with ACEi or ARB and those who discontinue these medications and, therefore, is generally recommended to initiate or continue these drugs during and beyond the disease.66 , 67", "section": "Treatment > Management of Heart Failure", "marker": "67", "linked": "true", "source_claim_text": "Coronavirus disease 2019 (Covid-19) may disproportionately affect people with cardiovascular disease.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-086", "citer_pmcid": "PMC7362818", "citer_title": "FDA approved drugs with pharmacotherapeutic potential for SARS-CoV-2 (COVID-19) therapy", "source_pmcid": "PMC7102549", "source_title": "Hydroxychloroquine and azithromycin as a treatment of COVID-19: results of an open-label non-randomized clinical trial", "source_pmid": "32205204", "source_doi": "10.1016/j.ijantimicag.2020.105949", "retraction_record_ids": "59596", "context_text": "The effect of treatment was significantly more pronounced in patients with URTI and LRTI in comparison with asymptomatic patients (p < 0.05) (Gautret et al., 2020).", "paragraph_text": "There are several studies that present potential benefits of antibiotic therapy in coronavirus infection. It is challenging to elucidate the potential underlying mechanism of action that might be of benefit in monotherapy, therefore most researchers turn their attention to combination therapy. Azithromycin, a macrolide antibiotic, in combination with HCQ, might yield clinical benefit as an adjunctive. The insights from the French study (described in the section concerning CQ) presents the thesis that azithromycin potentiates the effects of therapy (Gautret et al., 2020). Among patients treated with HCQ, 6 of them were given azithromycin (500 mg initially, then 250 mg per day for the next 4 days), in order to prevent superimposed bacterial infections. When comparing HCQ monotherapy to combination therapy with azithromycin, the percentage of patients who presented with negative PCR viral load was significantly different, at 3, 4, 5 and 6 days of follow-up, in the favor of dual therapy. On day 6, 100 % of patients were declared viral load-negative, in comparison with 57.1 % in HCQ monotherapy group and 12.5 % in control group (p < 0.001). The effect of treatment was significantly more pronounced in patients with URTI and LRTI in comparison with asymptomatic patients (p < 0.05) (Gautret et al., 2020).", "section": "Antibiotics", "marker": "Gautret et al., 2020", "linked": "true", "source_claim_text": "Chloroquine and hydroxychloroquine have been found to be efficient on SARS-CoV-2, and reported to be efficient in Chinese COV-19 patients.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-092", "citer_pmcid": "PMC8606168", "citer_title": "Mechanisms of COVID-19-induced kidney injury and current pharmacotherapies", "source_pmcid": "PMC7102549", "source_title": "Hydroxychloroquine and azithromycin as a treatment of COVID-19: results of an open-label non-randomized clinical trial", "source_pmid": "32205204", "source_doi": "10.1016/j.ijantimicag.2020.105949", "retraction_record_ids": "59596", "context_text": "Randomized clinical trials showed no clinical benefit; therefore, the use of azithromycin, alone or in combination with hydroxychloroquine, for treating COVID-19 was dropped [107–110].", "paragraph_text": "Azithromycin (AZM) is a macrolide-type antibiotic used mainly to treat respiratory infections. It has shown broad antiviral effects at both in vitro and in vivo stages against Ebola, Zika, influenza H1N1, respiratory syncytial virus, and rhinoviruses. In the case of SARS-CoV-2, it has shown synergistic effects when used with chloroquine and hydroxychloroquine in clinical settings [103]. AZM acts by binding to viral particles and blocking their attachment to lipid rafts, while chloroquine competitively prevents virus binding to gangliosides. Their similar mechanisms of action might explain the synergistic effects of the combination therapy [104]; however, combination therapy was associated with serious side effects such as prolonged QT interval and other GI symptoms like nausea, vomiting, and diarrhea, particularly in patients with a GFR less than 10 mL/min [105]. Azithromycin is eliminated mainly in the gastrointestinal tract via the biliary secretion, while liver metabolism renders inactive metabolites eliminated in the urine; thus, no dose adjustments are needed in patients with renal disease [106]. Randomized clinical trials showed no clinical benefit; therefore, the use of azithromycin, alone or in combination with hydroxychloroquine, for treating COVID-19 was dropped [107–110].", "section": "Antivirals > Azithromycin", "marker": "110", "linked": "true", "source_claim_text": "Chloroquine and hydroxychloroquine have been found to be efficient on SARS-CoV-2, and reported to be efficient in Chinese COV-19 patients.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-063", "citer_pmcid": "PMC8223190", "citer_title": "Vitamin D supplementation and clinical outcomes in COVID-19: a systematic review and meta-analysis", "source_pmcid": "PMC8138022", "source_title": "RETRACTED ARTICLE: Impact of daily high dose oral vitamin D therapy on the inflammatory markers in patients with COVID 19 disease", "source_pmid": "34017029", "source_doi": "10.1038/s41598-021-90189-4", "retraction_record_ids": "36619", "context_text": "After a scrupulous literature search and a meticulous study selection process, we included 13 studies in the present meta-analysis [7–15, 22–25], pooling data retrieved from 2933 patients with COVID-19 (Fig.", "paragraph_text": "After a scrupulous literature search and a meticulous study selection process, we included 13 studies in the present meta-analysis [7–15, 22–25], pooling data retrieved from 2933 patients with COVID-19 (Fig. 1). Of the 13 studies, 10 were observational studies [7–10, 12–14, 22–24], while 3 were RCTs [11, 15, 25]. Relevant studies where clinical outcomes were not reported in terms of ICU admission or mortality were excluded [26–28].", "section": "Results", "marker": "25", "linked": "true", "source_claim_text": "COVID 19 is known to cause immune dysregulation and vitamin D is a known immunomodulator.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-014", "citer_pmcid": "PMC7230749", "citer_title": "Optimal Nutritional Status for a Well-Functioning Immune System Is an Important Factor to Protect against Viral Infections", "source_pmcid": "PMC6057395", "source_title": "Extra Dose of Vitamin C Based on a Daily Supplementation Shortens the Common Cold: A Meta-Analysis of 9 Randomized Controlled Trials", "source_pmid": "30069463", "source_doi": "10.1155/2018/1837634", "retraction_record_ids": "43967", "context_text": "As noted above, recent meta-analyses concluded significant reductions in the risk and impact of both upper and lower respiratory tract infections such as the common cold and pneumonia, including disease severity and risk of death in older patients, with vitamin C supplementation [27,28,79].", "paragraph_text": "Second, we recommend supplementation above the RDA for vitamins C and D. As noted above, recent meta-analyses concluded significant reductions in the risk and impact of both upper and lower respiratory tract infections such as the common cold and pneumonia, including disease severity and risk of death in older patients, with vitamin C supplementation [27,28,79]. Based on this evidence, a daily intake of at least 200 mg/day for healthy individuals is recommended. This level is above the US RDA of 75 and 90 mg/day for female and male adults, respectively [80]. It should be noted that vitamin C requirements depend on health status, and 1–2 g/day are recommended to restore normal blood levels in individuals who are sick, beginning at the onset of symptoms. These levels are within the US tolerable upper limit (TUL) for adults of 2 g/day (note that the upper limit for children aged 1–3 years is 400 mg/day) [80].", "section": "3. Recommendations and Conclusions", "marker": "79", "linked": "true", "source_claim_text": "To investigate whether vitamin C is effective in the treatment of the common cold.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-148", "citer_pmcid": "PMC10563317", "citer_title": "The efficacy and safety of remdesivir alone and in combination with other drugs for the treatment of COVID-19: a systematic review and meta-analysis", "source_pmcid": "PMC8922517", "source_title": "Remdesivir Efficacy in COVID-19 Treatment: A Randomized Controlled Trial", "source_pmid": "34649223", "source_doi": "10.4269/ajtmh.21-0606", "retraction_record_ids": "39038", "context_text": "A total of seven RCTs [10, 11, 37, 39, 46, 52, 56] involved mortality, and the results of the meta-analysis showed that the use of remdesivir did not improve mortality in COVID-19 patients [RR = 0.94, 95% CI (0.83,1.07), P = 0.366] (Fig.", "paragraph_text": "A total of 10 RCTs [10, 11, 32, 37, 39, 45, 46, 51, 52, 56] involved primary outcomes. A total of seven RCTs [10, 11, 37, 39, 46, 52, 56] involved mortality, and the results of the meta-analysis showed that the use of remdesivir did not improve mortality in COVID-19 patients [RR = 0.94, 95% CI (0.83,1.07), P = 0.366] (Fig. 2A). Six RCTs were included in the meta-analysis of the duration of hospital stay. The results showed that the use of remdesivir did not reduce the duration of hospital stay [MD = 0.26, 95% CI (-2.45,2.97), P = 0.850] (Fig. 2B). In the recovery meta-analysis, two RCTs were included. The results showed that the use of remdesivir increased the recovery rate by a small amount [RR = 1.09, 95% CI (1.03, 1.15), P = 0.002] (Fig. 2C). In the safety results, a total of six RCTs [10, 11, 32, 37, 39, 51] were included in the meta-analysis. The results of the meta-analysis showed that remdesivir had no effect on the incidence of any adverse events or serious adverse events (Fig. 2D and E).", "section": "Results > Outcomes > Main outcomes of RCTs", "marker": "52", "linked": "true", "source_claim_text": "To date, no antiviral therapy has shown proven clinical effectiveness in treating patients with COVID-19.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-041", "citer_pmcid": "PMC10016932", "citer_title": "Origin, transmission, diagnosis and management of coronavirus disease 2019 (COVID-19)", "source_pmcid": "PMC7255293", "source_title": "RETRACTED: Hydroxychloroquine or chloroquine with or without a macrolide for treatment of COVID-19: a multinational registry analysis", "source_pmid": "32450107", "source_doi": "10.1016/S0140-6736(20)31180-6", "retraction_record_ids": "23529", "context_text": "The anti-malarial drugs, hydroxychloroquine and chloroquine, showed promising results in early in vitro study.69 However, the most robust and recent study in patients with COVID-19 have not shown unequivocal evidence of benefits for the treatment with hydroxychloroquine or chloroquine.70–72 In fact, the largest analysis to date of the risks and benefits of treating COVID-19 patients with these anti-malarial drugs was unable to confirm a benefit of hydroxychloroquine or chloroquine, when used alone or with a macrolide, on in-hospital outcomes for COVID-19.70 Besides, this study of 96 000 hospitalised patients on six continents found that those who received the drugs had a significantly higher risk of death and an increased frequency of ventricular arrhythmias compared with those who did not use it.70", "paragraph_text": "The anti-malarial drugs, hydroxychloroquine and chloroquine, showed promising results in early in vitro study.69 However, the most robust and recent study in patients with COVID-19 have not shown unequivocal evidence of benefits for the treatment with hydroxychloroquine or chloroquine.70–72 In fact, the largest analysis to date of the risks and benefits of treating COVID-19 patients with these anti-malarial drugs was unable to confirm a benefit of hydroxychloroquine or chloroquine, when used alone or with a macrolide, on in-hospital outcomes for COVID-19.70 Besides, this study of 96 000 hospitalised patients on six continents found that those who received the drugs had a significantly higher risk of death and an increased frequency of ventricular arrhythmias compared with those who did not use it.70", "section": "Management", "marker": "70–72", "linked": "false", "source_claim_text": "", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-084", "citer_pmcid": "PMC7176266", "citer_title": "Potential therapeutic agents against COVID-19: What we know so far", "source_pmcid": "PMC7102549", "source_title": "Hydroxychloroquine and azithromycin as a treatment of COVID-19: results of an open-label non-randomized clinical trial", "source_pmid": "32205204", "source_doi": "10.1016/j.ijantimicag.2020.105949", "retraction_record_ids": "59596", "context_text": "The result showed the virologically cured rate was significantly higher in HCQ combined with azithromycin-treated patients compared with the HCQ only group or control group (100% vs 57.1% vs 12.5%, p = 0.001).17 Although this study demonstrated promising results, further larger trials are still needed to verify the efficacy and safety of HCQ alone or in combination with azithromycin in COVID-19.", "paragraph_text": "Chloroquine (CQ) and hydroxychloroquine (HCQ) are aminoquinolines, which have been used to treat malaria and autoimmune diseases for over 50 years. These two drugs are weak diprotic bases and can elevate the pH of the endosome, which prevents viral fusion into the cell.14 Recent in vitro studies reported CQ and HCQ against SARS-CoV-2 at a multiplicity of infection (MOI) of 0.01 with EC50 = 2.71 and 4.51 μM in Vero E6 cells, respectively.15 Several clinical trials are being conducted in China to evaluate the efficacy and safety of CQ and HCQ in COVID-19, one of which revealed that chloroquine is superior to the control group in clinical improvement, promoting virus-negative conversion and shortening the disease course.16 Meanwhile, the preliminary study in France evaluated the efficacy of HCQ in COVID-19 patients. There were two groups in this study, 26 patients received HCQ (200 mg tid for 10 days) and 16 patients received standard of care. Six HCQ group patients lost to follow up due to early cessation of treatment. Six patients in HCQ group received additional azithromycin (500 mg on day 1, 250 mg once daily for 4 days) to prevent bacterial superinfection. The result showed the virologically cured rate was significantly higher in HCQ combined with azithromycin-treated patients compared with the HCQ only group or control group (100% vs 57.1% vs 12.5%, p = 0.001).17 Although this study demonstrated promising results, further larger trials are still needed to verify the efficacy and safety of HCQ alone or in combination with azithromycin in COVID-19. In addition, HCQ as postexposure prophylaxis/preemptive therapy for SARS-CoV-2 infection is now under evaluation in the USA (NCT04308668), using the regimen of 800 mg orally once, followed in 6 to 8 hours by 600 mg, then 600 mg once a day for four consecutive days. The results shall be reported soon.", "section": "2. POTENTIAL THERAPEUTIC AGENTS", "marker": "17", "linked": "true", "source_claim_text": "Chloroquine and hydroxychloroquine have been found to be efficient on SARS-CoV-2, and reported to be efficient in Chinese COV-19 patients.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-114", "citer_pmcid": "PMC7847796", "citer_title": "Things You Should Know in the Performing Echocardiographic Examination in Patients with COVID-19", "source_pmcid": "PMC7206931", "source_title": "Cardiovascular Disease, Drug Therapy, and Mortality in Covid-19", "source_pmid": "32356626", "source_doi": "10.1056/NEJMoa2007621", "retraction_record_ids": "23530", "context_text": "Clinicians should maintain optimal medical therapies including angiotensin-converting enzyme inhibitors or angiotensin receptor blockers since there is insufficient evidence to discontinue these medications if beneficial to patients.31)", "paragraph_text": "The echocardiographic examination can show a dilated left ventricle with reduced ejection fraction in patients with heart failure and reduced ejection fraction. Some of them can show right ventricular dilatation and dysfunction. Functional mitral regurgitation and tricuspid regurgitation can be observed in some patients. Patients with heart failure with preserved ejection fraction can have normal or near-normal left ventricular systolic function. However, they have a dilated left atrium with altered mitral inflow velocities. BNP/NT proBNP level and changes in these values can be useful for the diagnosis of heart failure. Also, clinicians should find previous echocardiographic data and compare current findings with those if there is available data. Because patients with acute heart failure aggravated by infection have a high mortality rate,30)31) these patients should be treated carefully. Clinicians should maintain optimal medical therapies including angiotensin-converting enzyme inhibitors or angiotensin receptor blockers since there is insufficient evidence to discontinue these medications if beneficial to patients.31)", "section": "SEVERAL CARDIOVASCULAR MANIFESTATIONS CAN BE IDENTIFIED DURING ECHOCARDIOGRAPHIC EXAMINATION IN PATIENTS WITH COVID-19 > Chronic heart failure", "marker": "31)", "linked": "true", "source_claim_text": "Coronavirus disease 2019 (Covid-19) may disproportionately affect people with cardiovascular disease.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-070", "citer_pmcid": "PMC9579963", "citer_title": "Recent advances in small-molecular therapeutics for COVID-19", "source_pmcid": "PMC8326462", "source_title": "Proxalutamide Reduces the Rate of Hospitalization for COVID-19 Male Outpatients: A Randomized Double-Blinded Placebo-Controlled Trial", "source_pmid": "34350193", "source_doi": "10.3389/fmed.2021.668698", "retraction_record_ids": "37573", "context_text": "Compared to usual care, it could reduce by 91% the hospitalization rate in male outpatients with COVID-19.108 In a placebo-controlled, two-arm, randomized clinical study, proxalutamide significantly increased recovery rate, shortened hospital stay, and reduced mortality rate in hospitalized COVID-19 patients in both arms.109", "paragraph_text": "Besides, androgen is the only known regulator of TMPRSS2, and targeting TMPRSS2 transcription with antiandrogens can affect the entry of viruses into host cells.103 Notably, androgen was reported to be highly expressed in elderly males and smokers (>70 years old), and elevated androgen level was closely related to higher disease severity in men.104,105 Therefore, older men are more likely than women to be infected with SARS-CoV-2 and develop severe COVID-19. Despite multifactorial mechanisms involved in the gender disparities observed in COVID-19 outcomes, androgen signaling plays a pivotal role in increasing COVID-19 susceptibility and severity in men. This is not only due to the regulatory effects of androgen on TMPRSS2, but also because of its suppressive role in the immune response.106 Proxalutamide (GT0918), a second-generation androgen receptor inhibitor, was originally developed as an anti-prostate cancer agent.107 The therapeutic effects of proxalutamide on COVID-19 have been evaluated in multiple clinical trials (Table 2). Compared to usual care, it could reduce by 91% the hospitalization rate in male outpatients with COVID-19.108 In a placebo-controlled, two-arm, randomized clinical study, proxalutamide significantly increased recovery rate, shortened hospital stay, and reduced mortality rate in hospitalized COVID-19 patients in both arms.109", "section": "Host-targeted inhibitors > Host protease inhibitors", "marker": "108", "linked": "true", "source_claim_text": "Antiandrogens have demonstrated a protective effect for COVOD-19 patients in observational and interventional studies.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-079", "citer_pmcid": "PMC13178928", "citer_title": "Modeling treatment and temperature effects on dengue transmission at the division level in Bangladesh", "source_pmcid": "PMC4512769", "source_title": "The seasonal reproduction number of dengue fever: impacts of climate on transmission", "source_pmid": "26213648", "source_doi": "10.7717/peerj.1069", "retraction_record_ids": "21244", "context_text": "as described in [66], where T represents the weekly average temperature.", "paragraph_text": "as described in [66], where T represents the weekly average temperature. In this study, we update this equation with the weekly average temperatures across the studied locations. The resulting function, b(T), thus provides a temperature-dependent measure of the mosquito biting rate.", "section": "4. Model calibration > 4.1. Temperature dependent biting rate", "marker": "66", "linked": "true", "source_claim_text": "Dengue fever is a mosquito-borne viral disease and a regular epidemic in Thailand.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-026", "citer_pmcid": "PMC7472403", "citer_title": "Chemoprophylaxis, diagnosis, treatments, and discharge management of COVID-19: An evidence-based clinical practice guideline (updated version)", "source_pmcid": "PMC7185795", "source_title": "Experimental Treatment with Favipiravir for COVID-19: An Open-Label Control Study☆", "source_pmid": "32346491", "source_doi": "10.1016/j.eng.2020.03.007", "retraction_record_ids": "22995", "context_text": "A non-RCT [52] reported 80 patients with COVID-19, 35 with favipiravir, and 45 with lopinavir-ritonavir, all the patients also received interferon α2b atomized inhalation.", "paragraph_text": "A non-RCT [52] reported 80 patients with COVID-19, 35 with favipiravir, and 45 with lopinavir-ritonavir, all the patients also received interferon α2b atomized inhalation. The time of positive-to-negative conversion of RT-PCR test in favipiravir group was lower than that in lopinavir-ritonavir group (median, IQR, 4 (2.5–9) days vs. 11 (8–13) days, P < 0.001), and chest imaging improvement rate was significantly faster compared to lopinavir-ritonavir group (91.4% vs. 62.2%, P = 0.004). The incidence of adverse reactions in favipiravir group was lower than that in the control group (11.4% vs. 55.6%, P < 0.001). The main adverse reactions were nausea, vomiting, diarrhea, rash, hepatic and renal injury, and so on.", "section": "Results > Treatments > Question 12: Should favipiravir be used to treat patients with COVID-19 to improve clinical outcomes? > Evidence summary", "marker": "52", "linked": "true", "source_claim_text": "There is currently an outbreak of respiratory disease caused by a novel coronavirus.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-133", "citer_pmcid": "PMC7826058", "citer_title": "Para-infectious anti-GD2/GD3 IgM myelitis during the Covid-19 pandemic: Case report and literature review", "source_pmcid": "PMC7415129", "source_title": "RETRACTED ARTICLE: Acute necrotizing myelitis and acute motor axonal neuropathy in a COVID-19 patient", "source_pmid": "32772172", "source_doi": "10.1007/s00415-020-10145-6", "retraction_record_ids": "26534", "context_text": "Myelitis was associated with encephalitis in 2 cases (Zoghi et al., 2020; Novi et al., 2020), with optic neuritis in 1 case (Novi et al., 2020), and with GBS in 3 cases (all of them with axonal-loss predominant polyneuropathy) (Maideniuc et al., 2020; Valiuddin et al., 2020; Masuccio et al., 2020).", "paragraph_text": "Myelitis was associated with encephalitis in 2 cases (Zoghi et al., 2020; Novi et al., 2020), with optic neuritis in 1 case (Novi et al., 2020), and with GBS in 3 cases (all of them with axonal-loss predominant polyneuropathy) (Maideniuc et al., 2020; Valiuddin et al., 2020; Masuccio et al., 2020).", "section": "Results > Review", "marker": "Maideniuc et al., 2020", "linked": "false", "source_claim_text": "", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}, {"row_id": "P3W1-025", "citer_pmcid": "PMC7412090", "citer_title": "Repurposing Therapeutics for Potential Treatment of SARS-CoV-2: A Review", "source_pmcid": "PMC7185795", "source_title": "Experimental Treatment with Favipiravir for COVID-19: An Open-Label Control Study☆", "source_pmid": "32346491", "source_doi": "10.1016/j.eng.2020.03.007", "retraction_record_ids": "22995", "context_text": "Specifically, lung imaging abnormalities improved more rapidly in the favipiravir treatment group [17].", "paragraph_text": "Favipiravir is an RdRp inhibitor that blocks the replication of multiple RNA viruses by terminating elongation at the incorporation site as a nucleoside analogue. Like remdesivir, it functions as an inhibitory RdRp substrate in its phosphorylated form, favipiravir-triphosphate, and inhibits the SARS-CoV-2 RdRp [15]. It is currently approved for influenza treatment in Japan and is well-tolerated by humans [16]. In high concentrations, favipiravir decreases SARS-CoV-2 viral infection in Vero cells [12,15]. A recent open-label, randomized controlled trial found that patients treated with favipiravir plus interferon-alfa cleared SARS-CoV-2 infection more rapidly than patients treated with lopinavir/ritonavir plus interferon-alfa combination therapy. Specifically, lung imaging abnormalities improved more rapidly in the favipiravir treatment group [17]. This early evidence suggests that favipiravir may be a beneficial therapy for SARS-CoV-2.", "section": "3. Results > 3.1. Targeted Enzyme Inhibitors > 3.1.1. RNA-Dependent RNA Polymerase Inhibitors > Favipiravir", "marker": "17", "linked": "true", "source_claim_text": "There is currently an outbreak of respiratory disease caused by a novel coronavirus.", "source_abstract": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1.1"}]}</script>
+<script>
+(function () {
+  "use strict";
+
+  const PACKET = JSON.parse(document.getElementById("packet-data").textContent);
+  const COLUMNS = PACKET.columns;
+  const ROWS = PACKET.rows;
+  const STORAGE_KEY = "axion-p3-03-wave1-overlap2";
+  const EXPORT_NAME = "dependency_audit_v1_wave1_overlap2_labelled.csv";
+  const GUIDELINE_VERSION = "P3-v1.1";
+  const DEFAULT_LABELER = "";
+
+  const state = { index: 0, entries: {} };
+  let storageAvailable = true;
+
+  const el = (id) => document.getElementById(id);
+  const escapeHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  function entryFor(row) {
+    if (!state.entries[row.row_id]) {
+      state.entries[row.row_id] = {
+        label: String(row.label || "").trim(),
+        note: String(row.note || "").trim(),
+        skipped: false,
+      };
+    }
+    return state.entries[row.row_id];
+  }
+
+  function loadSaved() {
+    try {
+      const savedId = localStorage.getItem(STORAGE_KEY + ":labeler");
+      el("labelerId").value = savedId !== null ? savedId : DEFAULT_LABELER;
+    } catch (error) {
+      el("labelerId").value = DEFAULT_LABELER;
+    }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || saved.version !== 1 || !saved.entries) return;
+      state.index = Number.isInteger(saved.index) ? saved.index : 0;
+      state.entries = saved.entries;
+    } catch (error) {
+      storageAvailable = false;
+      el("storageWarning").hidden = false;
+      el("storageWarning").textContent =
+        "Autosave is unavailable in this browser context. Export before closing the tab; progress will not resume.";
+      console.warn("Could not read saved progress", error);
+    }
+  }
+
+  function save() {
+    if (!storageAvailable) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        index: state.index,
+        entries: state.entries,
+      }));
+    } catch (error) {
+      storageAvailable = false;
+      el("storageWarning").hidden = false;
+      el("storageWarning").textContent =
+        "Autosave failed (storage is full or blocked). Export before closing the tab.";
+      console.warn("Could not save progress", error);
+    }
+  }
+
+  function labelerId() {
+    return (el("labelerId").value || "").trim();
+  }
+
+  function currentRow() {
+    return ROWS[state.index] || null;
+  }
+
+  function doneCount() {
+    return ROWS.filter((row) => {
+      const entry = state.entries[row.row_id];
+      return Boolean(entry && (entry.label || entry.skipped));
+    }).length;
+  }
+
+  function renderProgress() {
+    const total = ROWS.length;
+    const done = doneCount();
+    const skipped = ROWS.filter((row) => state.entries[row.row_id]?.skipped).length;
+    el("progressText").textContent = `${done} / ${total}`;
+    el("progressBar").max = Math.max(total, 1);
+    el("progressBar").value = done;
+    el("progressDetail").textContent =
+      `${done} labeled · ${skipped} skipped · ${total - done} left`;
+  }
+
+  function renderParagraph(paragraph, sentence) {
+    const text = String(paragraph || "");
+    const target = String(sentence || "");
+    if (!text) return `<span class="empty">No surrounding paragraph was recorded.</span>`;
+    if (!target) return escapeHtml(text);
+    const index = text.indexOf(target);
+    if (index < 0) {
+      return `${escapeHtml(text)}<br><span class="hint">[The citation sentence was not found verbatim in the paragraph; shown separately above.]</span>`;
+    }
+    return [
+      escapeHtml(text.slice(0, index)),
+      "<mark>",
+      escapeHtml(text.slice(index, index + target.length)),
+      "</mark>",
+      escapeHtml(text.slice(index + target.length)),
+    ].join("");
+  }
+
+  function renderStatus(row, entry) {
+    const pill = el("statusPill");
+    pill.className = "pill";
+    if (entry.skipped) {
+      pill.textContent = "skipped: insufficient_context";
+      pill.classList.add("unrelated");
+      el("rowStatus").textContent =
+        "This row exports with a blank label and a note beginning insufficient_context. It is not a gold label.";
+      return;
+    }
+    if (!entry.label) {
+      pill.textContent = "unlabeled";
+      el("rowStatus").textContent = "No label selected for this row.";
+      return;
+    }
+    pill.textContent = entry.label;
+    pill.classList.add(
+      entry.label === "RELIES_ON" ? "relies" :
+      entry.label === "MENTIONS" ? "mentions" : "unrelated"
+    );
+    if (entry.label === "RELIES_ON") {
+      el("rowStatus").textContent =
+        "RELIES_ON selected: B's assertion depends on a claim in A. Add a note naming the claim or result if it is visible.";
+    } else if (entry.label === "MENTIONS") {
+      el("rowStatus").textContent =
+        "MENTIONS selected: B cites A but does not depend on A's claim. Add a note if the case is close.";
+    } else {
+      el("rowStatus").textContent =
+        "UNRELATED selected: the marker does not connect the asserted content to A. Add a note.";
+    }
+  }
+
+  function render() {
+    const row = currentRow();
+    if (!row) {
+      el("citerTitle").textContent = "No rows found in this packet.";
+      el("rowCounter").textContent = "Row 0 of 0";
+      el("prevBtn").disabled = true;
+      el("nextBtn").disabled = true;
+      return;
+    }
+    const entry = entryFor(row);
+    el("rowCounter").textContent = `Row ${state.index + 1} of ${ROWS.length} · ${row.row_id}`;
+    el("citerTitle").textContent = row.citer_title || "(untitled citing paper)";
+    el("citerPmcid").textContent = row.citer_pmcid || "";
+    el("section").textContent = row.section || "(no section recorded)";
+    el("marker").textContent = row.marker || "(no marker)";
+    el("contextText").textContent = row.context_text || "(no citing sentence recorded)";
+    el("paragraphText").innerHTML = renderParagraph(row.paragraph_text, row.context_text);
+    el("sourceTitle").textContent = row.source_title || "(untitled source paper)";
+    el("sourcePmcid").textContent = row.source_pmcid || "";
+    el("sourceIds").textContent = [row.source_pmid, row.source_doi].filter(Boolean).join(" · ") || "—";
+    el("retractionIds").textContent = row.retraction_record_ids || "—";
+
+    const linked = String(row.linked) === "true";
+    const claimBlock = el("sourceClaimText");
+    if (linked) {
+      el("claimHeading").textContent = "Source claim text (abstract-sentence proxy; specific claim linking is P3-06)";
+      claimBlock.className = "";
+      claimBlock.textContent = row.source_claim_text ||
+        "No abstract claim proxy was found for this source paper.";
+    } else {
+      el("claimHeading").textContent = "Source abstract (no single claim could be extracted)";
+      claimBlock.className = "abstract";
+      claimBlock.textContent = row.source_abstract ||
+        "This source has no abstract and no extractable claim text (retracted or withdrawn stub). " +
+        "Label from the citing sentence, the paragraph, and the source title above.";
+    }
+
+    el("note").value = entry.skipped && entry.note.startsWith("insufficient_context:")
+      ? entry.note.slice("insufficient_context:".length).trim()
+      : entry.note;
+    document.querySelectorAll("#labelButtons button").forEach((button) => {
+      const label = button.dataset.label;
+      button.classList.toggle(
+        "active",
+        label === "insufficient_context" ? entry.skipped : entry.label === label
+      );
+    });
+    renderStatus(row, entry);
+    renderProgress();
+    el("prevBtn").disabled = state.index <= 0;
+    el("nextBtn").disabled = state.index >= ROWS.length - 1;
+  }
+
+  function setLabel(label) {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    if (label === "insufficient_context") {
+      entry.label = "";
+      entry.skipped = true;
+    } else {
+      entry.label = label;
+      entry.skipped = false;
+    }
+    save();
+    render();
+  }
+
+  function clearLabel() {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    entry.label = "";
+    entry.skipped = false;
+    save();
+    render();
+  }
+
+  function move(delta) {
+    const nextIndex = state.index + delta;
+    if (nextIndex < 0 || nextIndex >= ROWS.length) return;
+    state.index = nextIndex;
+    save();
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function csvEscape(value) {
+    const text = String(value ?? "");
+    if (/[",\r\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+    return text;
+  }
+
+  function exportCsv() {
+    const labeler = labelerId();
+    if (!labeler) {
+      window.alert("Enter your labeler id first — it is recorded in the exported CSV.");
+      el("labelerId").focus();
+      return;
+    }
+    const unlabeled = ROWS.filter((row) => {
+      const entry = state.entries[row.row_id];
+      return !entry || (!entry.label && !entry.skipped);
+    }).length;
+    if (unlabeled > 0 && !window.confirm(
+      `${unlabeled} row${unlabeled === 1 ? " is" : "s are"} still unlabeled. Export anyway?`
+    )) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const lines = [COLUMNS.map(csvEscape).join(",")];
+    for (const row of ROWS) {
+      const entry = entryFor(row);
+      const out = { ...row };
+      let note = (entry.note || "").trim();
+      if (entry.skipped) {
+        out.label = "";
+        if (!note.toLowerCase().startsWith("insufficient_context")) {
+          note = note ? `insufficient_context: ${note}` : "insufficient_context";
+        }
+      } else {
+        out.label = entry.label || "";
+      }
+      out.note = note;
+      out.labeler = labeler;
+      out.date = today;
+      out.guideline_version = GUIDELINE_VERSION;
+      lines.push(COLUMNS.map((column) => csvEscape(out[column])).join(","));
+    }
+
+    const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = EXPORT_NAME;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    el("rowStatus").textContent = `Exported ${EXPORT_NAME} to your browser downloads. Send that file back.`;
+  }
+
+  function resetProgress() {
+    if (!window.confirm("Clear all local labels and notes in this packet? This cannot be undone.")) return;
+    state.index = 0;
+    state.entries = {};
+    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { console.warn(error); }
+    render();
+  }
+
+  el("prevBtn").addEventListener("click", () => move(-1));
+  el("nextBtn").addEventListener("click", () => move(1));
+  el("exportBtn").addEventListener("click", exportCsv);
+  el("resetBtn").addEventListener("click", resetProgress);
+  el("labelerId").addEventListener("input", (event) => {
+    try { localStorage.setItem(STORAGE_KEY + ":labeler", event.target.value.trim()); } catch (error) { console.warn(error); }
+  });
+  el("note").addEventListener("input", (event) => {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    entry.note = event.target.value;
+    save();
+  });
+  document.querySelectorAll("#labelButtons button").forEach((button) => {
+    button.addEventListener("click", () => setLabel(button.dataset.label));
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.target.closest("textarea, input, [contenteditable='true']")) return;
+    if (event.key === "1") { event.preventDefault(); setLabel("RELIES_ON"); }
+    else if (event.key === "2") { event.preventDefault(); setLabel("MENTIONS"); }
+    else if (event.key === "3") { event.preventDefault(); setLabel("UNRELATED"); }
+    else if (event.key === "4") { event.preventDefault(); setLabel("insufficient_context"); }
+    else if (event.key === "0") { event.preventDefault(); clearLabel(); }
+    else if (event.key === "ArrowLeft") { event.preventDefault(); move(-1); }
+    else if (event.key === "ArrowRight") { event.preventDefault(); move(1); }
+  });
+
+  loadSaved();
+  render();
+})();
+</script>
+</body>
+</html>

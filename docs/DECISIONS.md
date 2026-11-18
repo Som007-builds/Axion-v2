@@ -534,6 +534,26 @@ corpus prevalence (reweighting the strata by their wave weights) so the size of 
 is visible rather than asserted. At ≥30 rows the interval is wide; κ is reported with an interval and
 is never used alone to certify a gate.
 
+**Realised overlap 2 (2026-11-18, measured).** Wave-1 labels returned 150/150 with 0 blanks and a note
+on every row: **25 `RELIES_ON` / 120 `MENTIONS` / 5 `UNRELATED` / 0 `insufficient_context`**. Overlap 2
+therefore realised as **31 rows = 25 `RELIES_ON` + 3 `MENTIONS` + 3 `UNRELATED` + 0
+`insufficient_context`** (20.7% of the wave; floors met: ≥30 rows, ≥20%, ≥6 negatives). Two
+consequences are recorded here rather than discovered later:
+
+- **The prevalence effect runs opposite to the assumption above.** The overlap is **81% positive**, not
+  ~50/50, and a class balance that far from even *depresses* κ rather than inflating it (κ is largest
+  near equal class sizes for fixed per-class agreement). So the overlap κ is a **conservative**
+  estimate of a balanced-design κ, and it cannot be compared to a corpus κ without the reweighting in
+  the reporting rule.
+- **The negative side rests on 6 rows** (3 + 3). Negative-class agreement is the least stable part of
+  the statistic; report it with an interval and do not read a 1-row disagreement as a rate. The
+  `insufficient_context` class is empty in labeler 1's labels, so it contributes nothing to agreement
+  and the four-class confusion matrix has a structurally empty row.
+- **Provenance:** the returned export's `labeler` column reads `Muse-agent`, which is the owner's own
+  labeler-id string; the owner attests the 150 rows are their own labels (`Soham`, 2026-11-18). The
+export is committed unedited as evidence and this attestation is the record; no label value was
+altered and no agent created a label.
+
 ### Amendment B — the 34 title-only stub rows are a pre-registered reporting stratum
 
 **Measured on the committed wave (recounted from the packet, not from memory).** Of 150 wave rows,
