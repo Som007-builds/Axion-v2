@@ -1,0 +1,22 @@
+{
+  "capped_sources": 5,
+  "inclusion_prob": 0.02513826,
+  "linked_share": 0.6333,
+  "pool": 5967,
+  "rows": 150,
+  "seed": 20261220,
+  "shared_contexts_with_wave1": 0,
+  "source_cap": 8,
+  "split_rows": {
+    "dev": 78,
+    "test": 72
+  },
+  "split_sources": {
+    "dev": 34,
+    "test": 37
+  },
+  "stub_rows": 34,
+  "text_bearing_rows": 116,
+  "wave": "wave2",
+  "weight": 39.78
+}

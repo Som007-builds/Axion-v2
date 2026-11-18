@@ -471,10 +471,26 @@ superseded, and no second labeler receives them.
 | 100 | 0.711–0.867 | 0.767–0.907 |
 
 At ~15 positives the interval straddles the gate and certifies nothing; **~30 positives** supports a
-decision-grade read at observed recall ≈0.85, and **~100** gives a lower bound above 0.70 at observed
-0.80. Wave 1 is expected to yield **3 positives under the pilot's own cue reading** (0 of 3
-cue-positive pilot rows were `RELIES_ON`) and **~21 if enrichment lifts the rate to 15%**; the realised
-count replaces this assumption before the owner decides on wave 2.
+decision-grade read at observed recall ≈0.85, and **~100** was the rounded table row for a lower bound
+above 0.70 at observed 0.80 — the exact minimum is **77**, recomputed by the metrics script.
+
+**Measured replacement (2026-11-18; `scripts/dependency_metrics.py`).** Wave 1 returned **25 positives**
+(not the 3 of the pilot's cue reading, and not the ~21 the 15% lift assumed), against a **uniform base
+rate of 7/30 = 23.3% (Wilson 95% [11.8%, 40.9%])** and an enriched rate of 18/120 = 15.0%
+([9.7%, 22.5%]). At those rates:
+
+| Assumed observed recall | Positives for a 0.70 lower bound | Extra positives | Extra rows (uniform 23.3%) | Extra rows (enriched 15.0%) |
+| --: | --: | --: | --: | --: |
+| 0.85 | 30 | 5 | 22 | 34 |
+| 0.80 | 77 | 52 | 223 | 348 |
+
+**Recommendation, recorded for the owner's wave-2 decision.** Draw **wave 2 from the uniform frame,
+about 150 rows**. It yields the most positives per labelled row at the measured rates (23.3% vs 15.0%),
+it is unbiased so it tightens the base rate, and at ~35 expected positives it takes the total to ~60 —
+comfortably past the decision-grade bar of 30. Certifying a 0.70 lower bound at observed recall 0.80
+would need ~223 uniform rows and is not worth the labeling time yet. Expected owner time for 150 rows
+is 50–112 minutes at the pilot pace (20–45 s/row); the owner's recorded pace replaces that arithmetic.
+The cue-enriched frame should not be used for wave 2: it did not beat the uniform draw.
 
 **Alternatives considered.** One uniform sample of ~600 rows: unbiased and ~60 positives, but ≈5 hours
 of owner labeling and no class coverage guarantee for κ. Pure cue-enriched sampling: more positives,
@@ -556,6 +572,17 @@ consequences are recorded here rather than discovered later:
   `Soham`** — never the agent-style string, in the label export, the overlap selection file, the
   reports and this ADR. No label value was altered and no agent created a label.
 
+**Agreement, measured (2026-11-18).** `python scripts/dependency_agreement.py` on the 31-row overlap,
+labeler 1 `Soham` and labeler 2 `friend`: **raw agreement 31/31 = 100%**, Cohen's κ **1.000**, PABAK
+1.000, design-weighted κ 1.000. **κ is degenerate**: there are zero discordant pairs, so the bootstrap
+interval is the single point 1.00 and the number cannot separate genuine rubric reliability from (a) a
+shared cue heuristic, (b) labeler 2 having seen labeler 1's labels, or (c) both readers applying the
+same "corroboration is not dependency" reading. It is recorded as **consistency, not established
+reliability**, and a blind test-retest of a small subset is the cheap check that would distinguish
+those explanations. The 6 negative rows remain the fragile side: one disagreement there moves that
+side by ~17 points. Report: `docs/reports/P3-03-agreement.md`; machine summary:
+`eval/audit/p3-03/p3-03-agreement.json`.
+
 ### Amendment B — the 34 title-only stub rows are a pre-registered reporting stratum
 
 **Measured on the committed wave (recounted from the packet, not from memory).** Of 150 wave rows,
@@ -577,11 +604,90 @@ reported as follows:
 4. `text_bearing` (true/false) is added to `p3-03-wave1-manifest.csv` **only**. It is never added to
    the labeler payload or shown to either labeler: the labeler must judge the row as it stands.
 
-**Why a stratum rather than a split.** A stub row shows a title and no evidence, so `RELIES_ON` is not
-plausibly available to any labeler; the rows are near-certain `MENTIONS`/`UNRELATED`. Dropping them from
-the headline flatters precision on the real workload (27% of the weight mass would silently vanish),
-while folding them in lets title-only rows dominate false alarms and dilute recall. Reporting both
-keeps the detector-facing number and the workload-representative number separately honest.
+**Why a stratum rather than a split.** A stub row shows a title and no evidence, so `RELIES_ON`
+looked implausible for it. **That reasoning is now withdrawn by measurement:** 3 of the 34 stubs are
+labelled `RELIES_ON` (8.8%), so a title-only row is not a near-certain negative — the citing sentence
+alone sometimes carries enough to judge the relation. The stratum still stays separate and still stays
+in the weighted base rate, which is exactly what makes the measurement safe to report. Dropping the
+stubs from the headline would flatter precision on the real workload (about 27% of the weight mass
+would vanish), while folding them in lets title-only rows dominate false alarms and dilute recall.
+Reporting both keeps the detector-facing number and the workload-representative number separately
+honest.
+
+### Amendment C — overlap protocol from wave 2 on (isolation and negative coverage)
+
+**Decision.** Four rules apply to every second-labeler overlap from wave 2 on.
+
+1. **Isolation of the two labelers.** Labeler 1's labelled file must never sit in a directory, share or
+   message that labeler 2 can reach. Labeler 2 receives **only** the blind HTML (and, if they ask for
+   one, the blind CSV whose label columns are blank). No path containing labeler 1's labels is shared,
+   and the packet is not built in the same folder as that export.
+2. **Subset check before any comparison.** The returned export is checked against the blinded
+   selection's row ids, counts and class mix; an export that is not exactly that subset is rejected
+   rather than compared. This is enforced in `scripts/dependency_agreement.py`, which refuses to run on
+   a mismatched export.
+3. **Negative floor: at least 15 negative rows.** Beyond the `RELIES_ON` rows, an overlap must contain
+   at least **15** negative rows across `MENTIONS`, `UNRELATED` and `insufficient_context`. If the
+   realised wave cannot supply 15, the overlap is still built and labelled, but the agreement report
+   must state that **κ on the negative side is not estimable**, and negative-class agreement is reported
+   as a raw count, not a rate. Below 15 rows one disagreement moves a rate by more than 6 points, which
+   is the threshold at which the number stops being information.
+4. **Recorded guarantees.** The overlap's selection file records the row counts per class, and the
+   agreement report states explicitly whether the negative floor was met, whether the export matched
+   the blinded subset, and whether the isolation rule held.
+
+**Wave 1 does not meet rule 1.** `dependency_audit_v1_wave1_labelled.csv` sat in
+`eval/audit/p3-03/` next to `p3-03-wave1-overlap2-labeler.html`, so labeler 2's exposure to labeler 1's
+labels **cannot be excluded**. Combined with zero discordant pairs (degenerate κ) and only 6 negative
+rows (below the 15-row floor), wave 1's 31/31 agreement is recorded as **consistency only, not
+established reliability**, and the negative side is reported as a count. The owner declined the 10-row
+blind test-retest for now (2026-11-18); that remains the cheap way to harden this result later.
+
+## ADR-0024 — Wave 2: a uniform-only top-up of 150 rows, and the stop rule
+
+**Date:** 2026-11-18 — **Status:** Proposed. The owner instructed this draw on 2026-11-18; the status stays
+Proposed until the owner accepts it against the wave-2 evidence.
+
+**Context.** Wave 1 (ADR-0023) returned **25 positives**: 7 from the 30-row uniform slice (**23.3%**,
+Wilson 95% [11.8%, 40.9%]) and 18 from 120 cue-enriched rows (**15.0%**, [9.7%, 22.5%]). The cues did
+**not** beat a uniform draw, so the enrichment premise is unsupported, and the uniform base rate is far
+above the 20-row pilot's 10%. A decision-grade recall read needs ~30 positives; a 0.70 lower bound at
+observed recall 0.80 needs **77** (`scripts/dependency_metrics.py`).
+
+**Decision.**
+
+1. **Wave 2 is 150 rows drawn uniformly at random from the pool remaining after wave 1** —
+   6,117 − 150 = **5,967 contexts** — with **equal inclusion probability**
+   π = 150/5,967 = **0.025137** and nominal weight **39.78** per row. No cue filter, no cue stratum, and
+   no section stratification.
+2. **Per-source handling follows ADR-0023's uniform rule:** the same cap of **8 rows per source**,
+   applied to the wave-2 draw. Sources truncated by the cap are listed in the wave-2 report and their
+   weights stay nominal — the same approximation §2 of ADR-0023 already records for the uniform frame.
+3. **Split inheritance, frozen.** ADR-0023 §3 assigns every source paper to dev or test before any
+   detector exists, so each wave-2 row **inherits its source's split**. Nothing is redrawn, and no
+   context can change split.
+4. **Wave 1 is not redrawn.** Its rows, weights, split and labels are unchanged, and the two waves are
+   additive because inclusion probability and split are properties of the row.
+5. **Target and stop rule.** Wave 2 aims to add ~35 positives at the measured 23.3%, taking the total to
+   ~60 and clearing the ~30-positive decision-grade bar. **After wave 2, the metrics script must report:**
+   positives per split (dev/test), the **updated weighted base rate with a Wilson interval**, and the
+   **extra rows still needed for the 0.80-observed-recall case** (77 positives). If wave 2 falls short,
+   that shortfall is reported — no wave 3 starts without a new owner decision.
+6. **No overlap is built yet.** The second-labeler overlap for wave 2 is built only from the owner's
+   returned wave-2 export, and under ADR-0023 Amendment C: labeler 1's file is never shared with
+   labeler 2, the export is checked against the blinded subset, and the overlap needs ≥15 negative rows
+   or the report declares negative-side κ not estimable.
+
+**Why uniform again.** Wave 1's uniform slice is the only unbiased estimate the project has, and it is
+the cheapest source of positives per labelled row at the measured rates (22 extra rows for the
+remaining 5 positives vs 34 enriched). Drawing uniformly makes wave 2 do two jobs at once: it tightens
+the base-rate interval and it supplies positives.
+
+**Consequences and risks.** The base rate gains 150 uniform rows (30 → 180), the positives-per-split
+check exposes any dev/test imbalance, and no cue evidence enters the sample. Cost is 50–112 minutes of
+owner labeling at the pilot pace (20–45 s/row); the owner's recorded pace will replace that arithmetic.
+**Risk:** if 23.3% is optimistic, wave 2 yields fewer than 35 positives, and the stop rule reports the
+shortfall rather than starting another wave on an assumption.
 
 ## ADR template
 ```
