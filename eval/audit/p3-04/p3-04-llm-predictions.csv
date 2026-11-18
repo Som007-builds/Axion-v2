@@ -1,0 +1,301 @@
+row_id,label,predicted,cue,model,prompt_version
+P3W1-001,MENTIONS,0,investigated on the role of polyfunctional T cells,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-002,MENTIONS,0,Tetramer staining was carried out as described,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-003,MENTIONS,0,peripheral CD8+ T cell cytotoxic,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-004,MENTIONS,0,as described previously,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-005,UNRELATED,0,donor sources and methods,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-006,MENTIONS,0,HDAC inhibition has suppressed proliferation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-007,RELIES_ON,1,replication of all of the APMVs,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-008,MENTIONS,0,established by the treating physician,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-009,UNRELATED,0,It was reported that IFN-λ1,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-010,MENTIONS,0,"hazard rate [29, 30]",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-011,MENTIONS,0,Iranian HBV patients had a larger distribution,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-012,RELIES_ON,1,A systematic review containing observational studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-013,MENTIONS,0,our previous results showed that DCs,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-014,MENTIONS,0,recent meta-analyses concluded significant reductions,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-015,MENTIONS,0,Orthobunyavirus is the largest and most diverse,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-016,MENTIONS,0,reference number 12,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-017,MENTIONS,0,outcomes observed in 104 pregnant women,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-018,MENTIONS,0,previously published reports,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-019,MENTIONS,0,Another study reported 1 ARDS,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-020,MENTIONS,0,Another study reported 1 ARDS,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-021,UNRELATED,0,Withdrawn: Clinical manifestations and outcome,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-022,MENTIONS,0,Early reports from China,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-023,MENTIONS,0,"previous research findings, which provide evidence",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-024,MENTIONS,0,An Open-Label Control Study [30],gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-025,MENTIONS,0,favipiravir treatment group,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-026,MENTIONS,0,A non-RCT reported 80 patients,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-027,MENTIONS,0,outbreak of respiratory disease,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-028,MENTIONS,0,efficacy of favipiravir administration has been reported,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-029,MENTIONS,0,"In 45 cases, the adverse reaction",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-030,RELIES_ON,1,open-label clinical trial showed that favipiravir,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-031,MENTIONS,0,A phase 3 Russian trial,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-032,MENTIONS,0,evaluated the effects of favipiravir,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-033,MENTIONS,0,available published evidence,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-034,MENTIONS,0,An article showed that favipiravir,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-035,MENTIONS,0,favipiravir has shown a consistent safety profile,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-036,MENTIONS,0,initial endorsement of favipiravir,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-037,MENTIONS,0,Earlier clinical studies have shown,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-038,MENTIONS,0,Several authors suggest that COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-039,UNRELATED,0,"12 , 14",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-040,MENTIONS,0,most duplications were described as accidental,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-041,RELIES_ON,1,the largest analysis to date of the risks,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-042,RELIES_ON,1,the largest analysis to date of the risks,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-043,MENTIONS,0,prominence of fringe or inefficacious therapies such as hydroxychloroquine,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-044,MENTIONS,0,Following the same report,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-045,MENTIONS,0,the papers had to be retracted,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-046,MENTIONS,0,In a recent example,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-047,MENTIONS,0,registry studies based on electronic medical records,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-048,MENTIONS,0,Mehra et al. LancetMay 2020,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-049,MENTIONS,0,retracted by the Lancet,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-050,MENTIONS,0,was mentioned in 4 policy documents,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-051,MENTIONS,0,retracted LANCET manuscript,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-052,MENTIONS,0,contradictory with Xia et al,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-053,MENTIONS,0,observational retrospective studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-054,MENTIONS,0,type of transducer used,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-055,MENTIONS,0,12-zone scoring system,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-056,MENTIONS,0,This scoring system became useful,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-057,RELIES_ON,1,evaluate hospital discharge of patients,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-058,MENTIONS,0,reported no significant impact of hydroxychloroquine,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-059,MENTIONS,0,acupuncture has been used as a supplementary treatment,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-060,MENTIONS,0,included in the systematic review,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-061,MENTIONS,0,COVID-19 patients with dyslipidemia may worsen,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-062,RELIES_ON,1,evaluating 9 studies with 3663 patients,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-063,MENTIONS,0,included 13 studies in the present meta-analysis,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-064,MENTIONS,0,observational cohort studies with mixed results,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-065,MENTIONS,0,"supplementation with 60,000 IU/day of vitamin D",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-066,MENTIONS,0,vitamin D supplementation was shown,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-067,MENTIONS,0,was retracted because the allocation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-068,MENTIONS,0,deaths and severe complications after vaccination,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-069,RELIES_ON,1,benefit of proxalutamide in newly diagnosed COVID-19 patients,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-070,MENTIONS,0,reduce by 91% the hospitalization rate,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-071,MENTIONS,0,the studies were retracted,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-072,UNRELATED,0,Why are we vaccinating children,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-073,MENTIONS,0,emergency use approval of Pfizer,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-074,MENTIONS,0,potential therapeutic target,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-075,MENTIONS,0,positive interaction between IFNβ and wild type p53,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-076,MENTIONS,0,attributable to pneumonia,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-077,UNRELATED,0,Fig 3 is therefore excluded,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-078,MENTIONS,0,vaccinated outbreed dogs with a prime-boost regimen,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-079,MENTIONS,0,as described in [66],gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-080,MENTIONS,0,were not reported in [1],gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-081,MENTIONS,0,emphasized this finding in their work,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-082,MENTIONS,0,previous studies conducted in,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-083,MENTIONS,0,Relevant studies have shown that,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-084,MENTIONS,0,Although this study demonstrated promising results,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-085,MENTIONS,0,"small, open-label, randomised trials",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-086,MENTIONS,0,"Gautret et al., 2020",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-087,MENTIONS,0,treated with both drugs showed negative,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-088,MENTIONS,0,Studies conducted in China reported using,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-089,MENTIONS,0,results showing a drop in viral load,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-090,MENTIONS,0,It was given as a 500 mg dose,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-091,RELIES_ON,1,HCQ with and without azithromycin was significantly more effective,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-092,MENTIONS,0,in combination with hydroxychloroquine,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-093,MENTIONS,0,association between biomedical imaging,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-094,MENTIONS,0,T cell infection may thus result,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-095,MENTIONS,0,tweets mentioning Wang et al.,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-096,MENTIONS,0,The studies were divided into 21 case reports,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-097,MENTIONS,0,included a total of 322 pregnant women,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-098,MENTIONS,0,deep learning has emerged as,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-099,MENTIONS,0,the authors proposed a deep learning model,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-100,MENTIONS,0,extracted features from CT scans,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-101,MENTIONS,0,imaging modalities including X-ray images and CT scans,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-102,MENTIONS,0,developed a model that can,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-103,MENTIONS,0,many others have shown promising results,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-104,MENTIONS,0,classified three classes with 86.7% accuracy,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-105,MENTIONS,0,aimed to establish a screening model,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-106,MENTIONS,0,CT images3D CNN model,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-107,MENTIONS,0,various studies have examined the psychological effects,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-108,MENTIONS,0,In line with the pre-pandemic literature,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-109,MENTIONS,0,These findings are in good agreement,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-110,MENTIONS,0,infection of COVID-19 have contributed,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-111,UNRELATED,0,ACE-Hemmer und Angiotensin-Rezeptor-Blocker,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-112,MENTIONS,0,diagnosis of history coronary artery disease,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-113,MENTIONS,0,confirmed in a recent study,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-114,MENTIONS,0,these medications if beneficial,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-115,MENTIONS,0,prognosis is very poor for infected patients,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-116,MENTIONS,0,Consistent with previous literature,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-117,UNRELATED,0,ACEi or ARB and those who discontinue,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-118,MENTIONS,0,"cardiovascular disease, respiratory or diabetes",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-119,MENTIONS,0,associated with complications,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-120,UNRELATED,0,hip fracture patients,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-121,MENTIONS,0,supported by several previous studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-122,MENTIONS,0,"self-similarity on a change of scale [1, 2, 3]",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-123,RELIES_ON,1,The meta-analysis on the association,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-124,MENTIONS,0,published studies have shown that there is a correlation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-125,MENTIONS,0,severe clinical course of COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-126,MENTIONS,0,An early meta-analysis described an increased risk,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-127,MENTIONS,0,of 1.72 for obesity,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-128,MENTIONS,0,patients with obesity are at a high risk,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-129,MENTIONS,0,meta-analysis of 6 studies showed,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-130,MENTIONS,0,maternal obesity and overweight,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-131,MENTIONS,0,"obesity, related to a worse prognosis",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-132,MENTIONS,0,Research suggested that obesity was linked,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-133,MENTIONS,0,Myelitis was associated with encephalitis in 2 cases,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-134,MENTIONS,0,we identified 430 patients with COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-135,MENTIONS,0,excluded [14],gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-136,UNRELATED,0,(19) found a higher rate,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-137,MENTIONS,0,consistent with other studies10–12,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-138,MENTIONS,0,those receiving favipiravir had a shorter duration,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-139,MENTIONS,0,"Khamis, F et al (2021)",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-140,UNRELATED,0,expression of concern Gautret et al,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-141,MENTIONS,0,patients who received favipiravir had a lower mean duration,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-142,MENTIONS,0,used a graph isomorphic network,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-143,MENTIONS,0,where training and testing was performed,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-144,MENTIONS,0,later retracted by the authors,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-145,MENTIONS,0,routine antiparasitic dose of ivermectin,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-146,MENTIONS,0,powerful method to solve the COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-147,MENTIONS,0,there have been numerous studies showing,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-148,RELIES_ON,1,results of the meta-analysis showed that the use of remdesivir did not improve mortality,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-149,MENTIONS,0,a study conducted in Eastern Ethiopia,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W1-150,MENTIONS,0,The paper we included by Skidmore,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-001,MENTIONS,0,inhibition of HDAC3 can lead,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-002,MENTIONS,0,persistent low level of neuroinflammation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-003,MENTIONS,0,importance of eicosanoids in NeuroHIV,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-004,MENTIONS,0,other studies have observed no significant differences,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-005,MENTIONS,0,Miliary tuberculosis (TB) is a rare,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-006,MENTIONS,0,results from massive lymphohematogenous dissemination,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-007,MENTIONS,0,less than 2% of total TB cases,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-008,MENTIONS,0,risk of MTCT is effectively reduced,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-009,MENTIONS,0,has never stated that PCR,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-010,MENTIONS,0,produce arrays of virulence agents,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-011,MENTIONS,0,19.3% in Chitwan and Dang in 2013,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-012,MENTIONS,0,We have previously found,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-013,MENTIONS,0,promote the inflammatory response by activating immune cells,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-014,MENTIONS,0,Plasmodium falciparum culture was maintained,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-015,MENTIONS,0,retract our article,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-016,MENTIONS,0,vertical transmission of SARS-CoV-2 from mother,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-017,MENTIONS,0,In the first publications from China,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-018,MENTIONS,0,from a review of 32 cases,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-019,MENTIONS,0,"fever(18-21,28-29,32,34,36,39)",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-020,UNRELATED,0,reference-list fragment or wrong target,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-021,MENTIONS,0,cuando se publicaron los trabajos,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-022,MENTIONS,0,other highly pathogenic coronavirus-related diseases,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-023,MENTIONS,0,included studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-024,MENTIONS,0,one report showed shorter viral clearance,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-025,MENTIONS,0,"open-label, control study, showed that favipiravir",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-026,MENTIONS,0,in a nonrandomized trial comparing favipiravir,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-027,MENTIONS,0,Favipiravir has been associated with improvement,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-028,UNRELATED,0,"11 day [8], [9]",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-029,MENTIONS,0,Continuous Positive Airway Pressure,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-030,MENTIONS,0,compared Favipiravir with Hydroxychloroquine,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-031,RELIES_ON,1,reported that favipiravir significantly improved,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-032,MENTIONS,0,reports on placental evaluation in women,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-033,MENTIONS,0,multinational registry analysis,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-034,MENTIONS,0,A recent study found no benefit,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-035,MENTIONS,0,The study was later retracted,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-036,MENTIONS,0,interferes with the ability,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-037,MENTIONS,0,reported their findings of a multilateral,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-038,MENTIONS,0,"since-retracted publication20,21 raised concerns",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-039,MENTIONS,0,was retracted by the authors,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-040,MENTIONS,0,publication retraction in The Lancet,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-041,MENTIONS,0,many people soon manifest a variety,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-042,MENTIONS,0,another study in the United States,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-043,MENTIONS,0,ruled out any association of initial viral load,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-044,MENTIONS,0,reported no association between viral load,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-045,MENTIONS,0,conflicting data regarding this relationship in COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-046,UNRELATED,0,interferon responses are a protective factor,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-047,MENTIONS,0,others have found that,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-048,MENTIONS,0,"prognosis [14,30,37]",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-049,MENTIONS,0,paucity of studies reporting the clinical characteristics,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-050,MENTIONS,0,"a combination of nasopharyngeal swabs, fecal and sputum testing",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-051,MENTIONS,0,affect healthcare in all aspects,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-052,MENTIONS,0,highlighted in an Iranian study,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-053,MENTIONS,0,Concerns about the COVID-19 vaccination were related,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-054,MENTIONS,0,Eight studies in 2020 found out,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-055,UNRELATED,0,Withdrawn article citation error,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-056,MENTIONS,0,Willingness to be vaccinated was also shaped,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-057,MENTIONS,0,People who lacked specific knowledge,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-058,MENTIONS,0,reflected by various studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-059,UNRELATED,0,Withdrawn article falsely cited for effectiveness,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-060,MENTIONS,0,Republic of Malta (61.8% were willing),gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-061,MENTIONS,0,natural world can be a complementary therapy,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-062,MENTIONS,0,"(Farooq et al., 2021; Tornberg",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-063,UNRELATED,0,hypertensive17,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-064,MENTIONS,0,novel coronavirus (COVID-19) has severely affected,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-065,MENTIONS,0,exacerbated the public's physiological over-reaction,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-066,MENTIONS,0,gain information about the COVID-19 situation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-067,MENTIONS,0,as a major challenge,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-068,RELIES_ON,1,reported that supplementing vitamin D,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-069,RELIES_ON,1,reduced in patients supplemented with,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-070,MENTIONS,0,evaluating the effects of supplementation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-071,MENTIONS,0,four retractions notes were cited,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-072,MENTIONS,0,depends primarily on Rabie’s verified techniques,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-073,MENTIONS,0,nucleos(t)ide analogism is certainly among,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-074,RELIES_ON,1,based on the genuine protocol,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-075,MENTIONS,0,broad-spectrum antiparasitic agent with previously reported antiviral activity,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-076,MENTIONS,0,Why are we vaccinating children,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-077,MENTIONS,0,recent studies demonstrated that the spike,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-078,MENTIONS,0,SARS-CoV-2 virus spike protein,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-079,MENTIONS,0,Aspergillus colonization results in activation,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-080,MENTIONS,0,was reported to be down regulated,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-081,MENTIONS,0,cooperates with wt p53 in fibroblasts,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-082,MENTIONS,0,This population comprises people who use drugs,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-083,MENTIONS,0,only one study found that,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-084,MENTIONS,0,associated with congenital abnormalities,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-085,MENTIONS,0,Leishmania-specific CPA+ response,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-086,MENTIONS,0,amount of rainfall is associated with the mosquito population,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-087,MENTIONS,0,Nakajima's group 14 injected 4vHPV,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-088,MENTIONS,0,Some studies report similar uropathogens pattern,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-089,MENTIONS,0,Debre Tabor (19%),gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-090,MENTIONS,0,previous studies conducted in Debre Tabor,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-091,MENTIONS,0,inhabit agricultural soils,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-092,MENTIONS,0,"affecting the skin, peripheral nerves",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-093,MENTIONS,0,produce an immune response to TBD-related coinfections,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-094,MENTIONS,0,Long known to be a cause of cervical,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-095,UNRELATED,0,HPV E6 and E7,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-096,MENTIONS,0,Reported RSV positivity rates,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-097,MENTIONS,0,Open-label data indicate a clinical benefit,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-098,MENTIONS,0,HCQ was investigated both as monotherapy,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-099,RELIES_ON,1,"rising to 100% in patients also given azithromycin (Gautret et al., 2020)",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-100,MENTIONS,0,preliminary cohort studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-101,MENTIONS,0,clinical trial conducted in France,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-102,MENTIONS,0,A French nonrandomized trial showed,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-103,MENTIONS,0,hydroxychloroquine did not reduce,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-104,UNRELATED,0,reference to WHO definition,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-105,MENTIONS,0,"Duckmanton et al., 1998",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-106,UNRELATED,0,reference-list fragment,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-107,MENTIONS,0,retraction notice,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-108,MENTIONS,0,cases from Australia,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-109,MENTIONS,0,chest CT scans were performed in 577,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-110,MENTIONS,0,19 case reports,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-111,MENTIONS,0,first peer reviewed report detailed the death,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-112,MENTIONS,0,interstitial cell involvement and ECA were not investigated,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-113,MENTIONS,0,These features were not evaluated in,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-114,MENTIONS,0,used ResNet23 and the classical,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-115,MENTIONS,0,limited amount of training,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-116,MENTIONS,0,assessed heterogeneous findings that originated from included studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-117,MENTIONS,0,Covid-19 Detection using Deep Learning,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-118,MENTIONS,0,affected the mental health of many people worldwide,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-119,UNRELATED,0,research already published,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-120,MENTIONS,0,summarises the prevalence of hypertension,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-121,MENTIONS,0,confirmed by several previous studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-122,MENTIONS,0,"heart, kidney and intestine",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-123,MENTIONS,0,two publications involving patients with COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-124,MENTIONS,0,supported by previous epidemiological studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-125,MENTIONS,0,has been shown to confer,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-126,UNRELATED,0,chest X-ray to underestimate,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-127,MENTIONS,0,The story with hydroxychloroquine tests,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-128,MENTIONS,0,mixed outcomes in several studies,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-129,MENTIONS,0,retraction of some investigations,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-130,MENTIONS,0,findings of Hussain et al,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-131,MENTIONS,0,where mortality rises up to 40%,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-132,MENTIONS,0,comorbidities associated with increased obesity,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-133,MENTIONS,0,high risk of mortality from COVID-19,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-134,MENTIONS,0,documented a marked increase in CSF protein,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-135,MENTIONS,0,articles were included in the analysis,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-136,MENTIONS,0,focusing on a mundane case rather than,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-137,MENTIONS,0,higher acceptance rates than other professions,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-138,MENTIONS,0,Bereitschaft zur COVID-19-Impfung,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-139,MENTIONS,0,"Grech & Gauci, 2020",gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-140,MENTIONS,0,as numerous studies showed seasonal temperature,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-141,UNRELATED,0,citations for the retraction note,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-142,MENTIONS,0,inhibit the replication of SARS-CoV-2 in vitro,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-143,MENTIONS,0,risk of bias,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-144,MENTIONS,0,proposed a GraphCovidNet,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-145,MENTIONS,0,include SARS-CoV-2 [53],gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-146,MENTIONS,0,Multiple clinical trials have been conducted,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-147,MENTIONS,0,fabricated or manipulated data,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-148,MENTIONS,0,withdrawn due to fraudulent data,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-149,UNRELATED,0,small and medium enterprises,gemini-3.5-flash-lite,p3-04-llm-v1
+P3W2-150,MENTIONS,0,distinguished potential uses of Artificial Intelligence,gemini-3.5-flash-lite,p3-04-llm-v1
