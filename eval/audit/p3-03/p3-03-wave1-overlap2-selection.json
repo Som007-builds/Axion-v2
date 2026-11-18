@@ -1,0 +1,50 @@
+{
+  "labeler": "Soham",
+  "negatives": 6,
+  "negatives_by_class": {
+    "MENTIONS": 3,
+    "UNRELATED": 3,
+    "insufficient_context": 0
+  },
+  "notes": [
+    "no insufficient_context rows in the export; the spread uses the other classes"
+  ],
+  "positives": 25,
+  "row_ids": [
+    "P3W1-065",
+    "P3W1-073",
+    "P3W1-031",
+    "P3W1-069",
+    "P3W1-139",
+    "P3W1-087",
+    "P3W1-104",
+    "P3W1-042",
+    "P3W1-111",
+    "P3W1-034",
+    "P3W1-046",
+    "P3W1-091",
+    "P3W1-138",
+    "P3W1-033",
+    "P3W1-056",
+    "P3W1-007",
+    "P3W1-058",
+    "P3W1-117",
+    "P3W1-086",
+    "P3W1-092",
+    "P3W1-063",
+    "P3W1-014",
+    "P3W1-148",
+    "P3W1-041",
+    "P3W1-084",
+    "P3W1-114",
+    "P3W1-070",
+    "P3W1-079",
+    "P3W1-026",
+    "P3W1-133",
+    "P3W1-025"
+  ],
+  "rows": 31,
+  "rule": "ADR-0023 Amendment A",
+  "share_of_wave": 0.2067,
+  "target_rows": 30
+}

@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1d2430;
+    --muted: #5d6878;
+    --line: #d8dde6;
+    --accent: #1d4ed8;
+    --accent-soft: #e8efff;
+    --relies: #0b6b3a;
+    --relies-soft: #e6f6ed;
+    --mentions: #8a5a00;
+    --mentions-soft: #fff4dc;
+    --unrelated: #8a1c1c;
+    --unrelated-soft: #fdecec;
+    --skip: #5d6878;
+    --skip-soft: #eef1f5;
+    --mark: #fff0a8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11151c;
+      --card: #1a202a;
+      --ink: #e8edf5;
+      --muted: #a8b3c4;
+      --line: #303a49;
+      --accent: #8fb2ff;
+      --accent-soft: #1d2b47;
+      --relies: #7fd6a6;
+      --relies-soft: #123326;
+      --mentions: #f0c46a;
+      --mentions-soft: #34280d;
+      --unrelated: #f3a3a3;
+      --unrelated-soft: #3a1717;
+      --skip: #a8b3c4;
+      --skip-soft: #232b37;
+      --mark: #5a4a00;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 16px 24px;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+  h2 { margin: 0 0 12px; font-size: 18px; }
+  h3 { margin: 20px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .sub { margin: 0; color: var(--muted); font-size: 13px; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .toolbar progress { width: min(240px, 40vw); height: 10px; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar label { font-size: 13px; color: var(--muted); font-weight: 650; }
+  .toolbar input[type="text"] {
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+    width: 160px;
+  }
+  button {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--unrelated); }
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+    gap: 18px;
+    max-width: 1380px;
+    margin: 20px auto;
+    padding: 0 24px 40px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.05);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--skip-soft);
+    color: var(--skip);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .pill.relies { background: var(--relies-soft); color: var(--relies); }
+  .pill.mentions { background: var(--mentions-soft); color: var(--mentions); }
+  .pill.unrelated { background: var(--unrelated-soft); color: var(--unrelated); }
+  .kv { display: flex; gap: 8px; margin: 4px 0; font-size: 14px; }
+  .kv b { flex: 0 0 130px; color: var(--muted); font-weight: 650; }
+  .kv span { min-width: 0; overflow-wrap: anywhere; }
+  blockquote {
+    margin: 0;
+    padding: 12px 14px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  blockquote.abstract { border-left-color: var(--mentions); background: var(--mentions-soft); }
+  .paragraph {
+    max-height: 280px;
+    overflow: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  mark { background: var(--mark); color: var(--ink); padding: 0 1px; border-radius: 2px; }
+  .hint { color: var(--muted); font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .empty { color: var(--muted); font-style: italic; }
+  details.guideline {
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+  }
+  details.guideline summary { cursor: pointer; font-weight: 650; }
+  details.guideline a { color: var(--accent); }
+  details.guideline ol { margin: 10px 0 0 20px; padding: 0; }
+  details.guideline li { margin: 6px 0; }
+  .labelCard { position: sticky; top: 132px; }
+  @media (max-width: 980px) { .labelCard { position: static; } }
+  .buttons { display: grid; gap: 10px; margin: 8px 0 16px; }
+  .buttons button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 15px;
+    border-width: 2px;
+  }
+  .buttons button[data-label="RELIES_ON"] { border-color: color-mix(in srgb, var(--relies) 45%, var(--line)); }
+  .buttons button[data-label="MENTIONS"] { border-color: color-mix(in srgb, var(--mentions) 45%, var(--line)); }
+  .buttons button[data-label="UNRELATED"] { border-color: color-mix(in srgb, var(--unrelated) 45%, var(--line)); }
+  .buttons button[data-label="insufficient_context"] { border-color: var(--line); }
+  .buttons button.active[data-label="RELIES_ON"] { background: var(--relies-soft); border-color: var(--relies); }
+  .buttons button.active[data-label="MENTIONS"] { background: var(--mentions-soft); border-color: var(--mentions); }
+  .buttons button.active[data-label="UNRELATED"] { background: var(--unrelated-soft); border-color: var(--unrelated); }
+  .buttons button.active[data-label="insufficient_context"] { background: var(--skip-soft); border-color: var(--skip); }
+  kbd {
+    font: 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+    background: var(--bg);
+  }
+  label[for="note"] { display: block; margin-bottom: 6px; font-weight: 650; }
+  textarea {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+  }
+  textarea:focus, button:focus-visible, summary:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .rowStatus {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--skip-soft);
+    color: var(--muted);
+    font-size: 13px;
+    min-height: 42px;
+  }
+  .warning {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--mentions-soft);
+    color: var(--mentions);
+    font-size: 13px;
+  }
+  .footerNote { color: var(--muted); font-size: 12px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>__TITLE__</h1>
+  <p class="sub">__SUBTITLE__</p>
+  <div class="toolbar">
+    <label for="labelerId">Your labeler id</label>
+    <input id="labelerId" type="text" autocomplete="off" spellcheck="false" placeholder="type your id">
+    <strong id="progressText">0 / 0</strong>
+    <progress id="progressBar" value="0" max="1"></progress>
+    <span id="progressDetail" class="hint"></span>
+    <span class="spacer"></span>
+    <button id="prevBtn" type="button">← Previous</button>
+    <button id="nextBtn" type="button">Next →</button>
+    <button id="exportBtn" class="primary" type="button">Export CSV</button>
+    <button id="resetBtn" class="danger" type="button">Reset saved progress</button>
+  </div>
+</header>
+<main>
+  <section class="card" aria-live="polite">
+    <div class="meta">
+      <span id="rowCounter">Row</span>
+      <span id="statusPill" class="pill">unlabeled</span>
+    </div>
+    <p id="storageWarning" class="warning" hidden></p>
+    <h2 id="citerTitle">Loading…</h2>
+    <div class="kv"><b>Citing paper</b><span id="citerPmcid"></span></div>
+    <div class="kv"><b>Section</b><span id="section"></span></div>
+    <div class="kv"><b>Marker</b><span id="marker"></span></div>
+    <h3>Citing sentence</h3>
+    <blockquote id="contextText"></blockquote>
+    <h3>Surrounding paragraph</h3>
+    <div id="paragraphText" class="paragraph"></div>
+    <h3>Source paper (A)</h3>
+    <div class="kv"><b>Title</b><span id="sourceTitle"></span></div>
+    <div class="kv"><b>PMCID</b><span id="sourcePmcid"></span></div>
+    <div class="kv"><b>PMID / DOI</b><span id="sourceIds"></span></div>
+    <div class="kv"><b>Retraction</b><span id="retractionIds"></span></div>
+    <h3 id="claimHeading">Source claim text</h3>
+    <blockquote id="sourceClaimText"></blockquote>
+    <details class="guideline">
+      <summary>Decision procedure (short copy) — open the full guideline</summary>
+      <p>
+        <a href="../../docs/eval/DEPENDENCY_GUIDELINE.md" target="_blank" rel="noreferrer">
+          docs/eval/DEPENDENCY_GUIDELINE.md
+        </a>
+      </p>
+      <p><b>RELIES_ON:</b> B's claim/argument is supported by, derived from, or conditional on a specific
+        claim in A. Counterfactual: if A's claim were removed or invalidated, B's assertion would need
+        to change.</p>
+      <p><b>MENTIONS:</b> B cites A, but B's claim does not depend on A's specific claim. Background,
+        credit, topic pointer, standard method/tool, or contrast that B's claim survives.</p>
+      <p><b>UNRELATED:</b> the marker does not actually connect the asserted content to A (reference
+        fragment, misattribution, or no assertion about A).</p>
+      <ol>
+        <li>Resolve the target A. Multiple sources in one marker: label each source separately.</li>
+        <li>Read the sentence, paragraph, and section; do not label from the reference title alone.</li>
+        <li>State B's assertion in this context.</li>
+        <li>Run the counterfactual. Yes → RELIES_ON; no but still refers → MENTIONS; no and not
+          about A → UNRELATED.</li>
+        <li>If the text is genuinely insufficient, use <b>insufficient_context</b>: leave the label
+          blank, write a note, and do not guess.</li>
+      </ol>
+      <p class="hint">Section is not a label, and retraction status is not a label. Corroboration is
+        not dependency.</p>
+    </details>
+  </section>
+  <section class="card labelCard">
+    <h2>Label this context-source edge</h2>
+    <div class="buttons" id="labelButtons">
+      <button type="button" data-label="RELIES_ON"><span>RELIES_ON</span><kbd>1</kbd></button>
+      <button type="button" data-label="MENTIONS"><span>MENTIONS</span><kbd>2</kbd></button>
+      <button type="button" data-label="UNRELATED"><span>UNRELATED</span><kbd>3</kbd></button>
+      <button type="button" data-label="insufficient_context"><span>insufficient_context</span><kbd>4</kbd></button>
+    </div>
+    <label for="note">Note <span class="hint">(short reason; required for non-obvious rows)</span></label>
+    <textarea id="note" rows="4" placeholder="e.g. A's effect size is a premise for B's model; or background-only citation."></textarea>
+    <div id="rowStatus" class="rowStatus">No label selected for this row.</div>
+    <p class="footerNote">
+      Keys: 1/2/3/4 choose a label, ←/→ move rows, 0 clears this row. Autosave is local to this
+      browser; progress resumes where you left off. Export writes the same columns plus your labeler
+      id and the export date.
+    </p>
+  </section>
+</main>
+<script id="packet-data" type="application/json">__DATA_JSON__</script>
+<script>
+(function () {
+  "use strict";
+
+  const PACKET = JSON.parse(document.getElementById("packet-data").textContent);
+  const COLUMNS = PACKET.columns;
+  const ROWS = PACKET.rows;
+  const STORAGE_KEY = "__SET_KEY__";
+  const EXPORT_NAME = "__EXPORT_NAME__";
+  const GUIDELINE_VERSION = "P3-v1.1";
+  const DEFAULT_LABELER = "__DEFAULT_LABELER__";
+
+  const state = { index: 0, entries: {} };
+  let storageAvailable = true;
+
+  const el = (id) => document.getElementById(id);
+  const escapeHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  function entryFor(row) {
+    if (!state.entries[row.row_id]) {
+      state.entries[row.row_id] = {
+        label: String(row.label || "").trim(),
+        note: String(row.note || "").trim(),
+        skipped: false,
+      };
+    }
+    return state.entries[row.row_id];
+  }
+
+  function loadSaved() {
+    try {
+      const savedId = localStorage.getItem(STORAGE_KEY + ":labeler");
+      el("labelerId").value = savedId !== null ? savedId : DEFAULT_LABELER;
+    } catch (error) {
+      el("labelerId").value = DEFAULT_LABELER;
+    }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || saved.version !== 1 || !saved.entries) return;
+      state.index = Number.isInteger(saved.index) ? saved.index : 0;
+      state.entries = saved.entries;
+    } catch (error) {
+      storageAvailable = false;
+      el("storageWarning").hidden = false;
+      el("storageWarning").textContent =
+        "Autosave is unavailable in this browser context. Export before closing the tab; progress will not resume.";
+      console.warn("Could not read saved progress", error);
+    }
+  }
+
+  function save() {
+    if (!storageAvailable) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        index: state.index,
+        entries: state.entries,
+      }));
+    } catch (error) {
+      storageAvailable = false;
+      el("storageWarning").hidden = false;
+      el("storageWarning").textContent =
+        "Autosave failed (storage is full or blocked). Export before closing the tab.";
+      console.warn("Could not save progress", error);
+    }
+  }
+
+  function labelerId() {
+    return (el("labelerId").value || "").trim();
+  }
+
+  function currentRow() {
+    return ROWS[state.index] || null;
+  }
+
+  function doneCount() {
+    return ROWS.filter((row) => {
+      const entry = state.entries[row.row_id];
+      return Boolean(entry && (entry.label || entry.skipped));
+    }).length;
+  }
+
+  function renderProgress() {
+    const total = ROWS.length;
+    const done = doneCount();
+    const skipped = ROWS.filter((row) => state.entries[row.row_id]?.skipped).length;
+    el("progressText").textContent = `${done} / ${total}`;
+    el("progressBar").max = Math.max(total, 1);
+    el("progressBar").value = done;
+    el("progressDetail").textContent =
+      `${done} labeled · ${skipped} skipped · ${total - done} left`;
+  }
+
+  function renderParagraph(paragraph, sentence) {
+    const text = String(paragraph || "");
+    const target = String(sentence || "");
+    if (!text) return `<span class="empty">No surrounding paragraph was recorded.</span>`;
+    if (!target) return escapeHtml(text);
+    const index = text.indexOf(target);
+    if (index < 0) {
+      return `${escapeHtml(text)}<br><span class="hint">[The citation sentence was not found verbatim in the paragraph; shown separately above.]</span>`;
+    }
+    return [
+      escapeHtml(text.slice(0, index)),
+      "<mark>",
+      escapeHtml(text.slice(index, index + target.length)),
+      "</mark>",
+      escapeHtml(text.slice(index + target.length)),
+    ].join("");
+  }
+
+  function renderStatus(row, entry) {
+    const pill = el("statusPill");
+    pill.className = "pill";
+    if (entry.skipped) {
+      pill.textContent = "skipped: insufficient_context";
+      pill.classList.add("unrelated");
+      el("rowStatus").textContent =
+        "This row exports with a blank label and a note beginning insufficient_context. It is not a gold label.";
+      return;
+    }
+    if (!entry.label) {
+      pill.textContent = "unlabeled";
+      el("rowStatus").textContent = "No label selected for this row.";
+      return;
+    }
+    pill.textContent = entry.label;
+    pill.classList.add(
+      entry.label === "RELIES_ON" ? "relies" :
+      entry.label === "MENTIONS" ? "mentions" : "unrelated"
+    );
+    if (entry.label === "RELIES_ON") {
+      el("rowStatus").textContent =
+        "RELIES_ON selected: B's assertion depends on a claim in A. Add a note naming the claim or result if it is visible.";
+    } else if (entry.label === "MENTIONS") {
+      el("rowStatus").textContent =
+        "MENTIONS selected: B cites A but does not depend on A's claim. Add a note if the case is close.";
+    } else {
+      el("rowStatus").textContent =
+        "UNRELATED selected: the marker does not connect the asserted content to A. Add a note.";
+    }
+  }
+
+  function render() {
+    const row = currentRow();
+    if (!row) {
+      el("citerTitle").textContent = "No rows found in this packet.";
+      el("rowCounter").textContent = "Row 0 of 0";
+      el("prevBtn").disabled = true;
+      el("nextBtn").disabled = true;
+      return;
+    }
+    const entry = entryFor(row);
+    el("rowCounter").textContent = `Row ${state.index + 1} of ${ROWS.length} · ${row.row_id}`;
+    el("citerTitle").textContent = row.citer_title || "(untitled citing paper)";
+    el("citerPmcid").textContent = row.citer_pmcid || "";
+    el("section").textContent = row.section || "(no section recorded)";
+    el("marker").textContent = row.marker || "(no marker)";
+    el("contextText").textContent = row.context_text || "(no citing sentence recorded)";
+    el("paragraphText").innerHTML = renderParagraph(row.paragraph_text, row.context_text);
+    el("sourceTitle").textContent = row.source_title || "(untitled source paper)";
+    el("sourcePmcid").textContent = row.source_pmcid || "";
+    el("sourceIds").textContent = [row.source_pmid, row.source_doi].filter(Boolean).join(" · ") || "—";
+    el("retractionIds").textContent = row.retraction_record_ids || "—";
+
+    const linked = String(row.linked) === "true";
+    const claimBlock = el("sourceClaimText");
+    if (linked) {
+      el("claimHeading").textContent = "Source claim text (abstract-sentence proxy; specific claim linking is P3-06)";
+      claimBlock.className = "";
+      claimBlock.textContent = row.source_claim_text ||
+        "No abstract claim proxy was found for this source paper.";
+    } else {
+      el("claimHeading").textContent = "Source abstract (no single claim could be extracted)";
+      claimBlock.className = "abstract";
+      claimBlock.textContent = row.source_abstract ||
+        "This source has no abstract and no extractable claim text (retracted or withdrawn stub). " +
+        "Label from the citing sentence, the paragraph, and the source title above.";
+    }
+
+    el("note").value = entry.skipped && entry.note.startsWith("insufficient_context:")
+      ? entry.note.slice("insufficient_context:".length).trim()
+      : entry.note;
+    document.querySelectorAll("#labelButtons button").forEach((button) => {
+      const label = button.dataset.label;
+      button.classList.toggle(
+        "active",
+        label === "insufficient_context" ? entry.skipped : entry.label === label
+      );
+    });
+    renderStatus(row, entry);
+    renderProgress();
+    el("prevBtn").disabled = state.index <= 0;
+    el("nextBtn").disabled = state.index >= ROWS.length - 1;
+  }
+
+  function setLabel(label) {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    if (label === "insufficient_context") {
+      entry.label = "";
+      entry.skipped = true;
+    } else {
+      entry.label = label;
+      entry.skipped = false;
+    }
+    save();
+    render();
+  }
+
+  function clearLabel() {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    entry.label = "";
+    entry.skipped = false;
+    save();
+    render();
+  }
+
+  function move(delta) {
+    const nextIndex = state.index + delta;
+    if (nextIndex < 0 || nextIndex >= ROWS.length) return;
+    state.index = nextIndex;
+    save();
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function csvEscape(value) {
+    const text = String(value ?? "");
+    if (/[",\r\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+    return text;
+  }
+
+  function exportCsv() {
+    const labeler = labelerId();
+    if (!labeler) {
+      window.alert("Enter your labeler id first — it is recorded in the exported CSV.");
+      el("labelerId").focus();
+      return;
+    }
+    const unlabeled = ROWS.filter((row) => {
+      const entry = state.entries[row.row_id];
+      return !entry || (!entry.label && !entry.skipped);
+    }).length;
+    if (unlabeled > 0 && !window.confirm(
+      `${unlabeled} row${unlabeled === 1 ? " is" : "s are"} still unlabeled. Export anyway?`
+    )) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const lines = [COLUMNS.map(csvEscape).join(",")];
+    for (const row of ROWS) {
+      const entry = entryFor(row);
+      const out = { ...row };
+      let note = (entry.note || "").trim();
+      if (entry.skipped) {
+        out.label = "";
+        if (!note.toLowerCase().startsWith("insufficient_context")) {
+          note = note ? `insufficient_context: ${note}` : "insufficient_context";
+        }
+      } else {
+        out.label = entry.label || "";
+      }
+      out.note = note;
+      out.labeler = labeler;
+      out.date = today;
+      out.guideline_version = GUIDELINE_VERSION;
+      lines.push(COLUMNS.map((column) => csvEscape(out[column])).join(","));
+    }
+
+    const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = EXPORT_NAME;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    el("rowStatus").textContent = `Exported ${EXPORT_NAME} to your browser downloads. Send that file back.`;
+  }
+
+  function resetProgress() {
+    if (!window.confirm("Clear all local labels and notes in this packet? This cannot be undone.")) return;
+    state.index = 0;
+    state.entries = {};
+    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { console.warn(error); }
+    render();
+  }
+
+  el("prevBtn").addEventListener("click", () => move(-1));
+  el("nextBtn").addEventListener("click", () => move(1));
+  el("exportBtn").addEventListener("click", exportCsv);
+  el("resetBtn").addEventListener("click", resetProgress);
+  el("labelerId").addEventListener("input", (event) => {
+    try { localStorage.setItem(STORAGE_KEY + ":labeler", event.target.value.trim()); } catch (error) { console.warn(error); }
+  });
+  el("note").addEventListener("input", (event) => {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    entry.note = event.target.value;
+    save();
+  });
+  document.querySelectorAll("#labelButtons button").forEach((button) => {
+    button.addEventListener("click", () => setLabel(button.dataset.label));
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.target.closest("textarea, input, [contenteditable='true']")) return;
+    if (event.key === "1") { event.preventDefault(); setLabel("RELIES_ON"); }
+    else if (event.key === "2") { event.preventDefault(); setLabel("MENTIONS"); }
+    else if (event.key === "3") { event.preventDefault(); setLabel("UNRELATED"); }
+    else if (event.key === "4") { event.preventDefault(); setLabel("insufficient_context"); }
+    else if (event.key === "0") { event.preventDefault(); clearLabel(); }
+    else if (event.key === "ArrowLeft") { event.preventDefault(); move(-1); }
+    else if (event.key === "ArrowRight") { event.preventDefault(); move(1); }
+  });
+
+  loadSaved();
+  render();
+})();
+</script>
+</body>
+</html>
