@@ -148,6 +148,29 @@ def test_selection_json_reports_counts_but_no_labels(tmp_path: Path) -> None:
     assert "Soham" not in json.dumps(summary["row_ids"])
 
 
+def test_negative_floor_and_isolated_handoff(tmp_path: Path) -> None:
+    """Amendment C: 15 negatives, and the handoff dir holds only labeler-2 files."""
+    labels = _labels(positives=12, negative_splits=(60, 40, 20))
+    wave_dir = tmp_path / "wave"
+    handoff = tmp_path / "labeler2"
+    _write_wave(wave_dir, sorted(labels))
+
+    summary = build_overlap_from_labels(
+        _write_labels(wave_dir / "labels.csv", labels),
+        wave_dir,
+        blind_dir=handoff,
+        min_negatives=15,
+    )
+
+    assert summary["negatives"] >= 15
+    assert summary["negatives_met_floor"] is True
+    assert summary["handoff_dir"] == str(handoff)
+    assert (handoff / "p3-03-wave1-overlap2-blind.csv").exists()
+    assert (handoff / "p3-03-wave1-overlap2-labeler.html").exists()
+    assert not (handoff / "p3-03-wave1-overlap2-selection.json").exists(), "counts leak"
+    assert (wave_dir / "p3-03-wave1-overlap2-selection.json").exists()
+
+
 def test_positive_heavy_wave_keeps_every_positive(tmp_path: Path) -> None:
     labels = _labels(positives=40, negative_splits=(40, 30, 40))
     _write_wave(tmp_path, sorted(labels))

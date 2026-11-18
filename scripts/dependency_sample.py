@@ -422,10 +422,22 @@ def select_overlap_from_labels(
     )
 
 
-def build_overlap_from_labels(labels_csv: Path, out_dir: Path = OUT) -> dict[str, object]:
-    """Build overlap 2 from labeler 1's export and write the blind artefacts."""
-    manifest_path = out_dir / f"p3-03-{WAVE_ID}-manifest.csv"
-    blind_path = out_dir / f"p3-03-{WAVE_ID}-blind.csv"
+def build_overlap_from_labels(
+    labels_csv: Path,
+    out_dir: Path = OUT,
+    *,
+    wave: str = WAVE_ID,
+    blind_dir: Path | None = None,
+    min_negatives: int = OVERLAP_MIN_NEGATIVES,
+) -> dict[str, object]:
+    """Build overlap 2 from labeler 1's export and write the blind artefacts.
+
+    Amendment C: `blind_dir` holds only what labeler 2 may receive (the blind CSV and
+    the labeler HTML). The selection file stays in `out_dir`, because its class counts
+    would leak labeler 1's labels.
+    """
+    manifest_path = out_dir / f"p3-03-{wave}-manifest.csv"
+    blind_path = out_dir / f"p3-03-{wave}-blind.csv"
     for path in (manifest_path, blind_path):
         if not path.exists():
             raise OverlapError(f"wave file not found: {path}")
@@ -440,7 +452,9 @@ def build_overlap_from_labels(labels_csv: Path, out_dir: Path = OUT) -> dict[str
             f"label export covers {len(labels)} of {len(known)} wave rows; "
             "label the whole wave before building the overlap"
         )
-    selection = select_overlap_from_labels(labels, wave_size=len(manifest_rows))
+    selection = select_overlap_from_labels(
+        labels, wave_size=len(manifest_rows), min_negatives=min_negatives
+    )
     rows: list[dict[str, str]] = []
     for row_id in selection.row_ids:
         source = blind_by_id[row_id]
@@ -468,9 +482,11 @@ def build_overlap_from_labels(labels_csv: Path, out_dir: Path = OUT) -> dict[str
                 "guideline_version": GUIDELINE_VERSION,
             }
         )
-    blind_out = out_dir / f"p3-03-{WAVE_ID}-overlap2-blind.csv"
-    html_out = out_dir / f"p3-03-{WAVE_ID}-overlap2-labeler.html"
-    selection_out = out_dir / f"p3-03-{WAVE_ID}-overlap2-selection.json"
+    handoff = blind_dir if blind_dir is not None else out_dir
+    handoff.mkdir(parents=True, exist_ok=True)
+    blind_out = handoff / f"p3-03-{wave}-overlap2-blind.csv"
+    html_out = handoff / f"p3-03-{wave}-overlap2-labeler.html"
+    selection_out = out_dir / f"p3-03-{wave}-overlap2-selection.json"
     _write_csv(blind_out, BLIND_COLUMNS, rows)
     html_out.write_text(
         _labeler_html(
@@ -499,6 +515,12 @@ def build_overlap_from_labels(labels_csv: Path, out_dir: Path = OUT) -> dict[str
         "negatives_by_class": {k: len(v) for k, v in selection.negatives.items()},
         "target_rows": selection.target_rows,
         "share_of_wave": round(len(rows) / len(known), 4),
+        "negative_floor": min_negatives,
+        "negatives_met_floor": selection.negative_count >= min_negatives,
+        "wave": wave,
+        "handoff_dir": (
+            handoff.relative_to(ROOT).as_posix() if handoff.is_relative_to(ROOT) else str(handoff)
+        ),
         "notes": list(selection.notes),
         "row_ids": list(selection.row_ids),
     }
@@ -582,11 +604,33 @@ def main(argv: list[str] | None = None) -> int:
             "instead of drawing the wave"
         ),
     )
+    parser.add_argument(
+        "--overlap-wave",
+        default=WAVE_ID,
+        help="wave id whose manifest and blind file the overlap is built from",
+    )
+    parser.add_argument(
+        "--overlap-blind-dir",
+        type=Path,
+        default=None,
+        help="directory that holds only what labeler 2 receives (Amendment C)",
+    )
+    parser.add_argument(
+        "--overlap-min-negatives",
+        type=int,
+        default=OVERLAP_MIN_NEGATIVES,
+        help="negative-row floor; Amendment C requires 15 from wave 2 on",
+    )
     args = parser.parse_args(argv)
 
     if args.build_overlap:
         try:
-            overlap = build_overlap_from_labels(Path(args.build_overlap))
+            overlap = build_overlap_from_labels(
+                Path(args.build_overlap),
+                wave=args.overlap_wave,
+                blind_dir=args.overlap_blind_dir,
+                min_negatives=args.overlap_min_negatives,
+            )
         except OverlapError as error:
             raise SystemExit(f"overlap build failed: {error}") from error
         print(json.dumps(overlap, indent=2, sort_keys=True))

@@ -643,6 +643,13 @@ rows (below the 15-row floor), wave 1's 31/31 agreement is recorded as **consist
 established reliability**, and the negative side is reported as a count. The owner declined the 10-row
 blind test-retest for now (2026-11-18); that remains the cheap way to harden this result later.
 
+**Wave 2 meets the rules (2026-11-18).** Its overlap was built from the returned wave-2 export into
+`eval/audit/p3-03-labeler2/`, a directory that holds only the blind CSV, the labeler HTML and a
+README - no labeler-1 export, no manifest, no selection file (the selection file with per-class
+counts stays in `eval/audit/p3-03/`). It carries **30 rows: 12 `RELIES_ON` + 18 negative** (9
+`MENTIONS`, 9 `UNRELATED`), so the **15-row negative floor is met** and negative-side κ will be
+estimable for this pair. The export is checked against the blinded subset before any comparison.
+
 ## ADR-0024 — Wave 2: a uniform-only top-up of 150 rows, and the stop rule
 
 **Date:** 2026-11-18 — **Status:** Proposed. The owner instructed this draw on 2026-11-18; the status stays
@@ -688,6 +695,34 @@ check exposes any dev/test imbalance, and no cue evidence enters the sample. Cos
 owner labeling at the pilot pace (20–45 s/row); the owner's recorded pace will replace that arithmetic.
 **Risk:** if 23.3% is optimistic, wave 2 yields fewer than 35 positives, and the stop rule reports the
 shortfall rather than starting another wave on an assumption.
+
+**Realised (2026-11-18, `scripts/dependency_wave2.py` + `scripts/dependency_metrics.py`).** The draw was
+150 rows at π = 0.02513826 (weight 39.78), 78 dev / 72 test, 0 contexts shared with wave 1, 5 sources
+truncated by the cap. The owner labelled all 150 in **1 h 35 min = 95 min**, i.e. **38 s/row** — inside
+the 20–45 s/row assumption and at its upper half, so the 50–112 min estimate stands as arithmetic with a
+measured point inside it. Results:
+
+- **12 `RELIES_ON` / 129 `MENTIONS` / 9 `UNRELATED` / 0 skipped: 8.0% positives**, not the ~35 positives
+  (23.3%) the plan expected, so **the risk above materialised**: wave 2 came in under the target.
+- Combined with wave 1: **37 positives over 300 rows**.
+- **The base rate is now heterogeneous, not a single number.** Wave 1 uniform 7/30 = 23.3% [11.8, 40.9];
+  wave 2 uniform 12/150 = 8.0% [4.6, 13.5]. Pooled design-weighted **15.8%** [10.3, 24.9]; pooled
+  unweighted 10.6%. The ~5x difference in design weights is why the two pooled figures disagree. Treated
+  as **provisional**: the 150-row wave-2 slice is the better-measured of the two and wave 1 may be high
+  by chance, but no homogeneity test is claimed.
+- **Stop-rule numbers:** 77 positives are needed for a 0.70 lower bound at observed recall 0.80, so
+  **40 more** are outstanding — about **254** rows at the pooled weighted rate, **379** at the pooled
+  unweighted rate, or **500** at the wave-2 rate alone. Per split: dev 16 `RELIES_ON`/151 rows, test
+  21/149.
+- The text-bearing frame is 232 rows (32 `RELIES_ON`) and the stub stratum 68 rows (5 `RELIES_ON`).
+- The second-labeler overlap was built from the returned export under Amendment C: **30 rows, 12
+  `RELIES_ON` + 18 negative** (9 `MENTIONS`, 9 `UNRELATED`), floor met, blind files isolated in
+  `eval/audit/p3-03-labeler2/` with no labeler-1 file present.
+
+**Stop rule, applied.** No wave 3 starts from this ADR. The realised rate is ~8–11%, not 23%, so hitting
+77 positives needs 254–500 more labelled rows — a decision for the owner, and a larger cost than wave 1
+and wave 2 combined. Options are recorded in `docs/PROGRESS.md`: accept a decision-grade read at ~37–60
+positives, extend uniformly toward 77, or narrow the claim to a stratified subset.
 
 ## ADR template
 ```

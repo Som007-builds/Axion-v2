@@ -1,0 +1,53 @@
+{
+  "handoff_dir": "eval\\audit\\p3-03-labeler2",
+  "labeler": "Soham",
+  "negative_floor": 15,
+  "negatives": 18,
+  "negatives_by_class": {
+    "MENTIONS": 9,
+    "UNRELATED": 9,
+    "insufficient_context": 0
+  },
+  "negatives_met_floor": true,
+  "notes": [
+    "no insufficient_context rows in the export; the spread uses the other classes"
+  ],
+  "positives": 12,
+  "row_ids": [
+    "P3W2-098",
+    "P3W2-045",
+    "P3W2-094",
+    "P3W2-001",
+    "P3W2-051",
+    "P3W2-131",
+    "P3W2-092",
+    "P3W2-103",
+    "P3W2-084",
+    "P3W2-054",
+    "P3W2-106",
+    "P3W2-118",
+    "P3W2-023",
+    "P3W2-134",
+    "P3W2-139",
+    "P3W2-145",
+    "P3W2-099",
+    "P3W2-140",
+    "P3W2-036",
+    "P3W2-097",
+    "P3W2-149",
+    "P3W2-109",
+    "P3W2-052",
+    "P3W2-126",
+    "P3W2-100",
+    "P3W2-143",
+    "P3W2-127",
+    "P3W2-018",
+    "P3W2-104",
+    "P3W2-120"
+  ],
+  "rows": 30,
+  "rule": "ADR-0023 Amendment A",
+  "share_of_wave": 0.2,
+  "target_rows": 30,
+  "wave": "wave2"
+}

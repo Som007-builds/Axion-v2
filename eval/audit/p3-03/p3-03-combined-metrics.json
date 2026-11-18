@@ -1,0 +1,166 @@
+{
+  "combined": {
+    "by_split": {
+      "dev": {
+        "MENTIONS": 74,
+        "RELIES_ON": 4,
+        "UNRELATED": 2,
+        "insufficient_context": 0
+      },
+      "test": {
+        "MENTIONS": 56,
+        "RELIES_ON": 10,
+        "UNRELATED": 8,
+        "insufficient_context": 0
+      }
+    },
+    "overall": {
+      "MENTIONS": 130,
+      "RELIES_ON": 14,
+      "UNRELATED": 10,
+      "insufficient_context": 0
+    },
+    "rows": 154,
+    "stub": {
+      "MENTIONS": 29,
+      "RELIES_ON": 2,
+      "UNRELATED": 3,
+      "insufficient_context": 0,
+      "rows": 34
+    },
+    "text_bearing": {
+      "MENTIONS": 101,
+      "RELIES_ON": 12,
+      "UNRELATED": 7,
+      "insufficient_context": 0,
+      "rows": 120
+    },
+    "uniform": {
+      "effective_n": 119.53,
+      "positives": 13,
+      "rows": 153,
+      "unweighted_rate": 0.085,
+      "weighted_rate": 0.1036,
+      "wilson_high": 0.1667,
+      "wilson_low": 0.0581
+    }
+  },
+  "extra_positives_for_080": 63,
+  "extra_rows_for_080": {
+    "combined_unweighted": 742,
+    "combined_weighted": 609,
+    "wave2_only": 788
+  },
+  "positives_needed_080": 77,
+  "uniform_rate_wave1": {
+    "effective_n": 3.0,
+    "positives": 1,
+    "rows": 3,
+    "unweighted_rate": 0.3333,
+    "weighted_rate": 0.3333,
+    "wilson_high": 0.7923,
+    "wilson_low": 0.0615
+  },
+  "uniform_rate_wave2": {
+    "effective_n": 150.0,
+    "positives": 12,
+    "rows": 150,
+    "unweighted_rate": 0.08,
+    "weighted_rate": 0.08,
+    "wilson_high": 0.1346,
+    "wilson_low": 0.0464
+  },
+  "wave1": {
+    "by_split": {
+      "dev": {
+        "MENTIONS": 0,
+        "RELIES_ON": 1,
+        "UNRELATED": 1,
+        "insufficient_context": 0
+      },
+      "test": {
+        "MENTIONS": 1,
+        "RELIES_ON": 1,
+        "UNRELATED": 0,
+        "insufficient_context": 0
+      }
+    },
+    "overall": {
+      "MENTIONS": 1,
+      "RELIES_ON": 2,
+      "UNRELATED": 1,
+      "insufficient_context": 0
+    },
+    "rows": 4,
+    "stub": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "rows": 0
+    },
+    "text_bearing": {
+      "MENTIONS": 1,
+      "RELIES_ON": 2,
+      "UNRELATED": 1,
+      "insufficient_context": 0,
+      "rows": 4
+    },
+    "uniform": {
+      "effective_n": 3.0,
+      "positives": 1,
+      "rows": 3,
+      "unweighted_rate": 0.3333,
+      "weighted_rate": 0.3333,
+      "wilson_high": 0.7923,
+      "wilson_low": 0.0615
+    }
+  },
+  "wave2": {
+    "by_split": {
+      "dev": {
+        "MENTIONS": 74,
+        "RELIES_ON": 3,
+        "UNRELATED": 1,
+        "insufficient_context": 0
+      },
+      "test": {
+        "MENTIONS": 55,
+        "RELIES_ON": 9,
+        "UNRELATED": 8,
+        "insufficient_context": 0
+      }
+    },
+    "overall": {
+      "MENTIONS": 129,
+      "RELIES_ON": 12,
+      "UNRELATED": 9,
+      "insufficient_context": 0
+    },
+    "rows": 150,
+    "stub": {
+      "MENTIONS": 29,
+      "RELIES_ON": 2,
+      "UNRELATED": 3,
+      "insufficient_context": 0,
+      "rows": 34
+    },
+    "text_bearing": {
+      "MENTIONS": 100,
+      "RELIES_ON": 10,
+      "UNRELATED": 6,
+      "insufficient_context": 0,
+      "rows": 116
+    },
+    "uniform": {
+      "effective_n": 150.0,
+      "positives": 12,
+      "rows": 150,
+      "unweighted_rate": 0.08,
+      "weighted_rate": 0.08,
+      "wilson_high": 0.1346,
+      "wilson_low": 0.0464
+    }
+  },
+  "waves": 2
+}

@@ -173,14 +173,24 @@ def write_combined(
     needed = positives_needed(0.80)
     extra = max(0, needed - total)
     rate = float(unified["weighted_rate"])
+    wave1_rate = pack_1["uniform"]
+    wave2_rate = pack_2["uniform"]
+    assert isinstance(wave1_rate, dict) and isinstance(wave2_rate, dict)
+    extra_rows = {
+        "combined_weighted": rows_for(extra, rate),
+        "combined_unweighted": rows_for(extra, float(unified["unweighted_rate"])),
+        "wave2_only": rows_for(extra, float(wave2_rate["weighted_rate"])),
+    }
     summary = {
         "waves": 2,
         "combined": pack_all,
         "wave1": pack_1,
         "wave2": pack_2,
+        "uniform_rate_wave1": wave1_rate,
+        "uniform_rate_wave2": wave2_rate,
         "positives_needed_080": needed,
         "extra_positives_for_080": extra,
-        "extra_rows_for_080": rows_for(extra, rate),
+        "extra_rows_for_080": extra_rows,
     }
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -231,7 +241,26 @@ def write_combined(
         "",
         f"- Combined positives: **{total}**. The 0.80-observed-recall case needs **{needed}**,",
         f"  so **{extra} more** are outstanding.",
-        f"- At the updated uniform rate that is about **{rows_for(extra, rate)} more rows**.",
+        "- At that rate the extra rows depend on which pool you believe:",
+        f"  - combined, design-weighted ({rate:.1%}): **{extra_rows['combined_weighted']} rows**;",
+        f"  - combined, unweighted ({float(unified['unweighted_rate']):.1%}): "
+        f"**{extra_rows['combined_unweighted']} rows**;",
+        f"  - wave 2 only ({float(wave2_rate['weighted_rate']):.1%}, n={wave2_rate['rows']}): "
+        f"**{extra_rows['wave2_only']} rows**.",
+        "",
+        "## Heterogeneity between the two uniform slices",
+        "",
+        f"- Wave 1 uniform: **{wave1_rate['positives']}/{wave1_rate['rows']} = "
+        f"{float(wave1_rate['unweighted_rate']):.1%}** "
+        f"[{float(wave1_rate['wilson_low']):.1%}, {float(wave1_rate['wilson_high']):.1%}].",
+        f"- Wave 2 uniform: **{wave2_rate['positives']}/{wave2_rate['rows']} = "
+        f"{float(wave2_rate['unweighted_rate']):.1%}** "
+        f"[{float(wave2_rate['wilson_low']):.1%}, {float(wave2_rate['wilson_high']):.1%}].",
+        "- The intervals overlap only slightly and the design weights differ by ~5x, which is",
+        "  why the pooled weighted and unweighted rates disagree. Treat the single pooled rate as",
+        "  provisional: the 150-row wave-2 slice is the larger and better-measured of the two,",
+        "  and the 30-row wave-1 slice may be high by chance. No homogeneity test is claimed.",
+        "",
         "- Every number here is conditional on the P1 citer set (ADR-0015) and on one labeler; the",
         "  overlap's kappa is degenerate, so no reliability claim rides on these counts.",
         "",
