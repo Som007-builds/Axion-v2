@@ -471,10 +471,26 @@ superseded, and no second labeler receives them.
 | 100 | 0.711–0.867 | 0.767–0.907 |
 
 At ~15 positives the interval straddles the gate and certifies nothing; **~30 positives** supports a
-decision-grade read at observed recall ≈0.85, and **~100** gives a lower bound above 0.70 at observed
-0.80. Wave 1 is expected to yield **3 positives under the pilot's own cue reading** (0 of 3
-cue-positive pilot rows were `RELIES_ON`) and **~21 if enrichment lifts the rate to 15%**; the realised
-count replaces this assumption before the owner decides on wave 2.
+decision-grade read at observed recall ≈0.85, and **~100** was the rounded table row for a lower bound
+above 0.70 at observed 0.80 — the exact minimum is **77**, recomputed by the metrics script.
+
+**Measured replacement (2026-11-18; `scripts/dependency_metrics.py`).** Wave 1 returned **25 positives**
+(not the 3 of the pilot's cue reading, and not the ~21 the 15% lift assumed), against a **uniform base
+rate of 7/30 = 23.3% (Wilson 95% [11.8%, 40.9%])** and an enriched rate of 18/120 = 15.0%
+([9.7%, 22.5%]). At those rates:
+
+| Assumed observed recall | Positives for a 0.70 lower bound | Extra positives | Extra rows (uniform 23.3%) | Extra rows (enriched 15.0%) |
+| --: | --: | --: | --: | --: |
+| 0.85 | 30 | 5 | 22 | 34 |
+| 0.80 | 77 | 52 | 223 | 348 |
+
+**Recommendation, recorded for the owner's wave-2 decision.** Draw **wave 2 from the uniform frame,
+about 150 rows**. It yields the most positives per labelled row at the measured rates (23.3% vs 15.0%),
+it is unbiased so it tightens the base rate, and at ~35 expected positives it takes the total to ~60 —
+comfortably past the decision-grade bar of 30. Certifying a 0.70 lower bound at observed recall 0.80
+would need ~223 uniform rows and is not worth the labeling time yet. Expected owner time for 150 rows
+is 50–112 minutes at the pilot pace (20–45 s/row); the owner's recorded pace replaces that arithmetic.
+The cue-enriched frame should not be used for wave 2: it did not beat the uniform draw.
 
 **Alternatives considered.** One uniform sample of ~600 rows: unbiased and ~60 positives, but ≈5 hours
 of owner labeling and no class coverage guarantee for κ. Pure cue-enriched sampling: more positives,
