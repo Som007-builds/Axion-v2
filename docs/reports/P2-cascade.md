@@ -1,8 +1,8 @@
 # P2 — Cost cascade: phase report
 
-**Status:** P2 COMPLETE — gate review needed.
-**Branch:** `p2`. **Real spend for the whole phase: $0** (Gemini free tier, billing off; list price is
-ledgered everywhere).
+**Status:** P2 COMPLETE — gate accepted 2026-11-18.
+**Branch:** `main` (the `p2` branch merged at `cd8f5aa`; phase branch deleted). **Real spend for the
+whole phase: $0** (Gemini free tier, billing off; list price is ledgered everywhere).
 
 > **Gold measures precision only.** It labels 200 baseline claims from 45 papers (22 dev / 23 test,
 > split by paper). Retention is agreement with the baseline's own output, **not recall**; absolute
@@ -14,13 +14,14 @@ ledgered everywhere).
 The PRD §P2 gate is ≥50% savings within 2 points of baseline precision, or a published negative
 result plus the best frontier point.
 
-- **Literal gate: PASS on two rows.** `escalation-length30` (−55.6% per paper, test precision 98.2%
-  vs baseline 96.9%) and `sections-core` (−56.4%, test precision 96.3%).
-- **The caveat that decides it:** both pass by emitting less. Test retention is **56.7%** for the
-  escalation row and **27.8%** for section targeting. Under ADR-0021 (proposed, owner-pending) the
-  gate also requires agreement with baseline, and no measured row reaches 90% retention.
-- **Operating point proposed, not adopted:** ADR-0022 selects `p2-05-length30-v1`. Promotion is the
-  owner's decision.
+- **Literal gate: PASS on two rows.** `escalation-length30` (-55.6% per paper, test precision 98.2%
+  vs baseline 96.9%) and `sections-core` (-56.4%, test precision 96.3%). **The owner accepted the
+  gate and both ADRs on 2026-11-18.**
+- **The accepted caveat:** both rows pass by emitting less. Test retention is **56.7%** for the
+  escalation row and **27.8%** for section targeting. Under ADR-0021 (accepted 2026-11-18) every row
+  reports both retention numbers, and no measured row reaches 90% retention.
+- **Operating point adopted:** ADR-0022 selects `p2-05-length30-v1`; the config lock is now
+  `status: accepted`. Stage 2 remains projected, not measured at scale.
 
 ## Measured rows
 

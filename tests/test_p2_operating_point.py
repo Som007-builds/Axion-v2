@@ -1,4 +1,4 @@
-"""Regression tests for the locked (proposed) P2 operating point."""
+"""Regression tests for the locked (accepted) P2 operating point."""
 
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ def _config() -> dict[str, object]:
     return yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
 
 
-def test_config_is_present_and_still_proposed() -> None:
+def test_config_is_present_and_accepted() -> None:
     config = _config()
-    assert config["status"] == "proposed"
+    assert config["status"] == "accepted"
     assert config["adr"] == "ADR-0022"
 
 

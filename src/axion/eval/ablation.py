@@ -122,7 +122,7 @@ class SplitScore(BaseModel):
     emitted: int
     claim_aligned: int
     claim_correct: int
-    # ADR-0021 (proposed): retention over gold claims in ``core`` sections, so a
+    # ADR-0021 (accepted 2026-11-18): retention over gold claims in ``core`` sections, so a
     # configuration that reads fewer sections is not scored on claims it never saw.
     core_gold: int
     core_retained: int
@@ -576,7 +576,8 @@ def render_report(scores: Sequence[ConfigScore], *, baseline_name: str = "baseli
         "  baseline claim (same sentence; see the `matching` column). Wilson 95% CI.",
         "- **Retention (all)**: share of the 200 gold claims the configuration still emits.",
         "- **Retention (core)**: share of the gold claims in `core` sections (abstract/results/"
-        "conclusion) that it still emits — ADR-0021, proposed. It shows what a configuration",
+        "conclusion) that it still emits — ADR-0021, accepted 2026-11-18. "
+        "It shows what a configuration",
         "  gives up by reading fewer sections instead of hiding it in one blended rate.",
         "- **Unverifiable rate**: share of evaluated output that matches no gold row.",
         "- **Cost**: list-price USD from the ledger. Free tier: real spend is $0.",

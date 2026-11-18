@@ -341,8 +341,8 @@ approve ADR-0020 and any small-tier adoption before P3.
 
 ## ADR-0021 — P2 reports two retention numbers and cost per core-section claim
 
-**Date:** 2026-11-16 — **Status:** Proposed (owner instruction at P2-02 review, 2026-11-16). The gate is
-**not** changed until the owner approves this ADR.
+**Date:** 2026-11-16 — **Status:** Accepted (owner decision, 2026-11-18). The gate wording is
+unchanged; both retention numbers and `$/core-section claim` are reported for every configuration.
 
 **Context.** P2-02 measured that section targeting removes most of the audited output: the `core` set
 (abstract/results/conclusion) held only **57 of 200 gold claims (28.5%)**, so the lever showed −56.4%
@@ -352,7 +352,7 @@ reproduce (sections it read but produced nothing usable). Passing the whole P2 p
 number would let a cheap configuration win by simply reading less. P3 will need to know which
 sections the *relied-upon* claims actually live in before that is decided.
 
-**Decision (proposed).** Every P2 configuration reports:
+**Decision.** Every P2 configuration reports:
 1. **Retention — all claims:** share of the 200 gold claims the configuration still emits (today's
    number, unchanged).
 2. **Retention — core-section claims:** share of the **57** gold claims whose recorded section matches
@@ -378,13 +378,13 @@ convenient subset (not comparable across rows).
 **Consequences:** the ablation harness must emit both retention numbers and `$/core-section claim`
 for every row; existing rows are recomputed from the same artifacts (no new labels, no new LLM
 calls). Rows with a different section set remain comparable because the core definition is fixed in
-config, not per configuration. Promotion to Accepted is the owner's call, together with any change to
-the gate wording.
+config, not per configuration. Accepted 2026-11-18; the gate wording is unchanged, and the
+operating-point decision records the retention consequence.
 
 ## ADR-0022 — P2 operating point: length-risk escalation
 
-**Date:** 2026-11-17 — **Status:** Proposed (agent recommendation; owner approval required before P2-08
-locks it, and before P3 uses it).
+**Date:** 2026-11-17 — **Status:** Accepted (owner decision, 2026-11-18). P2-08's "proposed" lock is
+promoted to accepted; P3 may use this operating point.
 
 **Context.** Six measured P2 rows exist (`docs/reports/P2-frontier.md`): baseline, `sections-core`,
 `batching`, `student-minilm`, `escalation-length30`, `flywheel-student`. Three levers are negatives on
@@ -393,7 +393,7 @@ retains ~30% of audited output. The literal PRD §P2 gate (≥50% savings within
 precision) is passed by **two** rows: `sections-core` (−56.4%, test precision 96.3%, test retention
 **27.8%**) and `escalation-length30` (−55.6%, test precision 98.2%, test retention **56.7%**).
 
-**Decision (proposed).** The P2 operating point is **`p2-05-length30-v1`**: the frozen
+**Decision.** The P2 operating point is **`p2-05-length30-v1`**: the frozen
 `student-v1-minilm-lr` on every paper (0 LLM calls), the longest **30%** of papers replaying the
 frozen `gemini-3.5-flash-lite` teacher, and `gemini-3.8-flash` only for an escalated paper with no
 accepted claim (which did not trigger on gold; projected 3.2% of papers).
@@ -408,13 +408,12 @@ rather than works better.
 (fails the cost target at −37.7% and halves yield); `student-minilm`/`flywheel-student` (no provider
 cost but ~30% retention, and they still need escalation to be a pipeline); baseline (no savings).
 
-**Consequences and open points.** The gate is judged on precision **and** agreement with baseline;
-`escalation-length30` clears precision but retains 56.7%, so the gate verdict depends on the
-ADR-0021 definition the owner has not yet approved. Savings exclude stage 2, which is projected to
-add $0.000335/paper (54.8% savings) and was never measured at scale. `s` is a priced compute
-assumption, not a bill. P2-08 must lock this configuration only after the owner accepts ADR-0021 and
-this ADR; if the owner instead requires ≥90% retention, **no measured row passes** and the honest
-outcome is the negative result plus the best frontier point.
+**Consequences and accepted caveats.** ADR-0021 and this ADR were accepted on 2026-11-18. The literal
+PRD gate is recorded as PASS on `escalation-length30`; the **56.7% test retention is a stated
+limitation**, not a silent pass, and no measured row reaches 90% retention. Savings exclude stage 2,
+which is projected to add $0.000335/paper (54.8% savings) and was never measured at scale. `s` is a
+priced compute assumption, not a bill. If a later phase requires ≥90% retention, this operating point
+must be revisited; the negative-result alternative remains documented in `docs/reports/P2-cascade.md`.
 
 ## ADR template
 ```

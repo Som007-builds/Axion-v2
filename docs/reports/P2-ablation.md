@@ -11,7 +11,7 @@
 - **Aligned precision**: `CORRECT / aligned` over output that matches a gold-labelled
   baseline claim (same sentence; see the `matching` column). Wilson 95% CI.
 - **Retention (all)**: share of the 200 gold claims the configuration still emits.
-- **Retention (core)**: share of the gold claims in `core` sections (abstract/results/conclusion) that it still emits — ADR-0021, proposed. It shows what a configuration
+- **Retention (core)**: share of the gold claims in `core` sections (abstract/results/conclusion) that it still emits — ADR-0021, accepted 2026-11-18. It shows what a configuration
   gives up by reading fewer sections instead of hiding it in one blended rate.
 - **Unverifiable rate**: share of evaluated output that matches no gold row.
 - **Cost**: list-price USD from the ledger. Free tier: real spend is $0.

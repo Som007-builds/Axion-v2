@@ -140,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
         "- `$/paper` is list price from the ledger (free tier: real spend is $0).",
         "- `savings` is relative to the P1 baseline's measured `$0.005645/paper`.",
         "- `retention (test)` is the share of the 200 gold claims still emitted; `core` is",
-        "  the ADR-0021 (proposed) view over abstract/results/conclusion claims.",
+        "  the ADR-0021 (accepted 2026-11-18) view over abstract/results/conclusion claims.",
         "- `e` is the escalation rate actually realised; `s` is the measured student compute",
         "  time priced at an **ASSUMPTION** of $0.05 per CPU-hour (ADR-0020).",
         "",
@@ -201,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
     # Among gate-passing rows, keep the one that retains the most audited output,
     # then the cheaper one: a configuration that passes on cost and precision by
-    # reading almost nothing is not an operating point (ADR-0021, proposed).
+    # reading almost nothing is not an operating point (ADR-0021, accepted 2026-11-18).
     best = (
         max(passing, key=lambda item: (item["retention"], -(item["cost"] or 0.0)))
         if passing
@@ -224,9 +224,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"{_pct(best['test_precision'])}, retention {_pct(best['retention'])}.",
                 "",
                 "It passes the literal gate (cost and precision) but its retention is the weak",
-                "point, so it is proposed in an ADR rather than adopted here. Under ADR-0021",
-                "(proposed) the agreement-with-baseline requirement would also apply, and that",
-                "decision is the owner's.",
+                "point. The owner accepted ADR-0021 and ADR-0022 on 2026-11-18, so the operating",
+                "point is adopted with 56.7% retention recorded as a stated limitation.",
             ]
         )
 
