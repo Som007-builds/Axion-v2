@@ -29,6 +29,7 @@ REPORT = ROOT / "docs" / "reports" / "P3-03-agreement.md"
 SUMMARY = OUT / "p3-03-agreement.json"
 
 CLASSES = ("RELIES_ON", "MENTIONS", "UNRELATED", "insufficient_context")
+NEGATIVE_FLOOR = 15  # ADR-0023 Amendment C: below this, negative-side kappa is not estimable
 SEED = 20261118
 BOOTSTRAP = 2000
 
@@ -161,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     left_counts = Counter(left)
     positive = left_counts["RELIES_ON"] / total
     negatives = sum(count for name, count in left_counts.items() if name != "RELIES_ON")
+    negative_side_estimable = negatives >= NEGATIVE_FLOOR
     matrix = {a: {b: 0 for b in (*CLASSES, "skip")} for a in (*CLASSES, "skip")}
     for a, b in zip(left, right, strict=True):
         matrix[a][b] += 1
@@ -189,6 +191,7 @@ def main(argv: list[str] | None = None) -> int:
         "design_weighted_kappa": round(weighted_kappa(left, right, weights), 4),
         "positive_prevalence_labeler_1": round(positive, 4),
         "negative_rows": negatives,
+        "negative_side_estimable": negative_side_estimable,
         "per_class": per_class,
         "confusion": matrix,
         "disagreements": disagreements,
@@ -237,8 +240,15 @@ def main(argv: list[str] | None = None) -> int:
         "*depresses* κ relative to a balanced design (the prevalence effect), so the value here is",
         "conservative; PABAK is shown because it ignores prevalence and therefore reads higher by",
         "construction. Only",
-        f"{negatives} negative rows carry the negative side, so one disagreement there is worth",
-        "about 17 percentage points of that side's agreement - do not read it as a rate.",
+        f"{negatives} negative rows carry the negative side, so one disagreement there is",
+        "worth about 17 percentage points of that side's agreement - not a rate.",
+        (
+            f"\n**Negative-side κ is not estimable**: {negatives} negative rows is below the "
+            f"{NEGATIVE_FLOOR}-row floor in ADR-0023 Amendment C. Agreement on `MENTIONS`,"
+            "\n`UNRELATED` and `insufficient_context` is a raw count here, not a rate."
+            if not negative_side_estimable
+            else ""
+        ),
         "",
         "## Confusion matrix (labeler 1 rows, labeler 2 columns)",
         "",
@@ -261,8 +271,6 @@ def main(argv: list[str] | None = None) -> int:
     else:
         lines.append("None: the two labelers agreed on every row.")
     limits = [
-        "- Single overlap, one pair of labelers, 31 rows: the interval is wide and this does not",
-        "  estimate corpus-level reliability.",
         "- The four-class matrix has a structurally empty `insufficient_context` row because",
         "  labeler 1 skipped nothing in wave 1.",
     ]
@@ -279,10 +287,30 @@ def main(argv: list[str] | None = None) -> int:
             "  (test-retest) is the cheap check that would separate these; until then this is",
             "  consistency, not established reliability.",
         ]
-    lines += [
+    protocol = [
         "",
+        "## Protocol checks (ADR-0023 Amendment C)",
+        "",
+        "- **Blinded subset:** the export's row ids match the selection file exactly; any",
+        "  mismatch is rejected before comparison.",
+        (
+            f"- **Negative floor (>= {NEGATIVE_FLOOR} rows): met** with {negatives} negative rows."
+            if negative_side_estimable
+            else f"- **Negative floor (>= {NEGATIVE_FLOOR} rows): NOT met** - only {negatives} "
+            "negative rows, so negative-side κ is not estimable and is reported as a count."
+        ),
+        "- **Isolation of labeler 1's labels: NOT met for wave 1.** The labelled export sat in",
+        "  `eval/audit/p3-03/` next to labeler 2's packet, so exposure cannot be excluded. Wave",
+        "  1's agreement is therefore recorded as consistency only; the isolation rule applies",
+        "  from wave 2.",
+        "",
+    ]
+    lines += protocol
+    lines += [
         "## Limits",
         "",
+        "- Single overlap, one pair of labelers, 31 rows: the interval is wide and this does not",
+        "  estimate corpus-level reliability.",
         *limits,
         "- Claim-level linking (P3-06) is a different task and is not measured here.",
         "",

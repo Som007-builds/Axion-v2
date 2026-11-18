@@ -19,8 +19,11 @@ not agreement between two exchangeable raters. The overlap is positive-heavy, wh
 *depresses* κ relative to a balanced design (the prevalence effect), so the value here is
 conservative; PABAK is shown because it ignores prevalence and therefore reads higher by
 construction. Only
-6 negative rows carry the negative side, so one disagreement there is worth
-about 17 percentage points of that side's agreement - do not read it as a rate.
+6 negative rows carry the negative side, so one disagreement there is
+worth about 17 percentage points of that side's agreement - not a rate.
+
+**Negative-side κ is not estimable**: 6 negative rows is below the 15-row floor in ADR-0023 Amendment C. Agreement on `MENTIONS`,
+`UNRELATED` and `insufficient_context` is a raw count here, not a rate.
 
 ## Confusion matrix (labeler 1 rows, labeler 2 columns)
 
@@ -35,6 +38,16 @@ about 17 percentage points of that side's agreement - do not read it as a rate.
 ## Disagreements
 
 None: the two labelers agreed on every row.
+
+## Protocol checks (ADR-0023 Amendment C)
+
+- **Blinded subset:** the export's row ids match the selection file exactly; any
+  mismatch is rejected before comparison.
+- **Negative floor (>= 15 rows): NOT met** - only 6 negative rows, so negative-side κ is not estimable and is reported as a count.
+- **Isolation of labeler 1's labels: NOT met for wave 1.** The labelled export sat in
+  `eval/audit/p3-03/` next to labeler 2's packet, so exposure cannot be excluded. Wave
+  1's agreement is therefore recorded as consistency only; the isolation rule applies
+  from wave 2.
 
 ## Limits
 

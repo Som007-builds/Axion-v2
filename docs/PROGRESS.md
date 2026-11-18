@@ -130,6 +130,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-18 — Buffy — Amendment C: overlap isolation and negative floor
+- ADR-0023 gained **Amendment C** (owner instruction): from wave 2 the labeler-1 export is never shared with labeler 2 (blind HTML/CSV only), the returned export is checked against the blinded subset, and an overlap needs **≥15 negative rows** or the report declares negative-side κ not estimable.
+- Wave 1 is recorded as **not meeting the isolation rule** (its export sat in `eval/audit/p3-03/` beside labeler 2's packet), so its 31/31 agreement stays consistency only; the owner declined the test-retest for now.
+- Enforcement is in code, not prose: `scripts/dependency_agreement.py` now carries `NEGATIVE_FLOOR = 15`, records `negative_side_estimable` in the JSON, and prints a **Protocol checks** section stating the blinded-subset check, the negative floor and the isolation failure.
+- Files: `docs/DECISIONS.md` (Amendment C), `docs/reports/P3-03-agreement.md`, `eval/audit/p3-03/p3-03-agreement.json`, `tests/test_dependency_agreement.py`.
+- Next: wave-2 decision (owner) and P3-04 baselines.
+
 ### 2026-11-18 — Buffy — wave-1 metrics measured
 - New `scripts/dependency_metrics.py` (+ `tests/test_dependency_metrics.py`, 7 tests) reports class counts overall and by frame/split, the design-weighted uniform base rate, the Amendment B frames, the cue-enrichment comparison, the positives-needed table and a wave-2 recommendation.
 - **Counts (150 rows):** 25 `RELIES_ON` / 120 `MENTIONS` / 5 `UNRELATED` / 0 `insufficient_context`. Uniform 30: 7/22/1. Enriched 120: 18/98/4. dev 73: 13/58/2. test 77: 12/62/3. Text-bearing 116: 22/92/2. Stub stratum 34: 3/28/3.

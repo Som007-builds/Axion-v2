@@ -52,6 +52,7 @@
     "friend"
   ],
   "negative_rows": 6,
+  "negative_side_estimable": false,
   "notes": [
     "kappa is conditioned on labeler 1: labeler 1's labels chose these rows",
     "6 negative rows: negative-class agreement is the least stable part",

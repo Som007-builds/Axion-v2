@@ -121,6 +121,7 @@ def test_main_flags_degenerate_kappa_and_writes_the_report(
     assert summary["rows"] == 6
     assert summary["cohen_kappa"] == 1.0
     assert summary["degenerate"] is True
+    assert summary["negative_side_estimable"] is False
     assert "degenerate" in (tmp_path / "report.md").read_text(encoding="utf-8").lower()
 
 

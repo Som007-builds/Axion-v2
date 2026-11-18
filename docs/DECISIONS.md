@@ -614,6 +614,35 @@ would vanish), while folding them in lets title-only rows dominate false alarms 
 Reporting both keeps the detector-facing number and the workload-representative number separately
 honest.
 
+### Amendment C — overlap protocol from wave 2 on (isolation and negative coverage)
+
+**Decision.** Four rules apply to every second-labeler overlap from wave 2 on.
+
+1. **Isolation of the two labelers.** Labeler 1's labelled file must never sit in a directory, share or
+   message that labeler 2 can reach. Labeler 2 receives **only** the blind HTML (and, if they ask for
+   one, the blind CSV whose label columns are blank). No path containing labeler 1's labels is shared,
+   and the packet is not built in the same folder as that export.
+2. **Subset check before any comparison.** The returned export is checked against the blinded
+   selection's row ids, counts and class mix; an export that is not exactly that subset is rejected
+   rather than compared. This is enforced in `scripts/dependency_agreement.py`, which refuses to run on
+   a mismatched export.
+3. **Negative floor: at least 15 negative rows.** Beyond the `RELIES_ON` rows, an overlap must contain
+   at least **15** negative rows across `MENTIONS`, `UNRELATED` and `insufficient_context`. If the
+   realised wave cannot supply 15, the overlap is still built and labelled, but the agreement report
+   must state that **κ on the negative side is not estimable**, and negative-class agreement is reported
+   as a raw count, not a rate. Below 15 rows one disagreement moves a rate by more than 6 points, which
+   is the threshold at which the number stops being information.
+4. **Recorded guarantees.** The overlap's selection file records the row counts per class, and the
+   agreement report states explicitly whether the negative floor was met, whether the export matched
+   the blinded subset, and whether the isolation rule held.
+
+**Wave 1 does not meet rule 1.** `dependency_audit_v1_wave1_labelled.csv` sat in
+`eval/audit/p3-03/` next to `p3-03-wave1-overlap2-labeler.html`, so labeler 2's exposure to labeler 1's
+labels **cannot be excluded**. Combined with zero discordant pairs (degenerate κ) and only 6 negative
+rows (below the 15-row floor), wave 1's 31/31 agreement is recorded as **consistency only, not
+established reliability**, and the negative side is reported as a count. The owner declined the 10-row
+blind test-retest for now (2026-11-18); that remains the cheap way to harden this result later.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title
