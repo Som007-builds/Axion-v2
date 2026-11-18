@@ -549,10 +549,12 @@ consequences are recorded here rather than discovered later:
   the statistic; report it with an interval and do not read a 1-row disagreement as a rate. The
   `insufficient_context` class is empty in labeler 1's labels, so it contributes nothing to agreement
   and the four-class confusion matrix has a structurally empty row.
-- **Provenance:** the returned export's `labeler` column reads `Muse-agent`, which is the owner's own
-  labeler-id string; the owner attests the 150 rows are their own labels (`Soham`, 2026-11-18). The
-export is committed unedited as evidence and this attestation is the record; no label value was
-altered and no agent created a label.
+- **Provenance and labeler id.** The 150 rows are the owner's own labels. The `labeler` column reads
+  `Soham` in every artefact; the first return carried the mis-set id string `Muse-agent` and was
+  corrected on the owner's instruction (2026-11-18). The pre-correction export remains in the history
+  of commit `bbcd377`, so the correction is auditable. **From now on labeler identity is recorded as
+  `Soham`** — never the agent-style string, in the label export, the overlap selection file, the
+  reports and this ADR. No label value was altered and no agent created a label.
 
 ### Amendment B — the 34 title-only stub rows are a pre-registered reporting stratum
 
