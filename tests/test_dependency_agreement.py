@@ -10,7 +10,9 @@ import pytest
 from scripts.dependency_agreement import (
     AgreementError,
     cohen_kappa,
+    isolation_audit,
     main,
+    negative_side,
     read_labels,
     weighted_kappa,
 )
@@ -149,3 +151,112 @@ def test_main_rejects_an_export_that_is_not_the_blinded_overlap(
 
     with pytest.raises(AgreementError, match="not the blinded overlap"):
         main([])
+
+
+def test_negative_side_reports_kappa_and_specificity_separately() -> None:
+    row_ids = ["a", "b", "c", "d"]
+    left = {"a": "MENTIONS", "b": "UNRELATED", "c": "RELIES_ON", "d": "MENTIONS"}
+    right = {"a": "MENTIONS", "b": "MENTIONS", "c": "RELIES_ON", "d": "RELIES_ON"}
+
+    side = negative_side(left, right, row_ids)
+
+    assert side["rows"] == 3, "only labeler 1's negative rows are in scope"
+    assert side["called_positive_by_labeler_2"] == 1
+    assert side["specificity"] == pytest.approx(2 / 3, abs=1e-4)
+    assert side["kappa"] is not None
+    assert side["specificity_ci"] is not None
+
+
+def test_negative_side_handles_a_wave_with_no_negatives() -> None:
+    side = negative_side({"a": "RELIES_ON"}, {"a": "RELIES_ON"}, ["a"])
+    assert side == {"rows": 0, "kappa": None, "specificity": None, "specificity_ci": None}
+
+
+def test_isolation_audit_passes_a_clean_handoff(tmp_path: Path, monkeypatch) -> None:
+    import scripts.dependency_agreement as module
+
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    handoff = tmp_path / "eval" / "audit" / "handoff"
+    handoff.mkdir(parents=True)
+    blind = _write(
+        handoff / "overlap-blind.csv",
+        [{"row_id": "a", "label": "", "labeler": ""}],
+        ["row_id", "label", "labeler"],
+    )
+    export = _write(
+        handoff / "overlap_labelled.csv",
+        [{"row_id": "a", "label": "RELIES_ON", "labeler": "friend"}],
+        ["row_id", "label", "labeler"],
+    )
+    (handoff / "README.md").write_text("only blind files here\n", encoding="utf-8")
+
+    checks = isolation_audit(
+        export,
+        {"handoff_dir": "eval/audit/handoff"},
+        labeler_1="Soham",
+        labeler_2="friend",
+        owner_pace_s=38.0,
+        second_pace_s=120.0,
+        blind_path=blind,
+    )
+
+    assert {check["verdict"] for check in checks} <= {"pass", "weak"}
+    assert any(check["verdict"] == "weak" for check in checks), "pace is never proof"
+
+
+def test_isolation_audit_flags_a_foreign_export_and_leaked_columns(
+    tmp_path: Path, monkeypatch
+) -> None:
+    import scripts.dependency_agreement as module
+
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    handoff = tmp_path / "eval" / "audit" / "handoff"
+    handoff.mkdir(parents=True)
+    blind = _write(
+        handoff / "overlap-blind.csv",
+        [{"row_id": "a", "label": "", "labeler": ""}],
+        ["row_id", "label", "labeler"],
+    )
+    export = _write(
+        handoff / "overlap_labelled.csv",
+        [{"row_id": "a", "label": "RELIES_ON", "labeler": "friend", "weight": "9.0"}],
+        ["row_id", "label", "labeler", "weight"],
+    )
+    (handoff / "dependency_audit_v1_wave2_labelled.csv").write_text("row_id\n", encoding="utf-8")
+
+    checks = isolation_audit(
+        export,
+        {"handoff_dir": "somewhere/else"},
+        labeler_1="Soham",
+        labeler_2="friend",
+        owner_pace_s=38.0,
+        second_pace_s=120.0,
+        blind_path=blind,
+    )
+
+    failed = {check["check"] for check in checks if check["verdict"] == "fail"}
+    assert "export sits in the declared handoff directory" in failed
+    assert "handoff directory holds only blind artefacts" in failed
+    assert "export carries no internal columns" in failed
+
+
+def test_isolation_audit_flags_identical_labeler_ids(tmp_path: Path, monkeypatch) -> None:
+    import scripts.dependency_agreement as module
+
+    monkeypatch.setattr(module, "ROOT", tmp_path)
+    export = _write(
+        tmp_path / "overlap_labelled.csv",
+        [{"row_id": "a", "label": "RELIES_ON", "labeler": "Soham"}],
+        ["row_id", "label", "labeler"],
+    )
+    checks = isolation_audit(
+        export,
+        {"handoff_dir": ""},
+        labeler_1="Soham",
+        labeler_2="Soham",
+        owner_pace_s=None,
+        second_pace_s=None,
+        blind_path=None,
+    )
+    failed = {check["check"] for check in checks if check["verdict"] == "fail"}
+    assert "labeler ids differ" in failed

@@ -41,6 +41,8 @@
   "degenerate": true,
   "design_weighted_kappa": 1.0,
   "disagreements": [],
+  "isolation": [],
+  "isolation_failures": [],
   "kappa_ci95": [
     1.0,
     1.0
@@ -52,6 +54,20 @@
     "friend"
   ],
   "negative_rows": 6,
+  "negative_side": {
+    "called_positive_by_labeler_2": 0,
+    "classes_seen": [
+      "MENTIONS",
+      "UNRELATED"
+    ],
+    "kappa": 1.0,
+    "rows": 6,
+    "specificity": 1.0,
+    "specificity_ci": [
+      0.6097,
+      1.0
+    ]
+  },
   "negative_side_estimable": false,
   "notes": [
     "kappa is conditioned on labeler 1: labeler 1's labels chose these rows",
@@ -59,6 +75,7 @@
     "the overlap is positive-heavy, so kappa is depressed relative to a balanced design",
     "degenerate: zero discordant pairs, so kappa is exactly 1 and the bootstrap interval cannot move; this cannot separate genuine reliability from a shared heuristic or from labeler 2 having seen labeler 1's labels"
   ],
+  "off_diagonal_cells": 0,
   "pabak": 1.0,
   "per_class": {
     "MENTIONS": {
@@ -84,5 +101,6 @@
   },
   "positive_prevalence_labeler_1": 0.8065,
   "raw_agreement": 1.0,
-  "rows": 31
+  "rows": 31,
+  "wave": "wave 1"
 }
