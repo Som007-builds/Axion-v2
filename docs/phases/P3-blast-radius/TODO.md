@@ -21,7 +21,8 @@
   - notes:
     - 2026-11-18 16:02: P2 gate accepted; claiming P3-01. Plan: guideline v1 with illustrative edge cases, a seeded 20-context pilot packet, and blank labels. The agent will not create labels; the owner labels the packet and the notes drive guideline v1.1.
     - 2026-11-18 16:09: guideline v1 + `scripts/dependency_pilot.py` + `eval/audit/dependency_pilot_v1.csv` committed as `dafa9dd`. Packet: **20 blank-label rows across 20 source papers**, seed `20261118`; it intentionally includes retraction notices, reference-list fragments, and grouped citations as edge cases. No labels created by the agent.
-    - **BLOCKED on owner:** label the 20 `label` cells in the CSV (add a `note` on every non-obvious row; fill `labeler` and `date`). Unblocks: return the labelled CSV; then compute agreement, refine the guideline to v1.1, record pilot notes, and mark this task `[x]`.
+    - 2026-11-18: packet extended with `paragraph_text` and a source-abstract `source_claim_text` proxy (not a linked claim); built the blank-label labeler `eval/audit/dependency_pilot_labeler.html` (self-contained, blind, localStorage autosave, CSV export). No labels created.
+    - **BLOCKED on owner:** open `eval/audit/dependency_pilot_labeler.html`, label the 20 rows (add a `note` on every non-obvious row), then click **Export CSV** and send `dependency_pilot_v1_labelled.csv` back. Unblocks: return the labelled CSV; then compute agreement, refine the guideline to v1.1, record pilot notes, and mark this task `[x]`.
   - done: — | evidence: —
 
 ### [ ] P3-02 — Candidate generator
@@ -106,6 +107,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-18 — opencode — P3-01 blank-label HTML labeler added; packet now carries paragraph and source-claim proxy — next: owner exports labels, then guideline v1.1 and P3-02
 - 2026-11-18 — opencode — P3-01 guideline v1 + 20-context blank pilot packet committed (`dafa9dd`); owner labeling pending — next: owner labels, then guideline v1.1 and P3-02
 
 ## Phase exit checklist

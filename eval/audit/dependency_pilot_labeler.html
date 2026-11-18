@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P3-01 Dependency Pilot Labeler</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1d2430;
+    --muted: #5d6878;
+    --line: #d8dde6;
+    --accent: #1d4ed8;
+    --accent-soft: #e8efff;
+    --relies: #0b6b3a;
+    --relies-soft: #e6f6ed;
+    --mentions: #8a5a00;
+    --mentions-soft: #fff4dc;
+    --unrelated: #8a1c1c;
+    --unrelated-soft: #fdecec;
+    --skip: #5d6878;
+    --skip-soft: #eef1f5;
+    --mark: #fff0a8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11151c;
+      --card: #1a202a;
+      --ink: #e8edf5;
+      --muted: #a8b3c4;
+      --line: #303a49;
+      --accent: #8fb2ff;
+      --accent-soft: #1d2b47;
+      --relies: #7fd6a6;
+      --relies-soft: #123326;
+      --mentions: #f0c46a;
+      --mentions-soft: #34280d;
+      --unrelated: #f3a3a3;
+      --unrelated-soft: #3a1717;
+      --skip: #a8b3c4;
+      --skip-soft: #232b37;
+      --mark: #5a4a00;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 16px 24px;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+  h2 { margin: 0 0 12px; font-size: 18px; }
+  h3 { margin: 20px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .sub { margin: 0; color: var(--muted); font-size: 13px; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .toolbar progress { width: min(280px, 45vw); height: 10px; }
+  .toolbar .spacer { flex: 1; }
+  button {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--unrelated); }
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+    gap: 18px;
+    max-width: 1380px;
+    margin: 20px auto;
+    padding: 0 24px 40px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.05);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--skip-soft);
+    color: var(--skip);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .pill.relies { background: var(--relies-soft); color: var(--relies); }
+  .pill.mentions { background: var(--mentions-soft); color: var(--mentions); }
+  .pill.unrelated { background: var(--unrelated-soft); color: var(--unrelated); }
+  .kv { display: flex; gap: 8px; margin: 4px 0; font-size: 14px; }
+  .kv b { flex: 0 0 120px; color: var(--muted); font-weight: 650; }
+  .kv span { min-width: 0; overflow-wrap: anywhere; }
+  blockquote {
+    margin: 0;
+    padding: 12px 14px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .paragraph {
+    max-height: 280px;
+    overflow: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  mark { background: var(--mark); color: var(--ink); padding: 0 1px; border-radius: 2px; }
+  .hint { color: var(--muted); font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .empty { color: var(--muted); font-style: italic; }
+  details.guideline {
+    margin-top: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+  }
+  details.guideline summary { cursor: pointer; font-weight: 650; }
+  details.guideline a { color: var(--accent); }
+  details.guideline ol { margin: 10px 0 0 20px; padding: 0; }
+  details.guideline li { margin: 6px 0; }
+  .labelCard { position: sticky; top: 118px; }
+  @media (max-width: 980px) { .labelCard { position: static; } }
+  .buttons { display: grid; gap: 10px; margin: 8px 0 16px; }
+  .buttons button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 15px;
+    border-width: 2px;
+  }
+  .buttons button[data-label="RELIES_ON"] { border-color: color-mix(in srgb, var(--relies) 45%, var(--line)); }
+  .buttons button[data-label="MENTIONS"] { border-color: color-mix(in srgb, var(--mentions) 45%, var(--line)); }
+  .buttons button[data-label="UNRELATED"] { border-color: color-mix(in srgb, var(--unrelated) 45%, var(--line)); }
+  .buttons button[data-label="insufficient_context"] { border-color: var(--line); }
+  .buttons button.active[data-label="RELIES_ON"] { background: var(--relies-soft); border-color: var(--relies); }
+  .buttons button.active[data-label="MENTIONS"] { background: var(--mentions-soft); border-color: var(--mentions); }
+  .buttons button.active[data-label="UNRELATED"] { background: var(--unrelated-soft); border-color: var(--unrelated); }
+  .buttons button.active[data-label="insufficient_context"] { background: var(--skip-soft); border-color: var(--skip); }
+  kbd {
+    font: 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 6px;
+    background: var(--bg);
+  }
+  label[for="note"] { display: block; margin-bottom: 6px; font-weight: 650; }
+  textarea {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font: inherit;
+  }
+  textarea:focus, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .rowStatus {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--skip-soft);
+    color: var(--muted);
+    font-size: 13px;
+    min-height: 42px;
+  }
+  .warning {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--mentions-soft);
+    color: var(--mentions);
+    font-size: 13px;
+  }
+  .footerNote { color: var(--muted); font-size: 12px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>P3-01 dependency pilot</h1>
+  <p class="sub">
+    Blind review: no model output is shown. Label the relation between the citing context and the
+    source paper. One row at a time.
+  </p>
+  <div class="toolbar">
+    <strong id="progressText">0 / 0</strong>
+    <progress id="progressBar" value="0" max="1"></progress>
+    <span id="progressDetail" class="hint"></span>
+    <span class="spacer"></span>
+    <button id="prevBtn" type="button">← Previous</button>
+    <button id="nextBtn" type="button">Next →</button>
+    <button id="exportBtn" class="primary" type="button">Export CSV</button>
+    <button id="resetBtn" class="danger" type="button">Reset saved progress</button>
+  </div>
+</header>
+<main>
+  <section class="card" aria-live="polite">
+    <div class="meta">
+      <span id="rowCounter">Row</span>
+      <span id="statusPill" class="pill">unlabeled</span>
+    </div>
+    <p id="storageWarning" class="warning" hidden></p>
+    <h2 id="citerTitle">Loading…</h2>
+    <div class="kv"><b>Citing paper</b><span id="citerPmcid"></span></div>
+    <div class="kv"><b>Section</b><span id="section"></span></div>
+    <div class="kv"><b>Marker</b><span id="marker"></span></div>
+    <h3>Citing sentence</h3>
+    <blockquote id="contextText"></blockquote>
+    <h3>Surrounding paragraph</h3>
+    <div id="paragraphText" class="paragraph"></div>
+    <h3>Source paper (A)</h3>
+    <div class="kv"><b>Title</b><span id="sourceTitle"></span></div>
+    <div class="kv"><b>PMCID</b><span id="sourcePmcid"></span></div>
+    <div class="kv"><b>PMID / DOI</b><span id="sourceIds"></span></div>
+    <div class="kv"><b>Retraction</b><span id="retractionIds"></span></div>
+    <h3>Source claim text <span class="hint">(abstract-sentence proxy; specific claim linking is P3-06)</span></h3>
+    <blockquote id="sourceClaimText"></blockquote>
+    <details class="guideline">
+      <summary>Decision procedure (short copy) — open the full guideline</summary>
+      <p>
+        <a href="../../docs/eval/DEPENDENCY_GUIDELINE.md" target="_blank" rel="noreferrer">
+          docs/eval/DEPENDENCY_GUIDELINE.md
+        </a>
+      </p>
+      <p><b>RELIES_ON:</b> B's claim/argument is supported by, derived from, or conditional on a specific
+        claim in A. Counterfactual: if A's claim were removed or invalidated, B's assertion would need
+        to change.</p>
+      <p><b>MENTIONS:</b> B cites A, but B's claim does not depend on A's specific claim. Background,
+        credit, topic pointer, standard method/tool, or contrast that B's claim survives.</p>
+      <p><b>UNRELATED:</b> the marker does not actually connect the asserted content to A (reference
+        fragment, misattribution, or no assertion about A).</p>
+      <ol>
+        <li>Resolve the target A. Multiple sources in one marker: label each source separately.</li>
+        <li>Read the sentence, paragraph, and section; do not label from the reference title alone.</li>
+        <li>State B's assertion in this context.</li>
+        <li>Run the counterfactual. Yes → RELIES_ON; no but still refers → MENTIONS; no and not
+          about A → UNRELATED.</li>
+        <li>If the text is genuinely insufficient, use <b>insufficient_context</b>: leave the label
+          blank, write a note, and do not guess.</li>
+      </ol>
+    </details>
+  </section>
+  <section class="card labelCard">
+    <h2>Label this context-source edge</h2>
+    <div class="buttons" id="labelButtons">
+      <button type="button" data-label="RELIES_ON"><span>RELIES_ON</span><kbd>1</kbd></button>
+      <button type="button" data-label="MENTIONS"><span>MENTIONS</span><kbd>2</kbd></button>
+      <button type="button" data-label="UNRELATED"><span>UNRELATED</span><kbd>3</kbd></button>
+      <button type="button" data-label="insufficient_context"><span>insufficient_context</span><kbd>4</kbd></button>
+    </div>
+    <label for="note">Note <span class="hint">(short reason; required for non-obvious rows)</span></label>
+    <textarea id="note" rows="4" placeholder="e.g. A's effect size is a premise for B's model; or background-only citation."></textarea>
+    <div id="rowStatus" class="rowStatus">No label selected for this row.</div>
+    <p class="footerNote">
+      Keys: 1/2/3/4 choose a label, ←/→ move rows, 0 clears this row. Autosave is local to this
+      browser. Export downloads a CSV with the same columns plus labeler=Soham and date=2026-11-18.
+    </p>
+  </section>
+</main>
+<script id="pilot-data" type="application/json">{"columns": ["pilot_id", "citer_pmcid", "citer_title", "source_pmcid", "source_title", "source_pmid", "source_doi", "retraction_record_ids", "context_id", "section", "marker", "ref_label", "context_text", "paragraph_text", "source_claim_text", "label", "note", "labeler", "date", "guideline_version"], "rows": [{"pilot_id": "P3P-001", "citer_pmcid": "PMC9432686", "citer_title": "Retraction: Potential of antiviral peptide-based SARS-CoV-2 inactivators to combat COVID-19", "source_pmcid": "PMC9165783", "source_title": "Potential of antiviral peptide-based SARS-CoV-2 inactivators to combat COVID-19", "source_pmid": "35657783", "source_doi": "10.1371/journal.pone.0268919", "retraction_record_ids": "38876", "context_id": "PMC9432686:p0:c0", "section": "", "marker": "1", "ref_label": "1.", "context_text": "The PLOS ONE Editors retract this article [1] because it was identified as one of a series of submissions for which we have concerns about authorship, competing interests, and peer review.", "paragraph_text": "The PLOS ONE Editors retract this article [1] because it was identified as one of a series of submissions for which we have concerns about authorship, competing interests, and peer review. We regret that the issues were not addressed prior to the article’s publication.", "source_claim_text": "The appearance of new variants of severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2) and the lack of effective antiviral therapeutics for coronavirus disease 2019 (COVID-19), a highly infectious disease caused by the virus, demands the search for alternative therapies.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-002", "citer_pmcid": "PMC3055872", "citer_title": "Predictors of Retention among Men Attending STI Clinics in HIV Prevention Programs and Research: A Case Control Study in Pune, India", "source_pmcid": "PMC2763673", "source_title": "Profile of Clients Tested HIV Positive in a Voluntary Counseling and Testing Center of a District Hospital, Udupi, South Kannada", "source_pmid": "19876475", "source_doi": "10.4103/0970-0218.42051", "retraction_record_ids": "3537", "context_id": "PMC3055872:p20:c17", "section": "Discussion", "marker": "[18]", "ref_label": "18.", "context_text": "As majority of VCT center attendees in the Government sector facilities in India are less educated [18], special efforts to improve their retention in primary prevention will be required.", "paragraph_text": "Being employed was a common predictor of lower retention across all the three study models. Level of education showed likelihood of retention across all three modeled scenarios. Education level among high risk men in India is low [12]–[13]. Additional efforts are required to be made for the less educated or illiterate men to effectively retain them in primary prevention programs and clinical trials. Similar observations have been made in other studies among men who have sex with men [14]–[16]. Our observation also corroborated with a similar observation in NIMH HIV prevention trial [17]. As majority of VCT center attendees in the Government sector facilities in India are less educated [18], special efforts to improve their retention in primary prevention will be required. Additionally, we observed that retention was less among employed men although the education level is expected to be high among them. Paucity of time could be the logical limiting reason for employed men to come for repeated follow-up visits as reported by several investigators [19]–[21]. To facilitate retention, it might be necessary to keep the health facilities and research clinics open and available out of routine work hours.", "source_claim_text": "The growing menace created by the HIV/AIDS (human immunodeficiency virus/acquired immunodeficiency syndrome) has alarmed not only the public health officials but also the general community.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-003", "citer_pmcid": "PMC8894692", "citer_title": "Role of genomics in combating COVID-19 pandemic", "source_pmcid": "PMC8547852", "source_title": "Analysis of 329,942 SARS-CoV-2 records retrieved from GISAID database", "source_pmid": "34735950", "source_doi": "10.1016/j.compbiomed.2021.104981", "retraction_record_ids": "36850", "context_id": "PMC8894692:p10:c45", "section": "Genomic surveillance > Sequencing initiatives across the world", "marker": "Zelenova et al., 2021", "ref_label": "", "context_text": "Due to the lack of proper quality control for genomic data, there were many sequences that were significantly shorter or longer than the reference genome (Zelenova et al., 2021).", "paragraph_text": "Sequencing data of SARS-COV-2 genomes from multiple countries across the world are now shared through open access repositories like Global Initiative on Sharing All Influenza Data (GISAID). GISAID was originally developed for rapid international exchange of all influenza viral genomes and related clinical data (Shu and McCauley, 2017), but it has now been expanded to include SARS-CoV-2 genomic data. The first SARS-CoV-2 whole-genome sequences were made publicly available on GISAID's SARS-CoV-2 database on January 10, 2020, allowing for worldwide responses to the pandemic (Lu et al., 2020). Within six months more than 57,000 SARS-CoV-2 genomes from around 100 countries were deposited. GISAID combines sequence data with epidemiological information and provides real-time genomic surveillance to monitor the emergence of SARS-CoV-2 variants in different parts of the world. GISAID is the most commonly used database for the SARS-CoV-2. As of December 2021, more than 5.7 million SARS-CoV-2 genome sequences from nearly 200 countries around the world were shared on the GISAID database (https://www.gisaid.org/). The largest proportion of sequences shared from Europe (58.2%), then North America (31.8%), Asia (5.8%), South America (1.9%), Africa (1.16%), with the fewest from Oceania (0.91%) (https://www.gisaid.org/). In addition to GISAID, other existing genomic and proteomic databases have been updated and used to provide SARS-CoV-2 resources (listed in Table 2 ). Some databases like China National Center for Bioinformation (CNCB) (https://ngdc.cncb.ac.cn/ncov/) combine information from five different sources – National Microbiome Data Collaborative (NMDC), China National Genebank Database (CNGdb), GISAID, Genome warehouse, and NCBI GenBank. However, accurate SARS-CoV-2 genomic surveillance has been hampered by several issues. The sequencing quality of SARS-CoV-2 genomes in public databases varies for a number of reasons like sequencing methods and laboratory-specific implementation, which can lead to significant bias while studying SARS-CoV-2 variants and evolution dynamics. Due to the lack of proper quality control for genomic data, there were many sequences that were significantly shorter or longer than the reference genome (Zelenova et al., 2021). A database update can be highly recommended in order to increase the quality of the genomic data. So many user-friendly web-based tools were created to overcome the problem of data processing and interpretation, for example, Phylogenetic Assignment of Named Global Outbreak Lineages (PANGOLIN) (https://pangolin.cog-uk.io/) for lineage assignment, Nextstrain (https://nextstrain.org/), CoVizu (http://filogeneti.ca/covizu/), and Microreact (https://microreact.org/) for data visualization. All these databases aided the scientists in deciphering SARS-CoV-2 mutations, developing appropriate diagnostic kits, and tracking the outbreaks all around the planet.Table 2List of commonly used SARS-CoV-2 genomic/proteomic databases.DatabaseData type (No. of entries)1ReferencesSource linkGISAID SARS-CoV-2 databaseSARS-CoV-2 genome sequences (3,445,483)Khare et al., 2021https://www.gisaid.org/DNA Databank of Japan (DDBJ)Sequence data of SARS-CoV-2 (47 entries)Okido et al., 2021https://www.ddbj.nig.ac.jp/EMBL-EBI COVID-19 Data Portal (CDP)Sequences (485,396), Raw reads (167,051), Sequenced samples (376,298), Studies (392), Genes (22), Browser (1), Variants (12,691)De Silva et al., 2021, Harrison et al., 2021https://www.ebi.ac.uk/ena/pathogens/covid-19https://www.covid19dataportal.org/NCBI SARS-CoV-2 ResourcesSRA runs (1,107,163), Nucleotide records (1,368,700), Clinical studies related to COVID-19 (6,533), PubMed (175,769), PMC (202,051)Sayers et al., 2022https://www.ncbi.nlm.nih.gov/sars-cov-2/NGDC-CNCB’s Resource for Coronavirus 2019 (RCoV19)Coronavirus Sequence (7,801,242), New Coronavirus Strain (3,597,465), Novel Coronavirus Sequence (3,617,804).Gong et al., 2020, Song et al., 2020, Zhao et al., 2020https://ngdc.cncb.ac.cn/ncov/PDBe-KB (Protein Data Bank in Europe) – COVID-19 Data PortalEntries (1849), Macromolecules (867), ompounds (725), Protein families (171)Varadi et al., 2022https://www.ebi.ac.uk/pdbe/covid-19CoV3DSARS-CoV-2 protein structures: spike (467), protease (374), NSP (458)Gowthaman et al., 2021https://cov3d.ibbr.umd.edu/RCSB-PDB (Protein Data Bank)PDB Structures (1449 files)Burley et al., 2021https://rcsb.org/covid191As of 03.12.2021.", "source_claim_text": "The SARS-CoV-2 virus caused a worldwide pandemic – although none of its predecessors from the coronavirus family ever achieved such a scale.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-004", "citer_pmcid": "PMC8829135", "citer_title": "Management of and Revitalization Strategy for Megacities Under Major Public Health Emergencies: A Case Study of Wuhan", "source_pmcid": "PMC7943712", "source_title": "The prediction of the lifetime of the new coronavirus in the USA using mathematical models", "source_pmid": "33716562", "source_doi": "10.1007/s00500-021-05643-2", "retraction_record_ids": "41016", "context_id": "PMC8829135:p1:c0", "section": "Introduction", "marker": "1", "ref_label": "1.", "context_text": "On December 8, 2019, pneumonia of unknown cause appeared in Wuhan, and indications pointed to a novel coronavirus, SARS-CoV-2 (1).", "paragraph_text": "On December 8, 2019, pneumonia of unknown cause appeared in Wuhan, and indications pointed to a novel coronavirus, SARS-CoV-2 (1). Facing the rampant spread of the disease and with increased awareness of the virus (2), Wuhan moved to close all transportation access into and out of the city on January 23, 2020, to prevent further spread of the virus (3). Two specialized hospitals, the Huoshen Mountain and Leishen Mountain Hospitals, were quickly built to receive and treat severe COVID-19 patients, and several public buildings were modified and furnished to serve as temporary hospitals with numerous beds for patients with mild symptoms (4, 5). The complete lockdown stopped the increase in confirmed cases, and centralized treatment led to a rapid decline in the number of infected people. After only 76 days, there were no remaining or additional confirmed cases for several consecutive weeks, and on April 8, 2020, Wuhan reopened for business and life, meaning that it had successfully contained the pandemic (6, 7). That the pandemic was curbed quickly demonstrates the resilience of Wuhan (8).", "source_claim_text": "The World Health Organization (WHO) on December 31, 2019, was informed of several cases of respiratory diseases of unknown origin in the city of Wuhan in the Chinese Province of Hubei, the clinical manifestations of which were similar to those of viral pneumonia and manifested as fever, cough, and shortness of breath.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-005", "citer_pmcid": "PMC4745270", "citer_title": "Retracted: Cure of Chronic Viral Infection and Virus-Induced Type 1 Diabetes by Neutralizing Antibodies", "source_pmcid": "PMC2270746", "source_title": "Cure of Chronic Viral Infection and Virus-Induced Type 1 Diabetes by Neutralizing Antibodies", "source_pmid": "16603445", "source_doi": "10.1080/17402520600579028", "retraction_record_ids": "2464", "context_id": "PMC4745270:p0:c0", "section": "", "marker": "1", "ref_label": "1", "context_text": "The paper titled “Cure of Chronic Viral Infection and Virus-Induced Type 1 Diabetes by Neutralizing Antibodies” [1] has been retracted as it was found that the paper was unintentionally published twice by the journal's former publisher.", "paragraph_text": "The paper titled “Cure of Chronic Viral Infection and Virus-Induced Type 1 Diabetes by Neutralizing Antibodies” [1] has been retracted as it was found that the paper was unintentionally published twice by the journal's former publisher. The version of record of this paper is available at http://dx.doi.org/10.1080/17402520600800721.", "source_claim_text": "The use of neutralizing antibodies is one of the most successful methods to interfere with receptor–ligand interactions in vivo.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-006", "citer_pmcid": "PMC6286756", "citer_title": "STING Signaling Promotes Apoptosis, Necrosis, and Cell Death: An Overview and Update", "source_pmcid": "PMC5964311", "source_title": "Stimulator of Interferon Genes in Classical Dendritic Cells Controls Mucosal Th17 Responses to Cyclic Dinucleotides for Host Defenses Against Microbial Infections in Gut", "source_pmid": "29868030", "source_doi": "10.3389/fimmu.2018.01085", "retraction_record_ids": "20682", "context_id": "PMC6286756:p2:c6", "section": "1. Introduction", "marker": "6", "ref_label": "6.", "context_text": "Also, STING is capable of directly sensing bacterial and viral messengers under certain conditions [3, 5, 6].", "paragraph_text": "In antigen-presenting cells (e.g., macrophages and dendritic cells), STING can cooperate with other molecules (e.g., cGAS) to recognize DNA for TBK1/IRF3 and NF-κB pathway activation and subsequent IFN and TNF production, respectively [3, 4]. Also, STING is capable of directly sensing bacterial and viral messengers under certain conditions [3, 5, 6]. The cellular and molecular process of STING signaling in innate immunity has been well reviewed elsewhere [7–9]. The potential application of targeting the STING pathway for cancer immunotherapy has been reviewed as well [10]. The complex of STING agonist and nanoparticles has been tested in antitumor therapy. Following membrane rupture and oxidative stress of tumor cells by cytotoxic nanoparticles, STING activation can enhance antitumor immunity by increasing expansion of tumor-infiltrating antigen-presenting cells and CD8+ T cells [11].", "source_claim_text": "Cyclic dinucleotides are bacterial signal transducers that bind to host intracellular protein, stimulator of interferon genes (STING) encoded by Tmem173.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-007", "citer_pmcid": "PMC9842993", "citer_title": "“Underneath the visible” - COVID-19 Risk prediction tools in a high-volume, low-resource Emergency Department", "source_pmcid": "PMC8792125", "source_title": "Comparison of the Performance of Various Scores in Predicting Mortality Among Patients Hospitalized With COVID-19", "source_pmid": "35111439", "source_doi": "10.7759/cureus.20751", "retraction_record_ids": "36358", "context_id": "PMC9842993:p4:c0", "section": "INTRODUCTION", "marker": "1", "ref_label": "1", "context_text": "The unwavering COVID-19 pandemic has affected economies and health infrastructures globally1,2, especially low and middle-income countries (LMIC’s) like Pakistan.3-5 The World Health Organization (WHO) surveillance data has reported 599,825,400 confirmed cases and 6,469,458 deaths globally.6 Emergency departments (ED) are combating the full spectrum of the disease, as patients’ progress to respiratory failure within 24 hours7 with a mortality of 2-3%.4 This steep progression poses a challenge in clinical decision-making6 and highlights the importance of patient risk stratification, in low-resource ED’S.", "paragraph_text": "The unwavering COVID-19 pandemic has affected economies and health infrastructures globally1,2, especially low and middle-income countries (LMIC’s) like Pakistan.3-5 The World Health Organization (WHO) surveillance data has reported 599,825,400 confirmed cases and 6,469,458 deaths globally.6 Emergency departments (ED) are combating the full spectrum of the disease, as patients’ progress to respiratory failure within 24 hours7 with a mortality of 2-3%.4 This steep progression poses a challenge in clinical decision-making6 and highlights the importance of patient risk stratification, in low-resource ED’S.", "source_claim_text": "Coronavirus disease 2019 (COVID-19) is a major social and economic challenge, devastating the health care system in several countries around the world.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-008", "citer_pmcid": "PMC5720812", "citer_title": "Pre-clinical antigenicity studies of an innovative multivalent vaccine for human visceral leishmaniasis", "source_pmcid": "PMC3919100", "source_title": "Immunomodulation in Human Dendritic Cells Leads to Induction of Interferon-Gamma Production by Leishmania donovani Derived KMP-11 Antigen via Activation of NF-κB in Indian Kala-Azar Patients", "source_pmid": "24587999", "source_doi": "10.1155/2014/947606", "retraction_record_ids": "41480", "context_id": "PMC5720812:p47:c48", "section": "Discussion", "marker": "40", "ref_label": "40", "context_text": "In agreement with previous observations [40–42], we demonstrated the immunogenicity of KMP11 in humans.", "paragraph_text": "In agreement with previous observations [40–42], we demonstrated the immunogenicity of KMP11 in humans. In fact, KMP11 was the antigen that generated a better response in the VL patients PBMCs stimulation experiments, with a significant increase in IFN-γ production by cells collected from cured VL patients compared with cells from matching endemic controls (Fig 2i). Such an observation was paramount to the final decision to include this particular antigen as a component of the innovative vaccine candidate. A possible explanation for the weak KMP11 immunogenicity detected in mice, which contrasts with previous studies in animals, is the use of the recombinant protein in opposition with the use of different DNA-based or heterologous recombinant live-vaccine approaches [21, 43–45].", "source_claim_text": "Dendritic cells (DCs) and macrophages (MΦs) are well-known antigen presenting cells with an ability to produce IL-12 which indicates that they have potential of directing acquired immunity toward a Th1-biased response.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-009", "citer_pmcid": "PMC12316195", "citer_title": "Two Decades of Human Rabies in Brazil: Epidemiological Trends, Emerging Risks and Treatment Challenges", "source_pmcid": "PMC7266186", "source_title": "Survival in human rabies but left against medical advice and death followed – Community education is the need of the hour", "source_pmid": "32509681", "source_doi": "10.4103/jfmpc.jfmpc_1079_19", "retraction_record_ids": "31285", "context_id": "PMC12316195:p14:c26", "section": "INTRODUCTION", "marker": "25", "ref_label": "25.", "context_text": "The Recife Protocol specifically highlights the risks of both hypernatremia and hyponatremia, which require careful monitoring and intervention 25 .", "paragraph_text": "In 2008, the Recife Protocol, an adaptation of the Milwaukee Protocol, was implemented in Brazil due to the unavailability of the drugs recommended in the original protocol. This protocol was applied for the treatment a 15-year-old boy who was bitten by a bat and sought medical care three weeks after the incident. After 35 days of hospitalization, the patient was cured. In 2018, a second patient in Brazil survived rabies after receiving treatment administered using the Recife Protocol; however, the patient died seven years later in 2025 24 . Both protocols are focused on deep sedation, administration of antiviral drugs, continuous monitoring of electrolyte balance, and management of vasoconstriction associated with the disease. The Recife Protocol specifically highlights the risks of both hypernatremia and hyponatremia, which require careful monitoring and intervention 25 .", "source_claim_text": "Human survival after developing rabies is very scary to humanity.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-010", "citer_pmcid": "PMC9773001", "citer_title": "Sociocultural Costs of the Long-term COVID-19 Outbreak in Bangladesh: A Systematic Review", "source_pmcid": "PMC8594051", "source_title": "“Crisis Within the Walls”: Rise of Intimate Partner Violence During the Pandemic, Indian Perspectives", "source_pmid": "34816184", "source_doi": "10.3389/fgwh.2021.614310", "retraction_record_ids": "42247", "context_id": "PMC9773001:p47:c149", "section": "Discussion", "marker": "Nair and Banerjee (2021)", "ref_label": "", "context_text": "(2021), Nair and Banerjee (2021) have evidenced an increase in domestic violence, IPV and gender-based violence during the COVID-19 lockdown.", "paragraph_text": "The fourth key finding of this study showed that the COVID-19 lockdown increased violence against women. Due to the prolonged lockdown, men had to stay at home for a long time, which in turn led them to engage in different abuse against women (Begum et al., 2020). Likewise, in India, a growing number of studies from Krishnakumar and Verma (2021), Maji et al. (2021), Nair and Banerjee (2021) have evidenced an increase in domestic violence, IPV and gender-based violence during the COVID-19 lockdown. Similarly, Baig et al. (2020), Haq et al. (2020) further showed that in Pakistan, women had to take more responsibility and stay longer hours with their abusive partners during this pandemic. The violence against women is worrisome during the COVID-19 lockdown that demands concerted efforts not only from the government and law enforcement agencies, but also growing awareness among mass people, especially among women to curve this shadow pandemic.", "source_claim_text": "The ongoing coronavirus disease 2019 pandemic has been a social “un-equalizer,” besides being a global health threat.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-011", "citer_pmcid": "PMC11259830", "citer_title": "Nexus among the perceived infrastructural, social, economic, and environmental impact of CPEC: A case of Pakistan", "source_pmcid": "PMC9821420", "source_title": "Does China Pakistan Economic Corridor become an avenue to achieve sustainable development goal no. 2 (food security) in Pakistan: Under the condition of COVID-19?", "source_pmid": "36608046", "source_doi": "10.1371/journal.pone.0279520", "retraction_record_ids": "43635", "context_id": "PMC11259830:p29:c103", "section": "Discussions", "marker": "[82]", "ref_label": "82.", "context_text": "The current analysis has proved that the economic implications are the most significant element of the economic corridor, and these results are consistent with several previous studies [[81], [82], [83]].", "paragraph_text": "The recent economic paradigm of Pakistan made policy developers think and develop policies that strengthened the economic integrity of the country. The success of any development project is determined by its impact on the country's economic growth and output. CPECs intended and developed energy infrastructure could reasonably impact Pakistan's sustainability. Coal-fired power plants could support SDGs related to improving livelihoods and eradicating poverty in nations with insufficient electric power supplies. According to the findings of this research, infrastructure innovation benefits both the community and the host nation. The current analysis has proved that the economic implications are the most significant element of the economic corridor, and these results are consistent with several previous studies [[81], [82], [83]]. Road and transportation infrastructure create job possibilities, boost the local economy, and increase local citizens' income and other economic activities, especially for small enterprises, which ends poverty and raises residents' living standards. These outcomes agree with previous research by Puaschunder [84]. Furthermore, CPEC would enhance rural infrastructure by attracting foreign investors, which would, in turn, lead to the creation of economic prospects. Infrastructure innovation directly contributes to the country's socio-economic development: highways to the sea and airports, infrastructure renovation to industrialization, and energy to special economic zones. These findings are similar to those of the study, which indicated that using higher-quality infrastructure in economic operations increases economic stability [85]. CPEC is the greatest foreign investment undertaken by any country in Pakistan since its independence. The country's GDP growth would improve by around 2 %–4 % once CPEC is fully operational. According to the study and previous literature, once Pakistan's economy is established, it will directly affect its economic growth. These results agree with Yan [86] research, which found that businesses that make more money contribute more to a stable economy.", "source_claim_text": "The post Covid-19 era steer towards stakeholder thinking, which demands to look for sustainable solutions in terms of other epidemics and food security is one of the most notable for the developing world.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-012", "citer_pmcid": "PMC9707851", "citer_title": "Biased, wrong and counterfeited evidences published during the COVID-19 pandemic, a systematic review of retracted COVID-19 papers", "source_pmcid": "PMC8531408", "source_title": "Exploring the potential effect of COVID-19 on an endangered great ape", "source_pmid": "34675230", "source_doi": "10.1038/s41598-021-00061-8", "retraction_record_ids": "35065", "context_id": "PMC9707851:p12:c50", "section": "Results", "marker": "2021", "ref_label": "", "context_text": "2021; Victor 2020a, b; Victor 2020a, b; Colchero et al. 2021; Saha et al. 2021; Ma et al.", "paragraph_text": "For reference, the entirety of the selected papers can be found in Table 1, and their citations are as follows: Ghanchi et al. 2020a, b; Elkhouly et al. 2020; An et al. 2020; Mulvey et al. 2020; Huang et al. 2021; Sun et al. 2020; Huang et al. 2020; Lu et al. 2020; Beato-Víbora 2020; Mehra et al. 2020a, b; Mehra et al. 2020a, b; Walach et al. 2021; Dutta et al. 2021; Friedlich et al. 2021; Ali et al. 2020a, b; Lin 2021; Ali et al. 2020a, b; Khalifa et al. 2020; Gul et al. 2021; Victor 2020a, b; Victor 2020a, b; Colchero et al. 2021; Saha et al. 2021; Ma et al. 2021; Imran et al. 2021; Akbar et al. 2020; Ferdous et al. 2021; Jiménez-Ruiz et al. 2021; Savaris et al. 2021; Grech 2020a, b; Zago Filho et al. 2020; Atangana et al. 2021; Mao et al. 2021; Fioranelli et al. 2020; Deokar et al. 2020; Temmerman 2021; Ibrahimagić et al. 2021; Saxena 2020; Grech 2020a, b; Din et al. 2020; Bae et al. 2020; Zeng et al. 2020; Funck-Brentano et al. 2020; Woodle et al. 2021; Standish 2021; Vainshelboim 2021; Singh 2020; Hays 2020; Kampf 2022; Kory et al. 2021; Messina et al. 2021; Banerjee et al. 2021; Zaidi et al. 2022; Wang et al. 2020; Jin et al. 2021; Zhao et al. 2020; Samaha et al. 2021; Dabbous et al. 2021; Nagra et al. 2021; Dabbous et al. 2021; Hussain et al. 2020; Hariyanto et al. 2019; Hill et al. 2021a, b; Guan et al. 2021; Huang et al. 2020.", "source_claim_text": "The current COVID-19 pandemic has created unmeasurable damages to society at a global level, from the irreplaceable loss of life, to the massive economic losses.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-013", "citer_pmcid": "PMC7889988", "citer_title": "Musculoskeletal disorders (MSDs) and their associated factors among quarry workers in Nigeria: A cross-sectional study", "source_pmcid": "PMC2781122", "source_title": "Musculoskeletal Disorders: Epidemiology and Treatment Seeking Behavior of Secondary School Students in a Nigerian Community", "source_pmid": "19966961", "source_doi": "10.4103/0970-0218.51231", "retraction_record_ids": "3535", "context_id": "PMC7889988:p5:c6", "section": "Introduction", "marker": "Adegbehingbe et al., 2009", "ref_label": "", "context_text": "1995; Punnett and Wegman, 2001; Adegbehingbe et al., 2009; Caicoya and Delclos, 2010; Tinubu et al., 2010; Shafiezadeh, 2011; Kulin and Reaston, 2011).", "paragraph_text": "Musculoskeletal disorders (MSDs) constitute major occupational health problems globally (Ekpenyong and Inyang, 2014; Ayub and Shah, 2018; Rahman et al., 2019). According to the Canadian Centre for Occupational Safety (2015), MSDs are complex group of painful disorders of tendons, muscles and ligaments caused by frequent and recurrent work activities or awkward occupational posture. MSDs commonly affect the musculoskeletal framework of the body such as tendon, ligaments, joints, nerves and blood vessels (Schierhout et al. 1995; Punnett and Wegman, 2001; Adegbehingbe et al., 2009; Caicoya and Delclos, 2010; Tinubu et al., 2010; Shafiezadeh, 2011; Kulin and Reaston, 2011). Accordingly, MSDs occur in nine parts of the body, namely: neck, shoulders, forearms, elbows, lower back, waist, wrists, thighs and knees with diverse rate across the parts of the body (Health and Safety Executive, 2017; Hamid and Mohammad, 2017).", "source_claim_text": "Epidemiological information paucity exists on musculoskeletal disorders (MSD) among secondary school students in Nigeria.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-014", "citer_pmcid": "PMC10373763", "citer_title": "Patterns in Oral Hygiene and Dietary Habits in School Children during the COVID-19 Pandemic", "source_pmcid": "PMC7528894", "source_title": "WITHDRAWN: Safe school reopening under COVID-19 restrictions – Measures implemented in San Andrea independent school in Malta", "source_pmid": "33039258", "source_doi": "10.1016/j.earlhumdev.2020.105207", "retraction_record_ids": "27056", "context_id": "PMC10373763:p36:c37", "section": "Discussion", "marker": "36", "ref_label": "36.", "context_text": "Furthermore, the present findings are also in contrast with a previous study concluding that different localities and schooling types may reflect varying socio-economic status and thereby different levels of oral health literacy.35 The present findings support previous evidences that the reopening of schools is important to safeguard both mental and physical health of children.36", "paragraph_text": "The oral health status of children is influenced by differing social dimensions.34 The present study, however, showed strong similarities in trends between participants from different localities, schools, school types (state and church), and year groups. Their responses were alike and there were no significant differences between the children's reported habits. Furthermore, the present findings are also in contrast with a previous study concluding that different localities and schooling types may reflect varying socio-economic status and thereby different levels of oral health literacy.35 The present findings support previous evidences that the reopening of schools is important to safeguard both mental and physical health of children.36", "source_claim_text": "", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-015", "citer_pmcid": "PMC9158500", "citer_title": "Reconstruction of the Evolutionary Origin, Phylodynamics, and Phylogeography of the Porcine Circovirus Type 3", "source_pmcid": "PMC8471232", "source_title": "Canine Morbillivirus from Colombian Lineage Exhibits In Silico and In Vitro Potential to Infect Human Cells", "source_pmid": "34578231", "source_doi": "10.3390/pathogens10091199", "retraction_record_ids": "40862", "context_id": "PMC9158500:p26:c90", "section": "Discussion", "marker": "Rendon-Marin et al., 2021", "ref_label": "", "context_text": "In tropical rainforests, the boundaries between wild and domestic animals are unclear, and there are often various contacts among different animals, which increases the risk of transmission among different species (Rendon-Marin et al., 2021).", "paragraph_text": "Bats and/or birds are usually the source of multiple viruses or an important intermediate host, including avian influenza, coronavirus, and Zika virus (Dye and Gay, 2003; Bera et al., 2017; Yu et al., 2018; Verdoni et al., 2020; Holmes et al., 2021). We wanted to determine the relationship between PCV3 and Malaysian bat circovirus by combining the phylogeographic and phylogenetic analysis results; however, it was found that so far, no bat circovirus sequence from Malaysia has been deposited in any database. Malaysia has many tropical rainforests, and there are many animals in these rainforests, including bats and birds. In tropical rainforests, the boundaries between wild and domestic animals are unclear, and there are often various contacts among different animals, which increases the risk of transmission among different species (Rendon-Marin et al., 2021). Therefore, researchers need to pay more attention to tropical or subtropical rainforest areas in future epidemic studies.", "source_claim_text": "Canine morbillivirus (CDV) is a viral agent that infects domestic dogs and a vast array of wildlife species.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-016", "citer_pmcid": "PMC11552094", "citer_title": "Development and validation of a nomogram for predicting bacterial infections in patients with acute exacerbation of chronic obstructive pulmonary disease", "source_pmcid": "PMC9225854", "source_title": "Analysis of Microbiological and Clinical Characteristics of Bacterial Infection in Patients with Pulmonary Infection", "source_pmid": "35755768", "source_doi": "10.1155/2022/5607358", "retraction_record_ids": "41982", "context_id": "PMC11552094:p18:c26", "section": "Discussion", "marker": "12", "ref_label": "12", "context_text": "Bacterial infections contribute to up to 50% of acute exacerbations of COPD, leading to increased morbidity and mortality (3,4,8,12).", "paragraph_text": "AECOPD is a complex and heterogeneous disease characterized by chronic airway inflammation. Over the past decade, advancements in modern research techniques have significantly enhanced the understanding of the role of bacterial infection in AECOPD (8). Bacterial infections contribute to up to 50% of acute exacerbations of COPD, leading to increased morbidity and mortality (3,4,8,12). Timely intervention is crucial for reducing the impact of bacterial infections on the health outcomes of patients with AECOPD (7). Previous studies have aimed at developing prediction models for identifying patients with bacterial infections (13-15). Therefore, it is imperative to prioritize this distinct patient cohort and develop a concise yet precise prognostic model that enables clinicians to accurately assess disease severity and optimize therapeutic strategies for improved patient survival.", "source_claim_text": "Using data investigation, the microbiology of bacterial infection in patients with pulmonary infection was discussed, and its clinical characteristics were analyzed.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-017", "citer_pmcid": "PMC9707851", "citer_title": "Biased, wrong and counterfeited evidences published during the COVID-19 pandemic, a systematic review of retracted COVID-19 papers", "source_pmcid": "PMC7568014", "source_title": "A deep learning model and machine learning methods for the classification of potential coronavirus treatments on a single human cell", "source_pmid": "33100894", "source_doi": "10.1007/s11051-020-05041-z", "retraction_record_ids": "31783", "context_id": "PMC9707851:p12:c44", "section": "Results", "marker": "2020", "ref_label": "", "context_text": "2020a, b; Khalifa et al. 2020; Gul et al. 2021; Victor 2020a, b; Victor 2020a, b; Colchero et al.", "paragraph_text": "For reference, the entirety of the selected papers can be found in Table 1, and their citations are as follows: Ghanchi et al. 2020a, b; Elkhouly et al. 2020; An et al. 2020; Mulvey et al. 2020; Huang et al. 2021; Sun et al. 2020; Huang et al. 2020; Lu et al. 2020; Beato-Víbora 2020; Mehra et al. 2020a, b; Mehra et al. 2020a, b; Walach et al. 2021; Dutta et al. 2021; Friedlich et al. 2021; Ali et al. 2020a, b; Lin 2021; Ali et al. 2020a, b; Khalifa et al. 2020; Gul et al. 2021; Victor 2020a, b; Victor 2020a, b; Colchero et al. 2021; Saha et al. 2021; Ma et al. 2021; Imran et al. 2021; Akbar et al. 2020; Ferdous et al. 2021; Jiménez-Ruiz et al. 2021; Savaris et al. 2021; Grech 2020a, b; Zago Filho et al. 2020; Atangana et al. 2021; Mao et al. 2021; Fioranelli et al. 2020; Deokar et al. 2020; Temmerman 2021; Ibrahimagić et al. 2021; Saxena 2020; Grech 2020a, b; Din et al. 2020; Bae et al. 2020; Zeng et al. 2020; Funck-Brentano et al. 2020; Woodle et al. 2021; Standish 2021; Vainshelboim 2021; Singh 2020; Hays 2020; Kampf 2022; Kory et al. 2021; Messina et al. 2021; Banerjee et al. 2021; Zaidi et al. 2022; Wang et al. 2020; Jin et al. 2021; Zhao et al. 2020; Samaha et al. 2021; Dabbous et al. 2021; Nagra et al. 2021; Dabbous et al. 2021; Hussain et al. 2020; Hariyanto et al. 2019; Hill et al. 2021a, b; Guan et al. 2021; Huang et al. 2020.", "source_claim_text": "Coronavirus pandemic is burdening healthcare systems around the world to the full capacity they can accommodate.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-018", "citer_pmcid": "PMC5400320", "citer_title": "Early predictive factors for lower-extremity motor or sensory deficits and surgical results of patients with spinal tuberculosis", "source_pmcid": "PMC4364357", "source_title": "Surgical Management for Thoracic Spinal Tuberculosis Posterior Only versus Anterior Video-Assisted Thoracoscopic Surgery", "source_pmid": "25781165", "source_doi": "10.1371/journal.pone.0119759", "retraction_record_ids": "20961", "context_id": "PMC5400320:p18:c31", "section": "Discussion", "marker": "23", "ref_label": "23", "context_text": "Zhong et al[23] pointed out that both the anterior video-assisted thoracoscopic surgery (VATS) and single-stage posterior debridement, transforaminal thoracic interbody fusion and instrumentation can effectively treat thoracic TB.", "paragraph_text": "The advantages of open operation include thoroughness of debridement, decompression of the spinal cord, and adequate spinal stabilization.[18–22] Among all the surgically treated patients in the current study, there were 6 patients (2.2%) who underwent minimally invasive surgery, anterior decompression, bone grafting, and posterior internal fixation using minimal access pedicle screw system. Zhong et al[23] pointed out that both the anterior video-assisted thoracoscopic surgery (VATS) and single-stage posterior debridement, transforaminal thoracic interbody fusion and instrumentation can effectively treat thoracic TB. Nevertheless, the posterior approach procedure obtained less morbidity and complications than the other. Ito et al[24] indicated that an endoscopic, minimally invasive surgical treatment is effective for rapid pain relief and a problem-free neurological resolution during the early stages of tuberculous spondylodiscitis, and may be a good method for preventing further vertebral collapse and a kyphotic spinal deformity, such as gibbus vertebrae. Kapoor et al[25] indicated that VATS-assisted surgical decompression can be a safe and effective technique for anterior debridement and fusion in TB of the dorsal spine to achieve neurological recovery. With the development of minimally invasive spine surgeries, the STB can be treated with reduced morbidity, blood loss, and hospital stay. Tuberculosis remains a major public health problem; however, before the disease can be treated, it must be recognized. Back pain in a patient with TB should be evaluated. Early initiation of an appropriate treatment regimen may reduce the need for surgical intervention.[24] Mwachaka et al[26] noted that patients with STB in their setting tended to present late and with advanced disease. Therefore, a high index of suspicion should be maintained and appropriate chemotherapy started as early as possible.", "source_claim_text": "To compare the clinical outcomes of surgical treatment by posterior only and anterior video-assisted thoracoscopic surgery for thoracic spinal tuberculosis (TSTB).", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-019", "citer_pmcid": "PMC9459830", "citer_title": "Synthesis, characterization, molecular docking, and anticancer activities of new 1,3,4-oxadiazole-5-fluorocytosine hybrid derivatives", "source_pmcid": "PMC7778709", "source_title": "CoViTris2020 and ChloViD2020: a striking new hope in COVID-19 therapy", "source_pmid": "33389560", "source_doi": "10.1007/s11030-020-10169-0", "retraction_record_ids": "38854", "context_id": "PMC9459830:p4:c31", "section": "Introduction", "marker": "[32]", "ref_label": "32.", "context_text": "They also proposed two new 1,3,4-oxadiazole compounds CoViTris2020 and ChloViD2020 as the first multitarget coronaviral protein blockers with high potency [32].", "paragraph_text": "1,3,4-Oxadiazole is another useful scaffold in medicinal chemistry offering both versatility and structural diversity for the design of drug molecules. In some cases, it serves as a bioisostere for carbonyl-containing compounds like esters, amides, and carbamates, or as a flat aromatic linker to provide the molecular geometry. Stability of the oxadiazole ring and its ability to interact with bio-targets via π –π interaction and strong hydrogen bonding justifies our interest in developing bioactive molecules containing this scaffold [21], [22], [23], [24]. Stecoza and coworkers have synthesized a series of new 2,5-diaryl/heteroaryl-1,3,4-oxadiazoles IV, which showed promising cytotoxicity against HT-29 (colon adenocarcinoma) and MDA-MB-231 (breast adenocarcinoma). 1,3,4-Oxadiazole compounds IV were able to arrest the cell cycle and induced apoptosis in the MDA-MB-231 cell lines [25]. Additionally, a series of new derivatives bearing 1,3,4-oxadiazole moiety V were designed, synthesized, and evaluated for their anticancer activities in four human cancer cell lines (HepG2, A549, MCF-7, and HCT-116). These compounds exhibited significant cytotoxic activity with mitochondrial-mediated apoptosis by decreasing mitochondrial membrane potential, up-regulation of Bax, down-regulation of Bcl-2 and activation levels of the caspase cascade [26]. Cancer patients are particularly vulnerable to coronavirus (COVID-19) [27, 28]. These individuals are not only more susceptible to this infection, but also more frequently develop severe pneumonia during the course of disease [29]. However, limited information is known about the outcome of chemotherapy for cancer patients with prior COVID-19 infection [30]. Meanwhile, Rabie et al. reported that the oxadiazole VI and VII exhibited significant anti-COVID-19 activity (anti-SARS-CoV-2 EC50 = 0.31 and 1.01 μM, respectively), which could be promising lead compound for the design of new anti-COVID-19 agents [31]. They also proposed two new 1,3,4-oxadiazole compounds CoViTris2020 and ChloViD2020 as the first multitarget coronaviral protein blockers with high potency [32].", "source_claim_text": "Designing anticoronavirus disease 2019 (anti-COVID-19) agents is the primary concern of medicinal chemists/drug designers nowadays.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}, {"pilot_id": "P3P-020", "citer_pmcid": "PMC9705106", "citer_title": "Retracted: Analysis of Urban Residents' Consumption Behavior and Influencing Factors of Ecological Agricultural Products in the Post-Pandemic Era of COVID-19", "source_pmcid": "PMC9112176", "source_title": "Analysis of Urban Residents' Consumption Behavior and Influencing Factors of Ecological Agricultural Products in the Post-Pandemic Era of COVID-19", "source_pmid": "35592868", "source_doi": "10.1155/2022/8382247", "retraction_record_ids": "40963", "context_id": "PMC9705106:p0:c0", "section": "", "marker": "1", "ref_label": "1", "context_text": "Applied Bionics and Biomechanics has retracted the article titled “Analysis of Urban Residents' Consumption Behavior and Influencing Factors of Ecological Agricultural Products in the Post-Pandemic Era of COVID-19” [1] due to concerns that the peer review process has been compromised.", "paragraph_text": "Applied Bionics and Biomechanics has retracted the article titled “Analysis of Urban Residents' Consumption Behavior and Influencing Factors of Ecological Agricultural Products in the Post-Pandemic Era of COVID-19” [1] due to concerns that the peer review process has been compromised.", "source_claim_text": "Based on consumer survey data in the post-pandemic era of COVID-19, a binary Logit model was used to analyze the consumers' consumption behavior and the influencing factors of ecological agricultural products in the post-pandemic era.", "label": "", "note": "", "labeler": "", "date": "", "guideline_version": "P3-v1"}]}</script>
+<script>
+(function () {
+  "use strict";
+
+  const PILOT = JSON.parse(document.getElementById("pilot-data").textContent);
+  const COLUMNS = PILOT.columns;
+  const ROWS = PILOT.rows;
+  const STORAGE_KEY = "axion-p3-01-dependency-pilot-v1";
+  const LABELER = "Soham";
+  const LABEL_DATE = "2026-11-18";
+  const GUIDELINE_VERSION = "P3-v1";
+
+  const state = { index: 0, entries: {} };
+  let storageAvailable = true;
+
+  const el = (id) => document.getElementById(id);
+  const escapeHtml = (value) => String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  function entryFor(row) {
+    if (!state.entries[row.pilot_id]) {
+      state.entries[row.pilot_id] = {
+        label: (row.label || "").trim(),
+        note: (row.note || "").trim(),
+        skipped: false,
+      };
+    }
+    return state.entries[row.pilot_id];
+  }
+
+  function loadSaved() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || saved.version !== 1 || !saved.entries) return;
+      state.index = Number.isInteger(saved.index) ? saved.index : 0;
+      state.entries = saved.entries;
+    } catch (error) {
+      storageAvailable = false;
+      el("storageWarning").hidden = false;
+      el("storageWarning").textContent =
+        "Autosave is unavailable in this browser context. Export before closing the tab; progress will not resume.";
+      console.warn("Could not read saved progress", error);
+    }
+  }
+
+  function save() {
+    if (!storageAvailable) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        index: state.index,
+        entries: state.entries,
+      }));
+    } catch (error) {
+      storageAvailable = false;
+      el("storageWarning").hidden = false;
+      el("storageWarning").textContent =
+        "Autosave failed (storage is full or blocked). Export before closing the tab.";
+      console.warn("Could not save progress", error);
+    }
+  }
+
+  function currentRow() {
+    return ROWS[state.index] || null;
+  }
+
+  function doneCount() {
+    return ROWS.filter((row) => {
+      const entry = state.entries[row.pilot_id];
+      return Boolean(entry && (entry.label || entry.skipped));
+    }).length;
+  }
+
+  function renderProgress() {
+    const total = ROWS.length;
+    const done = doneCount();
+    const skipped = ROWS.filter((row) => state.entries[row.pilot_id]?.skipped).length;
+    el("progressText").textContent = `${done} / ${total}`;
+    el("progressBar").max = Math.max(total, 1);
+    el("progressBar").value = done;
+    const remaining = total - done;
+    el("progressDetail").textContent =
+      `${done} labeled · ${skipped} skipped · ${remaining} left`;
+  }
+
+  function renderParagraph(paragraph, sentence) {
+    const text = String(paragraph || "");
+    const target = String(sentence || "");
+    if (!text) return `<span class="empty">No surrounding paragraph was recorded.</span>`;
+    if (!target) return escapeHtml(text);
+    const index = text.indexOf(target);
+    if (index < 0) {
+      return `${escapeHtml(text)}<br><span class="hint">[The citation sentence was not found verbatim in the paragraph; shown separately above.]</span>`;
+    }
+    return [
+      escapeHtml(text.slice(0, index)),
+      "<mark>",
+      escapeHtml(text.slice(index, index + target.length)),
+      "</mark>",
+      escapeHtml(text.slice(index + target.length)),
+    ].join("");
+  }
+
+  function renderStatus(row, entry) {
+    const pill = el("statusPill");
+    pill.className = "pill";
+    if (entry.skipped) {
+      pill.textContent = "skipped: insufficient_context";
+      pill.classList.add("unrelated");
+      el("rowStatus").textContent =
+        "This row will export with a blank label and a note beginning insufficient_context. It is not a gold label.";
+      return;
+    }
+    if (!entry.label) {
+      pill.textContent = "unlabeled";
+      el("rowStatus").textContent = "No label selected for this row.";
+      return;
+    }
+    pill.textContent = entry.label;
+    pill.classList.add(
+      entry.label === "RELIES_ON" ? "relies" :
+      entry.label === "MENTIONS" ? "mentions" :
+      entry.label === "UNRELATED" ? "unrelated" : "unrelated"
+    );
+    if (entry.label === "RELIES_ON") {
+      el("rowStatus").textContent =
+        "RELIES_ON selected: B's assertion depends on a claim in A. Add a note naming the claim or result if it is visible.";
+    } else if (entry.label === "MENTIONS") {
+      el("rowStatus").textContent =
+        "MENTIONS selected: B cites A but does not depend on A's claim. Add a note if the case is close.";
+    } else if (entry.label === "UNRELATED") {
+      el("rowStatus").textContent =
+        "UNRELATED selected: the marker does not connect the asserted content to A. Add a note.";
+    }
+  }
+
+  function render() {
+    const row = currentRow();
+    if (!row) {
+      el("citerTitle").textContent = "No pilot rows found.";
+      el("rowCounter").textContent = "Row 0 of 0";
+      el("prevBtn").disabled = true;
+      el("nextBtn").disabled = true;
+      return;
+    }
+    const entry = entryFor(row);
+    el("rowCounter").textContent = `Row ${state.index + 1} of ${ROWS.length} · ${row.pilot_id}`;
+    el("citerTitle").textContent = row.citer_title || "(untitled citing paper)";
+    el("citerPmcid").textContent = row.citer_pmcid || "";
+    el("section").textContent = row.section || "(no section recorded)";
+    el("marker").textContent = row.marker || "(no marker)";
+    el("contextText").textContent = row.context_text || "(no citing sentence recorded)";
+    el("paragraphText").innerHTML = renderParagraph(row.paragraph_text, row.context_text);
+    el("sourceTitle").textContent = row.source_title || "(untitled source paper)";
+    el("sourcePmcid").textContent = row.source_pmcid || "";
+    el("sourceIds").textContent = [row.source_pmid, row.source_doi].filter(Boolean).join(" · ") || "—";
+    el("retractionIds").textContent = row.retraction_record_ids || "—";
+    el("sourceClaimText").textContent = row.source_claim_text ||
+      "No abstract claim proxy was found for this source paper (it may be withdrawn or unavailable).";
+    el("note").value = entry.skipped && entry.note.startsWith("insufficient_context:")
+      ? entry.note.slice("insufficient_context:".length).trim()
+      : entry.note;
+    document.querySelectorAll("#labelButtons button").forEach((button) => {
+      const label = button.dataset.label;
+      button.classList.toggle(
+        "active",
+        label === "insufficient_context" ? entry.skipped : entry.label === label
+      );
+    });
+    renderStatus(row, entry);
+    renderProgress();
+    el("prevBtn").disabled = state.index <= 0;
+    el("nextBtn").disabled = state.index >= ROWS.length - 1;
+  }
+
+  function setLabel(label) {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    if (label === "insufficient_context") {
+      entry.label = "";
+      entry.skipped = true;
+    } else {
+      entry.label = label;
+      entry.skipped = false;
+    }
+    save();
+    render();
+  }
+
+  function clearLabel() {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    entry.label = "";
+    entry.skipped = false;
+    save();
+    render();
+  }
+
+  function move(delta) {
+    const nextIndex = state.index + delta;
+    if (nextIndex < 0 || nextIndex >= ROWS.length) return;
+    state.index = nextIndex;
+    save();
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function csvEscape(value) {
+    const text = String(value ?? "");
+    if (/[",\r\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+    return text;
+  }
+
+  function exportCsv() {
+    const unlabeled = ROWS.filter((row) => {
+      const entry = state.entries[row.pilot_id];
+      return !entry || (!entry.label && !entry.skipped);
+    }).length;
+    if (unlabeled > 0 && !window.confirm(
+      `${unlabeled} row${unlabeled === 1 ? " is" : "s are"} still unlabeled. Export anyway?`
+    )) return;
+
+    const lines = [COLUMNS.map(csvEscape).join(",")];
+    for (const row of ROWS) {
+      const entry = entryFor(row);
+      const out = { ...row };
+      let note = (entry.note || "").trim();
+      if (entry.skipped) {
+        out.label = "";
+        if (!note.toLowerCase().startsWith("insufficient_context")) {
+          note = note ? `insufficient_context: ${note}` : "insufficient_context";
+        }
+      } else {
+        out.label = entry.label || "";
+      }
+      out.note = note;
+      out.labeler = LABELER;
+      out.date = LABEL_DATE;
+      out.guideline_version = out.guideline_version || GUIDELINE_VERSION;
+      lines.push(COLUMNS.map((column) => csvEscape(out[column])).join(","));
+    }
+
+    const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "dependency_pilot_v1_labelled.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    el("rowStatus").textContent =
+      "Exported dependency_pilot_v1_labelled.csv to your browser downloads. Send that file back.";
+  }
+
+  function resetProgress() {
+    if (!window.confirm("Clear all local labels and notes for this pilot? This cannot be undone.")) return;
+    state.index = 0;
+    state.entries = {};
+    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { console.warn(error); }
+    render();
+  }
+
+  el("prevBtn").addEventListener("click", () => move(-1));
+  el("nextBtn").addEventListener("click", () => move(1));
+  el("exportBtn").addEventListener("click", exportCsv);
+  el("resetBtn").addEventListener("click", resetProgress);
+  el("note").addEventListener("input", (event) => {
+    const row = currentRow();
+    if (!row) return;
+    const entry = entryFor(row);
+    entry.note = event.target.value;
+    if (entry.skipped && !entry.note.trim().toLowerCase().startsWith("insufficient_context")) {
+      // The prefix is added at export time; keep the typed note clean in the UI.
+    }
+    save();
+  });
+  document.querySelectorAll("#labelButtons button").forEach((button) => {
+    button.addEventListener("click", () => setLabel(button.dataset.label));
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.target.closest("textarea, input, [contenteditable='true']")) return;
+    if (event.key === "1") { event.preventDefault(); setLabel("RELIES_ON"); }
+    else if (event.key === "2") { event.preventDefault(); setLabel("MENTIONS"); }
+    else if (event.key === "3") { event.preventDefault(); setLabel("UNRELATED"); }
+    else if (event.key === "4") { event.preventDefault(); setLabel("insufficient_context"); }
+    else if (event.key === "0") { event.preventDefault(); clearLabel(); }
+    else if (event.key === "ArrowLeft") { event.preventDefault(); move(-1); }
+    else if (event.key === "ArrowRight") { event.preventDefault(); move(1); }
+  });
+
+  loadSaved();
+  render();
+})();
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import csv
 import random
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -42,6 +43,8 @@ COLUMNS = (
     "marker",
     "ref_label",
     "context_text",
+    "paragraph_text",
+    "source_claim_text",
     "label",
     "note",
     "labeler",
@@ -68,6 +71,37 @@ def _parse_cached(
         paper = None
     parsed[pmcid] = paper
     return paper
+
+
+def _source_claim_text(paper: ParsedPaper | None) -> str:
+    """Return one short abstract sentence as a source-claim proxy, not a linked claim."""
+    if paper is None:
+        return ""
+    for section in paper.sections:
+        title = (section.title or "").lower()
+        if "abstract" not in title:
+            continue
+        for paragraph in section.paragraphs:
+            text = " ".join(paragraph.text.split())
+            if not text:
+                continue
+            for sentence in re.split(r"(?<=[.!?])\s+", text):
+                candidate = sentence.strip()
+                lowered = candidate.lower()
+                if len(candidate) < 60:
+                    continue
+                if lowered.startswith(("introduction", "background", "objective", "methods")):
+                    continue
+                if lowered.startswith(
+                    (
+                        "this article has been withdrawn",
+                        "the full elsevier",
+                        "the publisher apologizes",
+                    )
+                ):
+                    continue
+                return candidate[:700]
+    return ""
 
 
 def _source_targets(
@@ -150,7 +184,7 @@ def _pick_rows(
                     "citer_pmcid": citer.paper_id or cite.citer_pmcid,
                     "citer_title": citer.title or "",
                     "source_pmcid": source_pmcid,
-                    "source_title": source_parsed.title if source_parsed else "",
+                    "source_title": (source_parsed.title or "") if source_parsed else "",
                     "source_pmid": source_paper.pmid or "",
                     "source_doi": source_paper.doi or "",
                     "retraction_record_ids": ";".join(source_paper.rw_record_ids),
@@ -159,6 +193,8 @@ def _pick_rows(
                     "marker": context.marker,
                     "ref_label": context.ref_label or "",
                     "context_text": context.text,
+                    "paragraph_text": context.paragraph_text,
+                    "source_claim_text": _source_claim_text(source_parsed),
                     "label": "",
                     "note": "",
                     "labeler": "",
