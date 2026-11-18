@@ -1,15 +1,1 @@
-{
-  "contexts": 6117,
-  "enriched_rows": 120,
-  "expected_positives": 3.0,
-  "linked_share": 0.6733,
-  "overlap_rows": 30,
-  "seed": 20261119,
-  "sources": 258,
-  "split_rows": {
-    "dev": 73,
-    "test": 77
-  },
-  "uniform_rows": 30,
-  "wave_rows": 150
-}
+{"cap_truncated_sources":7,"contexts":6117,"enriched_rows":120,"expected_positives":3,"linked_share":0.6733,"max_rows_per_source":14,"overlap_rows":30,"seed":20261119,"sources":258,"sources_over_cap":6,"split_rows":{"dev":73,"test":77},"stub_rows":34,"text_bearing_rows":116,"uniform_rows":30,"wave_rows":150}

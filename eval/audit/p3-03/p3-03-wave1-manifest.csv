@@ -1,151 +1,151 @@
-row_id,ctx_id,citer_pmcid,source_pmcid,section,section_bucket,frame,stratum,inclusion_prob,weight,cue_score,cues,linked,split,overlap
-P3W1-001,PMC4001014:p27:c118,PMC4001014,PMC2678250,Subsets of Memory CD4 T Cells in TB,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false
-P3W1-002,PMC4372528:p52:c92,PMC4372528,PMC2678250,"Materials and Methods > TB patients, TM staining and cytokine detection",Methods,enriched,Methods,0.10638298,9.4,1,based_on,true,dev,false
-P3W1-003,PMC4704670:p24:c36,PMC4704670,PMC2678250,DISCUSSION,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,false
-P3W1-004,PMC4440314:p14:c25,PMC4440314,PMC3012077,Materials and methods > Cell viability assay,Methods,enriched,Methods,0.10638298,9.4,2,based_on;method_word,true,dev,true
-P3W1-005,PMC6668838:p1:c2,PMC6668838,PMC3012077,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,method_word,true,dev,false
-P3W1-006,PMC9281562:p50:c383,PMC9281562,PMC3012077,9 Epigenetic Manipulations > 9.1 Therapeutic Modulation of Chromatin Structure > 9.1.2 Histone Deacetylase Inhibition,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,true
-P3W1-007,PMC7086963:p14:c9,PMC7086963,PMC3037383,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,2,we_used;method_word,true,dev,true
-P3W1-008,PMC7652626:p10:c20,PMC7652626,PMC3544391,2. Methods > 2.2. Study Methods,Methods,enriched,Methods,0.10638298,9.4,1,based_on,true,dev,false
-P3W1-009,PMC5291100:p3:c15,PMC5291100,PMC3884778,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,comparison,true,dev,false
-P3W1-010,PMC8716055:p13:c38,PMC8716055,PMC4237371,Materials and methods > Statistical methods > Cox proportional hazard model (Cox PH),Methods,enriched,Methods,0.10638298,9.4,1,method_word,true,dev,false
-P3W1-011,PMC12661238:p31:c43,PMC12661238,PMC4319784,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,false
-P3W1-012,PMC6284502:p7:c12,PMC6284502,PMC5563917,Strengthening of immunodominance hierarchy might reduce the VE for H3N2,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false
-P3W1-013,PMC6443583:p42:c39,PMC6443583,PMC5964311,Conclusion,Conclusion,uniform,uniform,0.00490436,203.9,0,,true,dev,true
-P3W1-014,PMC7230749:p17:c105,PMC7230749,PMC6057395,3. Recommendations and Conclusions,Conclusion,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-015,PMC7882632:p2:c11,PMC7882632,PMC6537736,Introduction,Introduction,uniform,uniform,0.00490436,203.9,1,based_on,true,dev,false
-P3W1-016,PMC10183856:p27:c21,PMC10183856,PMC7133645,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,false,dev,true
-P3W1-017,PMC7187838:p25:c76,PMC7187838,PMC7133645,Discussion > Principal findings,Discussion,enriched,Discussion,0.11036789,9.0606,2,comparison;method_word,false,dev,true
-P3W1-018,PMC7187838:p28:c145,PMC7187838,PMC7133645,Discussion > Strengths and limitations,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,false,dev,false
-P3W1-019,PMC7212949:p47:c289,PMC7212949,PMC7133645,OBSTETRICS MANIFESTATIONS > COVID-19,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false
-P3W1-020,PMC7212949:p47:c290,PMC7212949,PMC7133645,OBSTETRICS MANIFESTATIONS > COVID-19,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false
-P3W1-021,PMC7428686:p6:c15,PMC7428686,PMC7133645,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,false,dev,false
-P3W1-022,PMC7969862:p3:c5,PMC7969862,PMC7133645,Effect of COVID-19 in pregnant women,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false
-P3W1-023,PMC8056848:p22:c139,PMC8056848,PMC7133645,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,false,dev,false
-P3W1-024,PMC7396961:p13:c74,PMC7396961,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,true,dev,false
-P3W1-025,PMC7412090:p9:c27,PMC7412090,PMC7185795,3. Results > 3.1. Targeted Enzyme Inhibitors > 3.1.1. RNA-Dependent RNA Polymerase Inhibitors > Favipiravir,Results,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-026,PMC7472403:p77:c90,PMC7472403,PMC7185795,Results > Treatments > Question 12: Should favipiravir be used to treat patients with COVID-19 to improve clinical outcomes? > Evidence summary,Results,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-027,PMC7524677:p7:c21,PMC7524677,PMC7185795,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,numeric_effect,true,dev,false
-P3W1-028,PMC7755570:p3:c6,PMC7755570,PMC7185795,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,dev,false
-P3W1-029,PMC7890447:p18:c108,PMC7890447,PMC7185795,Pharmacotherapeutic agents used in treatment and management of COVID-19 > Favipiravir,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,true
-P3W1-030,PMC8059985:p27:c22,PMC8059985,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,numeric_effect;comparison,true,dev,true
-P3W1-031,PMC8237135:p20:c69,PMC8237135,PMC7185795,Antivirals > Favipiravir (FPR),Other,uniform,uniform,0.00490436,203.9,1,numeric_effect,true,dev,false
-P3W1-032,PMC8239658:p9:c31,PMC8239658,PMC7185795,CLINICAL EVIDENCE OF ANTIVIRAL AGENTS,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-033,PMC8332739:p26:c19,PMC8332739,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,based_on;method_word,true,dev,true
-P3W1-034,PMC8627269:p43:c115,PMC8627269,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,false
-P3W1-035,PMC8931493:p26:c19,PMC8931493,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,true
-P3W1-036,PMC8931493:p26:c22,PMC8931493,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,true,dev,false
-P3W1-037,PMC9696372:p20:c51,PMC9696372,PMC7185795,4. Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-038,PMC8096756:p65:c61,PMC8096756,PMC7195270,Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,false,dev,false
-P3W1-039,PMC9946891:p8:c16,PMC9946891,PMC7227562,INTRODUCTION,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,false,dev,false
-P3W1-040,PMC8114243:p16:c25,PMC8114243,PMC7250775,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,method_word,true,dev,false
-P3W1-041,PMC10016932:p20:c77,PMC10016932,PMC7255293,Management,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false
-P3W1-042,PMC10016932:p20:c78,PMC10016932,PMC7255293,Management,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false
-P3W1-043,PMC10636520:p18:c64,PMC10636520,PMC7255293,Alert > Research,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false
-P3W1-044,PMC7334645:p46:c209,PMC7334645,PMC7255293,Clinical practice guidelines in anti-SARS-CoV-2 antiviral therapy including chloroquine/hydroxy chloroquine,Other,enriched,Other,0.11254019,8.8857,1,based_on,false,dev,false
-P3W1-045,PMC7441141:p14:c24,PMC7441141,PMC7255293,Science-based communication during the COVID-19 pandemic,Other,enriched,Other,0.11254019,8.8857,1,based_on,false,dev,false
-P3W1-046,PMC7462881:p4:c17,PMC7462881,PMC7255293,Preprints: Accelerated Research Transmission in a Pandemic,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,dev,false
-P3W1-047,PMC7558783:p15:c19,PMC7558783,PMC7255293,Results,Results,enriched,Results,0.11111111,9.0,1,based_on,false,dev,false
-P3W1-048,PMC7810282:p14:c57,PMC7810282,PMC7255293,HCQ in COVID-19 disease,Other,uniform,uniform,0.00490436,203.9,1,method_word,false,dev,false
-P3W1-049,PMC7953944:p25:c53,PMC7953944,PMC7255293,Results > Popularity index (PI),Results,uniform,uniform,0.00490436,203.9,0,,false,dev,false
-P3W1-050,PMC8179078:p46:c141,PMC8179078,PMC7255293,Stage 3: science communication > A surge of preprints and their misuse,Other,uniform,uniform,0.00490436,203.9,0,,false,dev,false
-P3W1-051,PMC8640856:p24:c23,PMC8640856,PMC7255293,DISCUSSION,Discussion,enriched,Discussion,0.11036789,9.0606,2,based_on;comparison,false,dev,true
-P3W1-052,PMC8698695:p32:c42,PMC8698695,PMC7332909,DISCUSSION,Discussion,uniform,uniform,0.00490436,203.9,1,comparison,true,dev,false
-P3W1-053,PMC7983424:p13:c165,PMC7983424,PMC7470341,Results,Results,enriched,Results,0.11111111,9.0,1,method_word,true,dev,false
-P3W1-054,PMC7983424:p23:c546,PMC7983424,PMC7470341,Results,Results,enriched,Results,0.11111111,9.0,1,prior_finding,true,dev,false
-P3W1-055,PMC8473437:p27:c90,PMC8473437,PMC7470341,12-ZONE SCORING SYSTEM,Other,enriched,Other,0.11254019,8.8857,1,method_word,true,dev,false
-P3W1-056,PMC8473437:p35:c109,PMC8473437,PMC7470341,MULBSTA SCORING SYSTEM,Other,enriched,Other,0.11254019,8.8857,1,based_on,true,dev,false
-P3W1-057,PMC9007269:p12:c110,PMC9007269,PMC7493721,SARS-CoV-2 in urine and semen,Other,enriched,Other,0.11254019,8.8857,2,method_word;inference_connector,true,dev,true
-P3W1-058,PMC9489065:p36:c161,PMC9489065,PMC7543820,Results > Need for ventilation > Antimalarial and mucolytic drugs,Results,enriched,Results,0.11111111,9.0,1,comparison,true,dev,false
-P3W1-059,PMC10063305:p5:c14,PMC10063305,PMC7544387,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,2,method_word;inference_connector,true,dev,true
-P3W1-060,PMC10112745:p9:c47,PMC10112745,PMC7832243,RESULTS,Results,enriched,Results,0.11111111,9.0,1,inference_connector,false,dev,false
-P3W1-061,PMC10487380:p22:c12,PMC10487380,PMC7868769,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,inference_connector,false,dev,false
-P3W1-062,PMC8906381:p31:c23,PMC8906381,PMC7868769,DISCUSSION,Discussion,enriched,Discussion,0.11036789,9.0606,1,numeric_effect,false,dev,false
-P3W1-063,PMC8223190:p20:c19,PMC8223190,PMC8138022,Results,Results,enriched,Results,0.11111111,9.0,1,we_used,true,dev,false
-P3W1-064,PMC8516726:p7:c8,PMC8516726,PMC8138022,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,2,based_on;method_word,true,dev,true
-P3W1-065,PMC9607422:p7:c51,PMC9607422,PMC8138022,3. The Impact of Dietary Supplements on Inflammatory Markers and in Response to SARS-CoV-2 > 3.1. Vitamins and Minerals,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false
-P3W1-066,PMC9670202:p58:c296,PMC9670202,PMC8138022,LINKS BETWEEN CIRCADIAN CLOCK AND COVID‐19 > Circadian clock – an emerging therapeutic target to improve COVID‐19 outcomes > Manipulating the clock with lifestyle changes > Diet and COVID‐19,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-067,PMC9864223:p3:c35,PMC9864223,PMC8138022,2. Results and Discussion,Results,enriched,Results,0.11111111,9.0,1,method_word,true,dev,false
-P3W1-068,PMC9032573:p19:c38,PMC9032573,PMC8294615,4. Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,dev,false
-P3W1-069,PMC10814161:p40:c107,PMC10814161,PMC8326462,3. Results > 3.4. Randomized Clinical Trials,Results,enriched,Results,0.11111111,9.0,2,numeric_effect;inference_connector,true,dev,true
-P3W1-070,PMC9579963:p20:c114,PMC9579963,PMC8326462,Host-targeted inhibitors > Host protease inhibitors,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false
-P3W1-071,PMC9914919:p14:c43,PMC9914919,PMC8326462,3. Results,Results,enriched,Results,0.11111111,9.0,1,method_word,true,dev,false
-P3W1-072,PMC9393854:p29:c30,PMC9393854,PMC8437699,Discussion > Long-term safety issues and side effects,Discussion,enriched,Discussion,0.11036789,9.0606,2,numeric_effect;inference_connector,false,dev,true
-P3W1-073,PMC9787894:p83:c166,PMC9787894,PMC8437699,6. Problems in Clinical Application of LNP@mRNA > 6.2. Side Effects of PEG,Other,enriched,Other,0.11254019,8.8857,1,numeric_effect,false,dev,false
-P3W1-074,PMC6156294:p30:c64,PMC6156294,PMC2687565,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false
-P3W1-075,PMC3632588:p11:c44,PMC3632588,PMC3353995,"Results > IFNβ attenuates mutant p53 levels through inhibition of its mRNA stabilizer, WIG1",Results,enriched,Results,0.11111111,9.0,1,inference_connector,true,test,false
-P3W1-076,PMC5402550:p8:c38,PMC5402550,PMC3647710,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,test,false
-P3W1-077,PMC8177446:p5:c10,PMC8177446,PMC3974783,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,inference_connector,true,test,false
-P3W1-078,PMC8784899:p27:c82,PMC8784899,PMC4509652,INTRODUCTION,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false
-P3W1-079,PMC13178928:p91:c58,PMC13178928,PMC4512769,4. Model calibration > 4.1. Temperature dependent biting rate,Other,enriched,Other,0.11254019,8.8857,1,based_on,true,test,false
-P3W1-080,PMC6879124:p1:c2,PMC6879124,PMC4849629,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,method_word,true,test,false
-P3W1-081,PMC6428244:p44:c56,PMC6428244,PMC4991016,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,prior_finding,true,test,false
-P3W1-082,PMC7450280:p33:c35,PMC7450280,PMC5350485,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,comparison;prior_finding,true,test,true
-P3W1-083,PMC12573646:p26:c24,PMC12573646,PMC7034405,Discuss > Discussion on the feasibility of modified iliac bone graft combined with antibiotic bone cement technology in the treatment of lower limb bone infection complicated with large segment bone defect,Discussion,enriched,Discussion,0.11036789,9.0606,1,numeric_effect,true,test,false
-P3W1-084,PMC7176266:p6:c16,PMC7176266,PMC7102549,2. POTENTIAL THERAPEUTIC AGENTS,Other,enriched,Other,0.11254019,8.8857,2,numeric_effect;comparison,true,test,true
-P3W1-085,PMC7255293:p5:c6,PMC7255293,PMC7102549,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false
-P3W1-086,PMC7362818:p13:c47,PMC7362818,PMC7102549,Antibiotics,Other,enriched,Other,0.11254019,8.8857,1,numeric_effect,true,test,true
-P3W1-087,PMC7375972:p12:c119,PMC7375972,PMC7102549,"Anti-SARS-CoV-2 drugs: mechanisms of action, approved indications, biological rationale for their use as anti-viral agents > Drugs that interfere with SARS-CoV-2 entry > Chloroquine and hydroxychloroquine with or without azithromycin",Other,enriched,Other,0.11254019,8.8857,1,comparison,true,test,false
-P3W1-088,PMC7462641:p24:c57,PMC7462641,PMC7102549,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,numeric_effect;comparison,true,test,true
-P3W1-089,PMC7822757:p8:c10,PMC7822757,PMC7102549,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,comparison,true,test,false
-P3W1-090,PMC7852573:p107:c280,PMC7852573,PMC7102549,MISCELLANEOUS TREATMENT > Azithromycin,Other,uniform,uniform,0.00490436,203.9,0,,true,test,true
-P3W1-091,PMC8435122:p21:c89,PMC8435122,PMC7102549,Mechanism of action of the candidate antiviral drugs against SARS-CoV-2 > SARS-CoV-2 protease inhibitors > Chloroquine,Other,enriched,Other,0.11254019,8.8857,2,numeric_effect;comparison,true,test,true
-P3W1-092,PMC8606168:p25:c143,PMC8606168,PMC7102549,Antivirals > Azithromycin,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,true,test,false
-P3W1-093,PMC7790733:p12:c31,PMC7790733,PMC7127013,Introduction,Introduction,uniform,uniform,0.00490436,203.9,1,method_word,false,test,false
-P3W1-094,PMC7196557:p20:c92,PMC7196557,PMC7136698,Overview of COVID-19 immunopathology > Act 3: the immunodeficient state,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,false,test,false
-P3W1-095,PMC8072087:p23:c61,PMC8072087,PMC7136698,"Results > Twitter activity of Wang et al., (2020a) and (2020b)",Results,enriched,Results,0.11111111,9.0,1,based_on,false,test,false
-P3W1-096,PMC7313049:p14:c29,PMC7313049,PMC7151464,3. Results,Results,enriched,Results,0.11111111,9.0,1,method_word,false,test,false
-P3W1-097,PMC7674121:p14:c107,PMC7674121,PMC7151464,Results > Study selection,Results,enriched,Results,0.11111111,9.0,1,we_used,false,test,false
-P3W1-098,PMC10384252:p24:c31,PMC10384252,PMC7175452,4. Clinical Applications > 4.2. Bioinformatics and Diagnosis of Coronavirus Disease 2019,Other,uniform,uniform,0.00490436,203.9,0,,false,test,true
-P3W1-099,PMC7598372:p7:c32,PMC7598372,PMC7175452,Related work,Other,enriched,Other,0.11254019,8.8857,2,based_on;method_word,false,test,true
-P3W1-100,PMC8083830:p7:c17,PMC8083830,PMC7175452,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,false,test,false
-P3W1-101,PMC8129611:p5:c20,PMC8129611,PMC7175452,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,2,based_on;method_word,false,test,true
-P3W1-102,PMC8145061:p4:c11,PMC8145061,PMC7175452,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,method_word,false,test,false
-P3W1-103,PMC8667427:p14:c40,PMC8667427,PMC7175452,Related work > CNNs for visual recognition.,Other,enriched,Other,0.11254019,8.8857,2,method_word;inference_connector,false,test,true
-P3W1-104,PMC8785935:p12:c46,PMC8785935,PMC7175452,Literature review,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,test,false
-P3W1-105,PMC9058053:p7:c21,PMC9058053,PMC7175452,Related works > COVID-19 recognition,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,test,false
-P3W1-106,PMC9797382:p20:c123,PMC9797382,PMC7175452,Literature Review > Deep Learning and Deep Transfer Learning-Based Approaches,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,test,false
-P3W1-107,PMC7908057:p6:c5,PMC7908057,PMC7195325,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,false,test,false
-P3W1-108,PMC9684782:p2:c15,PMC9684782,PMC7195325,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,comparison,false,test,false
-P3W1-109,PMC10641795:p21:c59,PMC10641795,PMC7206931,4. Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,prior_finding,true,test,false
-P3W1-110,PMC10641795:p24:c96,PMC10641795,PMC7206931,4. Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,test,false
-P3W1-111,PMC7220578:p2:c2,PMC7220578,PMC7206931,,Unsectioned,uniform,uniform,0.00490436,203.9,0,,true,test,false
-P3W1-112,PMC7253235:p8:c17,PMC7253235,PMC7206931,Cardiovascular Disease and COVID-19,Other,uniform,uniform,0.00490436,203.9,1,method_word,true,test,false
-P3W1-113,PMC7789083:p36:c37,PMC7789083,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,prior_finding,true,test,false
-P3W1-114,PMC7847796:p22:c40,PMC7847796,PMC7206931,SEVERAL CARDIOVASCULAR MANIFESTATIONS CAN BE IDENTIFIED DURING ECHOCARDIOGRAPHIC EXAMINATION IN PATIENTS WITH COVID-19 > Chronic heart failure,Other,uniform,uniform,0.00490436,203.9,0,,true,test,false
-P3W1-115,PMC8046382:p2:c12,PMC8046382,PMC7206931,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,test,false
-P3W1-116,PMC8286237:p39:c64,PMC8286237,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false
-P3W1-117,PMC8576114:p17:c79,PMC8576114,PMC7206931,Treatment > Management of Heart Failure,Other,uniform,uniform,0.00490436,203.9,1,inference_connector,true,test,false
-P3W1-118,PMC8795755:p3:c5,PMC8795755,PMC7206931,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,test,false
-P3W1-119,PMC8957676:p6:c5,PMC8957676,PMC7206931,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false
-P3W1-120,PMC8958101:p28:c34,PMC8958101,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false
-P3W1-121,PMC9328505:p33:c36,PMC9328505,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,comparison;inference_connector,true,test,true
-P3W1-122,PMC8082213:p2:c0,PMC8082213,PMC7272237,Introduction,Introduction,uniform,uniform,0.00490436,203.9,0,,false,test,false
-P3W1-123,PMC7666596:p0:c1,PMC7666596,PMC7346803,To the Editor,Other,enriched,Other,0.11254019,8.8857,1,numeric_effect,true,test,false
-P3W1-124,PMC7904471:p21:c21,PMC7904471,PMC7346803,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,true,test,false
-P3W1-125,PMC8002515:p24:c37,PMC8002515,PMC7346803,4. Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,inference_connector,true,test,false
-P3W1-126,PMC8008780:p3:c7,PMC8008780,PMC7346803,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,inference_connector,true,test,true
-P3W1-127,PMC8127472:p14:c54,PMC8127472,PMC7346803,COVID-19,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,test,false
-P3W1-128,PMC8294531:p27:c18,PMC8294531,PMC7346803,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false
-P3W1-129,PMC8339539:p18:c15,PMC8339539,PMC7346803,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,numeric_effect,true,test,false
-P3W1-130,PMC8396815:p26:c27,PMC8396815,PMC7346803,2. Materials and Methods > 2.1. Study Design,Methods,enriched,Methods,0.10638298,9.4,1,based_on,true,test,false
-P3W1-131,PMC9330942:p36:c48,PMC9330942,PMC7346803,Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,test,true
-P3W1-132,PMC9446153:p19:c27,PMC9446153,PMC7346803,Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,test,false
-P3W1-133,PMC7826058:p17:c10,PMC7826058,PMC7415129,Results > Review,Results,uniform,uniform,0.00490436,203.9,0,,false,test,false
-P3W1-134,PMC7833669:p8:c86,PMC7833669,PMC7415129,Results,Results,enriched,Results,0.11111111,9.0,1,based_on,false,test,false
-P3W1-135,PMC9506365:p10:c58,PMC9506365,PMC7528734,3. Results > 3.1. Study Selection,Results,enriched,Results,0.11111111,9.0,1,inference_connector,false,test,false
-P3W1-136,PMC9589339:p20:c15,PMC9589339,PMC7528734,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,inference_connector,false,test,false
-P3W1-137,PMC8935894:p6:c13,PMC8935894,PMC7674579,Results > Univariate analysis to study the association between COVID-19 cases and metabolic parameters,Results,enriched,Results,0.11111111,9.0,1,comparison,false,test,false
-P3W1-138,PMC8398077:p75:c141,PMC8398077,PMC7829645,3. Results > 3.3. Favipiravir > 3.3.1. Efficacy,Results,enriched,Results,0.11111111,9.0,1,numeric_effect,true,test,false
-P3W1-139,PMC8627269:p15:c28,PMC8627269,PMC7829645,Result > Antiviral Therapy for COVID-19 Treatments,Results,enriched,Results,0.11111111,9.0,1,numeric_effect,true,test,true
-P3W1-140,PMC7405382:p2:c2,PMC7405382,PMC7833633,,Unsectioned,uniform,uniform,0.00490436,203.9,0,,false,test,false
-P3W1-141,PMC9719906:p34:c342,PMC9719906,PMC8012649,Structures of small molecule drugs for COVID-19 therapy > Nucleoside/nucleotide analogs,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,true,test,false
-P3W1-142,PMC8157360:p2:c14,PMC8157360,PMC8050058,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,method_word,true,test,false
-P3W1-143,PMC8216853:p36:c52,PMC8216853,PMC8050058,Experimental results and discussion > Performance on an inter-dataset experimental set-up,Results,enriched,Results,0.11111111,9.0,1,method_word,true,test,false
-P3W1-144,PMC8576060:p17:c38,PMC8576060,PMC8420640,The tocilizumab story,Other,enriched,Other,0.11254019,8.8857,1,based_on,true,test,false
-P3W1-145,PMC9336605:p5:c4,PMC9336605,PMC8420640,INTRODUCTION,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false
-P3W1-146,PMC8906945:p19:c26,PMC8906945,PMC8545328,3. Conceptual Framework > 3.1. Artificial Intelligence for COVID-19 Pandemic,Other,enriched,Other,0.11254019,8.8857,1,method_word,true,test,false
-P3W1-147,PMC8986985:p27:c91,PMC8986985,PMC8812897,Role of Vitamin D and Glutathione in Decreasing Cytokine Surge and Oxidative Stress,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,true,test,false
-P3W1-148,PMC10563317:p21:c56,PMC10563317,PMC8922517,Results > Outcomes > Main outcomes of RCTs,Results,enriched,Results,0.11111111,9.0,1,numeric_effect,true,test,false
-P3W1-149,PMC11010278:p42:c46,PMC11010278,PMC9161581,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,method_word,true,test,false
-P3W1-150,PMC11287309:p2:c17,PMC11287309,PMC9872073,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,we_used,true,test,false
+row_id,ctx_id,citer_pmcid,source_pmcid,section,section_bucket,frame,stratum,inclusion_prob,weight,cue_score,cues,linked,split,overlap,text_bearing
+P3W1-001,PMC4001014:p27:c118,PMC4001014,PMC2678250,Subsets of Memory CD4 T Cells in TB,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false,true
+P3W1-002,PMC4372528:p52:c92,PMC4372528,PMC2678250,"Materials and Methods > TB patients, TM staining and cytokine detection",Methods,enriched,Methods,0.10638298,9.4,1,based_on,true,dev,false,true
+P3W1-003,PMC4704670:p24:c36,PMC4704670,PMC2678250,DISCUSSION,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,false,true
+P3W1-004,PMC4440314:p14:c25,PMC4440314,PMC3012077,Materials and methods > Cell viability assay,Methods,enriched,Methods,0.10638298,9.4,2,based_on;method_word,true,dev,true,true
+P3W1-005,PMC6668838:p1:c2,PMC6668838,PMC3012077,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,method_word,true,dev,false,true
+P3W1-006,PMC9281562:p50:c383,PMC9281562,PMC3012077,9 Epigenetic Manipulations > 9.1 Therapeutic Modulation of Chromatin Structure > 9.1.2 Histone Deacetylase Inhibition,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,true,true
+P3W1-007,PMC7086963:p14:c9,PMC7086963,PMC3037383,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,2,we_used;method_word,true,dev,true,true
+P3W1-008,PMC7652626:p10:c20,PMC7652626,PMC3544391,2. Methods > 2.2. Study Methods,Methods,enriched,Methods,0.10638298,9.4,1,based_on,true,dev,false,true
+P3W1-009,PMC5291100:p3:c15,PMC5291100,PMC3884778,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,comparison,true,dev,false,true
+P3W1-010,PMC8716055:p13:c38,PMC8716055,PMC4237371,Materials and methods > Statistical methods > Cox proportional hazard model (Cox PH),Methods,enriched,Methods,0.10638298,9.4,1,method_word,true,dev,false,true
+P3W1-011,PMC12661238:p31:c43,PMC12661238,PMC4319784,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,false,true
+P3W1-012,PMC6284502:p7:c12,PMC6284502,PMC5563917,Strengthening of immunodominance hierarchy might reduce the VE for H3N2,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false,true
+P3W1-013,PMC6443583:p42:c39,PMC6443583,PMC5964311,Conclusion,Conclusion,uniform,uniform,0.00490436,203.9,0,,true,dev,true,true
+P3W1-014,PMC7230749:p17:c105,PMC7230749,PMC6057395,3. Recommendations and Conclusions,Conclusion,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-015,PMC7882632:p2:c11,PMC7882632,PMC6537736,Introduction,Introduction,uniform,uniform,0.00490436,203.9,1,based_on,true,dev,false,true
+P3W1-016,PMC10183856:p27:c21,PMC10183856,PMC7133645,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,false,dev,true,true
+P3W1-017,PMC7187838:p25:c76,PMC7187838,PMC7133645,Discussion > Principal findings,Discussion,enriched,Discussion,0.11036789,9.0606,2,comparison;method_word,false,dev,true,true
+P3W1-018,PMC7187838:p28:c145,PMC7187838,PMC7133645,Discussion > Strengths and limitations,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,false,dev,false,true
+P3W1-019,PMC7212949:p47:c289,PMC7212949,PMC7133645,OBSTETRICS MANIFESTATIONS > COVID-19,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false,true
+P3W1-020,PMC7212949:p47:c290,PMC7212949,PMC7133645,OBSTETRICS MANIFESTATIONS > COVID-19,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false,true
+P3W1-021,PMC7428686:p6:c15,PMC7428686,PMC7133645,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,false,dev,false,true
+P3W1-022,PMC7969862:p3:c5,PMC7969862,PMC7133645,Effect of COVID-19 in pregnant women,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false,true
+P3W1-023,PMC8056848:p22:c139,PMC8056848,PMC7133645,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,false,dev,false,true
+P3W1-024,PMC7396961:p13:c74,PMC7396961,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,true,dev,false,true
+P3W1-025,PMC7412090:p9:c27,PMC7412090,PMC7185795,3. Results > 3.1. Targeted Enzyme Inhibitors > 3.1.1. RNA-Dependent RNA Polymerase Inhibitors > Favipiravir,Results,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-026,PMC7472403:p77:c90,PMC7472403,PMC7185795,Results > Treatments > Question 12: Should favipiravir be used to treat patients with COVID-19 to improve clinical outcomes? > Evidence summary,Results,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-027,PMC7524677:p7:c21,PMC7524677,PMC7185795,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,numeric_effect,true,dev,false,true
+P3W1-028,PMC7755570:p3:c6,PMC7755570,PMC7185795,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,dev,false,true
+P3W1-029,PMC7890447:p18:c108,PMC7890447,PMC7185795,Pharmacotherapeutic agents used in treatment and management of COVID-19 > Favipiravir,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,true,true
+P3W1-030,PMC8059985:p27:c22,PMC8059985,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,numeric_effect;comparison,true,dev,true,true
+P3W1-031,PMC8237135:p20:c69,PMC8237135,PMC7185795,Antivirals > Favipiravir (FPR),Other,uniform,uniform,0.00490436,203.9,1,numeric_effect,true,dev,false,true
+P3W1-032,PMC8239658:p9:c31,PMC8239658,PMC7185795,CLINICAL EVIDENCE OF ANTIVIRAL AGENTS,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-033,PMC8332739:p26:c19,PMC8332739,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,based_on;method_word,true,dev,true,true
+P3W1-034,PMC8627269:p43:c115,PMC8627269,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,false,true
+P3W1-035,PMC8931493:p26:c19,PMC8931493,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,dev,true,true
+P3W1-036,PMC8931493:p26:c22,PMC8931493,PMC7185795,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,true,dev,false,true
+P3W1-037,PMC9696372:p20:c51,PMC9696372,PMC7185795,4. Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-038,PMC8096756:p65:c61,PMC8096756,PMC7195270,Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,false,dev,false,false
+P3W1-039,PMC9946891:p8:c16,PMC9946891,PMC7227562,INTRODUCTION,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,false,dev,false,true
+P3W1-040,PMC8114243:p16:c25,PMC8114243,PMC7250775,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,method_word,true,dev,false,true
+P3W1-041,PMC10016932:p20:c77,PMC10016932,PMC7255293,Management,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false,false
+P3W1-042,PMC10016932:p20:c78,PMC10016932,PMC7255293,Management,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false,false
+P3W1-043,PMC10636520:p18:c64,PMC10636520,PMC7255293,Alert > Research,Other,enriched,Other,0.11254019,8.8857,1,comparison,false,dev,false,false
+P3W1-044,PMC7334645:p46:c209,PMC7334645,PMC7255293,Clinical practice guidelines in anti-SARS-CoV-2 antiviral therapy including chloroquine/hydroxy chloroquine,Other,enriched,Other,0.11254019,8.8857,1,based_on,false,dev,false,false
+P3W1-045,PMC7441141:p14:c24,PMC7441141,PMC7255293,Science-based communication during the COVID-19 pandemic,Other,enriched,Other,0.11254019,8.8857,1,based_on,false,dev,false,false
+P3W1-046,PMC7462881:p4:c17,PMC7462881,PMC7255293,Preprints: Accelerated Research Transmission in a Pandemic,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,dev,false,false
+P3W1-047,PMC7558783:p15:c19,PMC7558783,PMC7255293,Results,Results,enriched,Results,0.11111111,9.0,1,based_on,false,dev,false,false
+P3W1-048,PMC7810282:p14:c57,PMC7810282,PMC7255293,HCQ in COVID-19 disease,Other,uniform,uniform,0.00490436,203.9,1,method_word,false,dev,false,false
+P3W1-049,PMC7953944:p25:c53,PMC7953944,PMC7255293,Results > Popularity index (PI),Results,uniform,uniform,0.00490436,203.9,0,,false,dev,false,false
+P3W1-050,PMC8179078:p46:c141,PMC8179078,PMC7255293,Stage 3: science communication > A surge of preprints and their misuse,Other,uniform,uniform,0.00490436,203.9,0,,false,dev,false,false
+P3W1-051,PMC8640856:p24:c23,PMC8640856,PMC7255293,DISCUSSION,Discussion,enriched,Discussion,0.11036789,9.0606,2,based_on;comparison,false,dev,true,false
+P3W1-052,PMC8698695:p32:c42,PMC8698695,PMC7332909,DISCUSSION,Discussion,uniform,uniform,0.00490436,203.9,1,comparison,true,dev,false,true
+P3W1-053,PMC7983424:p13:c165,PMC7983424,PMC7470341,Results,Results,enriched,Results,0.11111111,9.0,1,method_word,true,dev,false,true
+P3W1-054,PMC7983424:p23:c546,PMC7983424,PMC7470341,Results,Results,enriched,Results,0.11111111,9.0,1,prior_finding,true,dev,false,true
+P3W1-055,PMC8473437:p27:c90,PMC8473437,PMC7470341,12-ZONE SCORING SYSTEM,Other,enriched,Other,0.11254019,8.8857,1,method_word,true,dev,false,true
+P3W1-056,PMC8473437:p35:c109,PMC8473437,PMC7470341,MULBSTA SCORING SYSTEM,Other,enriched,Other,0.11254019,8.8857,1,based_on,true,dev,false,true
+P3W1-057,PMC9007269:p12:c110,PMC9007269,PMC7493721,SARS-CoV-2 in urine and semen,Other,enriched,Other,0.11254019,8.8857,2,method_word;inference_connector,true,dev,true,true
+P3W1-058,PMC9489065:p36:c161,PMC9489065,PMC7543820,Results > Need for ventilation > Antimalarial and mucolytic drugs,Results,enriched,Results,0.11111111,9.0,1,comparison,true,dev,false,true
+P3W1-059,PMC10063305:p5:c14,PMC10063305,PMC7544387,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,2,method_word;inference_connector,true,dev,true,true
+P3W1-060,PMC10112745:p9:c47,PMC10112745,PMC7832243,RESULTS,Results,enriched,Results,0.11111111,9.0,1,inference_connector,false,dev,false,true
+P3W1-061,PMC10487380:p22:c12,PMC10487380,PMC7868769,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,inference_connector,false,dev,false,true
+P3W1-062,PMC8906381:p31:c23,PMC8906381,PMC7868769,DISCUSSION,Discussion,enriched,Discussion,0.11036789,9.0606,1,numeric_effect,false,dev,false,true
+P3W1-063,PMC8223190:p20:c19,PMC8223190,PMC8138022,Results,Results,enriched,Results,0.11111111,9.0,1,we_used,true,dev,false,true
+P3W1-064,PMC8516726:p7:c8,PMC8516726,PMC8138022,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,2,based_on;method_word,true,dev,true,true
+P3W1-065,PMC9607422:p7:c51,PMC9607422,PMC8138022,3. The Impact of Dietary Supplements on Inflammatory Markers and in Response to SARS-CoV-2 > 3.1. Vitamins and Minerals,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false,true
+P3W1-066,PMC9670202:p58:c296,PMC9670202,PMC8138022,LINKS BETWEEN CIRCADIAN CLOCK AND COVID‐19 > Circadian clock – an emerging therapeutic target to improve COVID‐19 outcomes > Manipulating the clock with lifestyle changes > Diet and COVID‐19,Other,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-067,PMC9864223:p3:c35,PMC9864223,PMC8138022,2. Results and Discussion,Results,enriched,Results,0.11111111,9.0,1,method_word,true,dev,false,true
+P3W1-068,PMC9032573:p19:c38,PMC9032573,PMC8294615,4. Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,dev,false,true
+P3W1-069,PMC10814161:p40:c107,PMC10814161,PMC8326462,3. Results > 3.4. Randomized Clinical Trials,Results,enriched,Results,0.11111111,9.0,2,numeric_effect;inference_connector,true,dev,true,true
+P3W1-070,PMC9579963:p20:c114,PMC9579963,PMC8326462,Host-targeted inhibitors > Host protease inhibitors,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,dev,false,true
+P3W1-071,PMC9914919:p14:c43,PMC9914919,PMC8326462,3. Results,Results,enriched,Results,0.11111111,9.0,1,method_word,true,dev,false,true
+P3W1-072,PMC9393854:p29:c30,PMC9393854,PMC8437699,Discussion > Long-term safety issues and side effects,Discussion,enriched,Discussion,0.11036789,9.0606,2,numeric_effect;inference_connector,false,dev,true,false
+P3W1-073,PMC9787894:p83:c166,PMC9787894,PMC8437699,6. Problems in Clinical Application of LNP@mRNA > 6.2. Side Effects of PEG,Other,enriched,Other,0.11254019,8.8857,1,numeric_effect,false,dev,false,false
+P3W1-074,PMC6156294:p30:c64,PMC6156294,PMC2687565,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false,true
+P3W1-075,PMC3632588:p11:c44,PMC3632588,PMC3353995,"Results > IFNβ attenuates mutant p53 levels through inhibition of its mRNA stabilizer, WIG1",Results,enriched,Results,0.11111111,9.0,1,inference_connector,true,test,false,true
+P3W1-076,PMC5402550:p8:c38,PMC5402550,PMC3647710,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,test,false,true
+P3W1-077,PMC8177446:p5:c10,PMC8177446,PMC3974783,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,inference_connector,true,test,false,true
+P3W1-078,PMC8784899:p27:c82,PMC8784899,PMC4509652,INTRODUCTION,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false,true
+P3W1-079,PMC13178928:p91:c58,PMC13178928,PMC4512769,4. Model calibration > 4.1. Temperature dependent biting rate,Other,enriched,Other,0.11254019,8.8857,1,based_on,true,test,false,true
+P3W1-080,PMC6879124:p1:c2,PMC6879124,PMC4849629,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,method_word,true,test,false,true
+P3W1-081,PMC6428244:p44:c56,PMC6428244,PMC4991016,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,prior_finding,true,test,false,true
+P3W1-082,PMC7450280:p33:c35,PMC7450280,PMC5350485,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,comparison;prior_finding,true,test,true,true
+P3W1-083,PMC12573646:p26:c24,PMC12573646,PMC7034405,Discuss > Discussion on the feasibility of modified iliac bone graft combined with antibiotic bone cement technology in the treatment of lower limb bone infection complicated with large segment bone defect,Discussion,enriched,Discussion,0.11036789,9.0606,1,numeric_effect,true,test,false,true
+P3W1-084,PMC7176266:p6:c16,PMC7176266,PMC7102549,2. POTENTIAL THERAPEUTIC AGENTS,Other,enriched,Other,0.11254019,8.8857,2,numeric_effect;comparison,true,test,true,true
+P3W1-085,PMC7255293:p5:c6,PMC7255293,PMC7102549,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false,true
+P3W1-086,PMC7362818:p13:c47,PMC7362818,PMC7102549,Antibiotics,Other,enriched,Other,0.11254019,8.8857,1,numeric_effect,true,test,true,true
+P3W1-087,PMC7375972:p12:c119,PMC7375972,PMC7102549,"Anti-SARS-CoV-2 drugs: mechanisms of action, approved indications, biological rationale for their use as anti-viral agents > Drugs that interfere with SARS-CoV-2 entry > Chloroquine and hydroxychloroquine with or without azithromycin",Other,enriched,Other,0.11254019,8.8857,1,comparison,true,test,false,true
+P3W1-088,PMC7462641:p24:c57,PMC7462641,PMC7102549,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,numeric_effect;comparison,true,test,true,true
+P3W1-089,PMC7822757:p8:c10,PMC7822757,PMC7102549,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,comparison,true,test,false,true
+P3W1-090,PMC7852573:p107:c280,PMC7852573,PMC7102549,MISCELLANEOUS TREATMENT > Azithromycin,Other,uniform,uniform,0.00490436,203.9,0,,true,test,true,true
+P3W1-091,PMC8435122:p21:c89,PMC8435122,PMC7102549,Mechanism of action of the candidate antiviral drugs against SARS-CoV-2 > SARS-CoV-2 protease inhibitors > Chloroquine,Other,enriched,Other,0.11254019,8.8857,2,numeric_effect;comparison,true,test,true,true
+P3W1-092,PMC8606168:p25:c143,PMC8606168,PMC7102549,Antivirals > Azithromycin,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,true,test,false,true
+P3W1-093,PMC7790733:p12:c31,PMC7790733,PMC7127013,Introduction,Introduction,uniform,uniform,0.00490436,203.9,1,method_word,false,test,false,true
+P3W1-094,PMC7196557:p20:c92,PMC7196557,PMC7136698,Overview of COVID-19 immunopathology > Act 3: the immunodeficient state,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,false,test,false,false
+P3W1-095,PMC8072087:p23:c61,PMC8072087,PMC7136698,"Results > Twitter activity of Wang et al., (2020a) and (2020b)",Results,enriched,Results,0.11111111,9.0,1,based_on,false,test,false,false
+P3W1-096,PMC7313049:p14:c29,PMC7313049,PMC7151464,3. Results,Results,enriched,Results,0.11111111,9.0,1,method_word,false,test,false,false
+P3W1-097,PMC7674121:p14:c107,PMC7674121,PMC7151464,Results > Study selection,Results,enriched,Results,0.11111111,9.0,1,we_used,false,test,false,false
+P3W1-098,PMC10384252:p24:c31,PMC10384252,PMC7175452,4. Clinical Applications > 4.2. Bioinformatics and Diagnosis of Coronavirus Disease 2019,Other,uniform,uniform,0.00490436,203.9,0,,false,test,true,false
+P3W1-099,PMC7598372:p7:c32,PMC7598372,PMC7175452,Related work,Other,enriched,Other,0.11254019,8.8857,2,based_on;method_word,false,test,true,false
+P3W1-100,PMC8083830:p7:c17,PMC8083830,PMC7175452,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,false,test,false,false
+P3W1-101,PMC8129611:p5:c20,PMC8129611,PMC7175452,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,2,based_on;method_word,false,test,true,false
+P3W1-102,PMC8145061:p4:c11,PMC8145061,PMC7175452,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,method_word,false,test,false,false
+P3W1-103,PMC8667427:p14:c40,PMC8667427,PMC7175452,Related work > CNNs for visual recognition.,Other,enriched,Other,0.11254019,8.8857,2,method_word;inference_connector,false,test,true,false
+P3W1-104,PMC8785935:p12:c46,PMC8785935,PMC7175452,Literature review,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,test,false,false
+P3W1-105,PMC9058053:p7:c21,PMC9058053,PMC7175452,Related works > COVID-19 recognition,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,test,false,false
+P3W1-106,PMC9797382:p20:c123,PMC9797382,PMC7175452,Literature Review > Deep Learning and Deep Transfer Learning-Based Approaches,Other,enriched,Other,0.11254019,8.8857,1,method_word,false,test,false,false
+P3W1-107,PMC7908057:p6:c5,PMC7908057,PMC7195325,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,false,test,false,false
+P3W1-108,PMC9684782:p2:c15,PMC9684782,PMC7195325,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,comparison,false,test,false,false
+P3W1-109,PMC10641795:p21:c59,PMC10641795,PMC7206931,4. Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,prior_finding,true,test,false,true
+P3W1-110,PMC10641795:p24:c96,PMC10641795,PMC7206931,4. Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,test,false,true
+P3W1-111,PMC7220578:p2:c2,PMC7220578,PMC7206931,,Unsectioned,uniform,uniform,0.00490436,203.9,0,,true,test,false,true
+P3W1-112,PMC7253235:p8:c17,PMC7253235,PMC7206931,Cardiovascular Disease and COVID-19,Other,uniform,uniform,0.00490436,203.9,1,method_word,true,test,false,true
+P3W1-113,PMC7789083:p36:c37,PMC7789083,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,prior_finding,true,test,false,true
+P3W1-114,PMC7847796:p22:c40,PMC7847796,PMC7206931,SEVERAL CARDIOVASCULAR MANIFESTATIONS CAN BE IDENTIFIED DURING ECHOCARDIOGRAPHIC EXAMINATION IN PATIENTS WITH COVID-19 > Chronic heart failure,Other,uniform,uniform,0.00490436,203.9,0,,true,test,false,true
+P3W1-115,PMC8046382:p2:c12,PMC8046382,PMC7206931,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,test,false,true
+P3W1-116,PMC8286237:p39:c64,PMC8286237,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false,true
+P3W1-117,PMC8576114:p17:c79,PMC8576114,PMC7206931,Treatment > Management of Heart Failure,Other,uniform,uniform,0.00490436,203.9,1,inference_connector,true,test,false,true
+P3W1-118,PMC8795755:p3:c5,PMC8795755,PMC7206931,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,inference_connector,true,test,false,true
+P3W1-119,PMC8957676:p6:c5,PMC8957676,PMC7206931,Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false,true
+P3W1-120,PMC8958101:p28:c34,PMC8958101,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false,true
+P3W1-121,PMC9328505:p33:c36,PMC9328505,PMC7206931,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,2,comparison;inference_connector,true,test,true,true
+P3W1-122,PMC8082213:p2:c0,PMC8082213,PMC7272237,Introduction,Introduction,uniform,uniform,0.00490436,203.9,0,,false,test,false,false
+P3W1-123,PMC7666596:p0:c1,PMC7666596,PMC7346803,To the Editor,Other,enriched,Other,0.11254019,8.8857,1,numeric_effect,true,test,false,true
+P3W1-124,PMC7904471:p21:c21,PMC7904471,PMC7346803,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,based_on,true,test,false,true
+P3W1-125,PMC8002515:p24:c37,PMC8002515,PMC7346803,4. Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,inference_connector,true,test,false,true
+P3W1-126,PMC8008780:p3:c7,PMC8008780,PMC7346803,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,inference_connector,true,test,true,true
+P3W1-127,PMC8127472:p14:c54,PMC8127472,PMC7346803,COVID-19,Other,enriched,Other,0.11254019,8.8857,1,comparison,true,test,false,true
+P3W1-128,PMC8294531:p27:c18,PMC8294531,PMC7346803,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,comparison,true,test,false,true
+P3W1-129,PMC8339539:p18:c15,PMC8339539,PMC7346803,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,numeric_effect,true,test,false,true
+P3W1-130,PMC8396815:p26:c27,PMC8396815,PMC7346803,2. Materials and Methods > 2.1. Study Design,Methods,enriched,Methods,0.10638298,9.4,1,based_on,true,test,false,true
+P3W1-131,PMC9330942:p36:c48,PMC9330942,PMC7346803,Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,test,true,true
+P3W1-132,PMC9446153:p19:c27,PMC9446153,PMC7346803,Discussion,Discussion,uniform,uniform,0.00490436,203.9,0,,true,test,false,true
+P3W1-133,PMC7826058:p17:c10,PMC7826058,PMC7415129,Results > Review,Results,uniform,uniform,0.00490436,203.9,0,,false,test,false,false
+P3W1-134,PMC7833669:p8:c86,PMC7833669,PMC7415129,Results,Results,enriched,Results,0.11111111,9.0,1,based_on,false,test,false,false
+P3W1-135,PMC9506365:p10:c58,PMC9506365,PMC7528734,3. Results > 3.1. Study Selection,Results,enriched,Results,0.11111111,9.0,1,inference_connector,false,test,false,true
+P3W1-136,PMC9589339:p20:c15,PMC9589339,PMC7528734,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,inference_connector,false,test,false,true
+P3W1-137,PMC8935894:p6:c13,PMC8935894,PMC7674579,Results > Univariate analysis to study the association between COVID-19 cases and metabolic parameters,Results,enriched,Results,0.11111111,9.0,1,comparison,false,test,false,false
+P3W1-138,PMC8398077:p75:c141,PMC8398077,PMC7829645,3. Results > 3.3. Favipiravir > 3.3.1. Efficacy,Results,enriched,Results,0.11111111,9.0,1,numeric_effect,true,test,false,true
+P3W1-139,PMC8627269:p15:c28,PMC8627269,PMC7829645,Result > Antiviral Therapy for COVID-19 Treatments,Results,enriched,Results,0.11111111,9.0,1,numeric_effect,true,test,true,true
+P3W1-140,PMC7405382:p2:c2,PMC7405382,PMC7833633,,Unsectioned,uniform,uniform,0.00490436,203.9,0,,false,test,false,false
+P3W1-141,PMC9719906:p34:c342,PMC9719906,PMC8012649,Structures of small molecule drugs for COVID-19 therapy > Nucleoside/nucleotide analogs,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,true,test,false,true
+P3W1-142,PMC8157360:p2:c14,PMC8157360,PMC8050058,1. Introduction,Introduction,enriched,Introduction,0.11377246,8.7895,1,method_word,true,test,false,true
+P3W1-143,PMC8216853:p36:c52,PMC8216853,PMC8050058,Experimental results and discussion > Performance on an inter-dataset experimental set-up,Results,enriched,Results,0.11111111,9.0,1,method_word,true,test,false,true
+P3W1-144,PMC8576060:p17:c38,PMC8576060,PMC8420640,The tocilizumab story,Other,enriched,Other,0.11254019,8.8857,1,based_on,true,test,false,true
+P3W1-145,PMC9336605:p5:c4,PMC9336605,PMC8420640,INTRODUCTION,Introduction,enriched,Introduction,0.11377246,8.7895,1,based_on,true,test,false,true
+P3W1-146,PMC8906945:p19:c26,PMC8906945,PMC8545328,3. Conceptual Framework > 3.1. Artificial Intelligence for COVID-19 Pandemic,Other,enriched,Other,0.11254019,8.8857,1,method_word,true,test,false,true
+P3W1-147,PMC8986985:p27:c91,PMC8986985,PMC8812897,Role of Vitamin D and Glutathione in Decreasing Cytokine Surge and Oxidative Stress,Other,enriched,Other,0.11254019,8.8857,1,inference_connector,true,test,false,true
+P3W1-148,PMC10563317:p21:c56,PMC10563317,PMC8922517,Results > Outcomes > Main outcomes of RCTs,Results,enriched,Results,0.11111111,9.0,1,numeric_effect,true,test,false,true
+P3W1-149,PMC11010278:p42:c46,PMC11010278,PMC9161581,Discussion,Discussion,enriched,Discussion,0.11036789,9.0606,1,method_word,true,test,false,true
+P3W1-150,PMC11287309:p2:c17,PMC11287309,PMC9872073,,Unsectioned,enriched,Unsectioned,0.11111111,9.0,1,we_used,true,test,false,true

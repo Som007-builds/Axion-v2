@@ -11,7 +11,7 @@
 | Uniform random | 30 | 30/6,117 = 0.004904 | 203.9 | unbiased base rate |
 | Cue-enriched, stratified by section | 120 | per-stratum n/N | per row in manifest | positives for recall |
 
-Per-source cap: **8 rows** (5% of a 150-row wave), applied **per frame** (uniform and enriched are capped separately). Truncated by the cap in wave 1: **7 sources**, all in the enriched frame (`PMC7102549`, `PMC7133645`, `PMC7175452`, `PMC7185795`, `PMC7206931`, `PMC7255293`, `PMC7346803`). Because the cap is per frame, **6 sources hold more than 8 wave rows in total, max 14** (`PMC7185795`).
+Per-source cap: **8 rows** (5% of a 150-row wave), applied **per frame** (uniform and enriched are capped separately). Truncated by the cap in wave 1: **7 sources** (`PMC7102549`, `PMC7133645`, `PMC7175452`, `PMC7185795`, `PMC7206931`, `PMC7255293`, `PMC7346803`). Because the cap is per frame, **6 sources hold more than 8 wave rows in total, max 14** (`PMC7185795` (14), `PMC7206931` (13), `PMC7255293` (11), `PMC7346803` (10), `PMC7102549` (9), `PMC7175452` (9)).
 
 ## Strata
 
@@ -46,6 +46,8 @@ and 34 have no abstract at all: those come from
 retracted/withdrawn stub articles that carry a title and no abstract element. They stay
 in the set because retraction-notice contexts are the `UNRELATED`/`MENTIONS` edge cases
 the audit must cover; the labeler says plainly that no claim or abstract exists.
+
+**Pre-registered reporting (ADR-0023 Amendment B).** Detector precision/recall is reported primarily on the **116-row text-bearing frame** (linked rows plus unlinked rows that show an abstract). The **34 title-only stub rows** are reported as a separate stratum, and they stay in the gold file and in the weighted base rate. `text_bearing` is a manifest-only column: it is not shown in either labeler.
 
 ## Cue prevalence (all 6,117 contexts)
 
@@ -115,21 +117,26 @@ read, not a certified one, which is why waves 2+ exist.
 
 ## Overlap set for the second labeler
 
-**30 rows (20% of the wave)**, 24 cue-enriched + 6 uniform, exported as a separate blind packet. Enrichment is what makes `RELIES_ON` and `UNRELATED` present often enough for kappa to mean anything; kappa
-from an enriched overlap is prevalence-specific and is not the corpus kappa. If a class
-is still absent after labelling, the owner tops up from the remaining pool (<=10 rows)
-rather than reusing these.
+30 rows (20% of the wave), 24 cue-enriched + 6 uniform, were drawn in advance as a separate blind packet. **That packet is SUPERSEDED by ADR-0023 Amendment A** and must not be labelled: it was chosen without reference to the first labeler's labels, so it cannot guarantee that `RELIES_ON` is represented, and its kappa would be prevalence-specific and conditioned on an arbitrary class balance.
+
+**Overlap 2** is built from the first labeler's returned wave-1 labels:
+
+- all (or nearly all) `RELIES_ON` rows, plus a round-robin spread over `MENTIONS`, `UNRELATED` and `insufficient_context`;
+- at least **30 rows AND at least 20% of the wave AND at least 6 negatives**;
+- a separate blind file with a blank labeler id, hash-ordered so position leaks nothing, and no first-labeler label or `overlap` flag in the payload.
+
+kappa from this overlap is **conditioned on labeler 1**: it measures reproducibility against one rater, not agreement between two exchangeable raters, and the balanced overlap raises kappa relative to corpus prevalence (see ADR-0023 Amendment A for the inflation/deflation directions). Raw agreement is reported next to it.
 
 ## Labeling time (pilot pace not recorded)
 
 150 rows at 20 s / 30 s / 45 s per row = **50 / 75 / 112 minutes**. The P3-01 pilot did not record a duration, so
 this is an arithmetic estimate from a stated assumption, not a measurement; the second
-labeler has 30 rows (~15 min at 30 s).
+labeler gets at least 30 overlap rows (~15 min at 30 s).
 
 ## Files
 
 - **Label this:** `eval/audit/p3-03/p3-03-wave1-labeler.html` (open in a browser).
-- Second labeler: `eval/audit/p3-03/p3-03-wave1-overlap-labeler.html`.
+- Second labeler: **not this file** — the pre-built overlap is superseded. Overlap 2 is generated after wave 1 with `python scripts/dependency_sample.py --build-overlap <labelled.csv>`, which writes `p3-03-wave1-overlap2-labeler.html`.
 - Blind packet (same rows, CSV): `eval/audit/p3-03/p3-03-wave1-blind.csv`.
 - Internal manifest (weights, strata, cues, split): `eval/audit/p3-03/p3-03-wave1-manifest.csv` — **not** for labelers.
 

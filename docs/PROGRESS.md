@@ -130,6 +130,14 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-18 — Buffy — P3-03 overlap 2 builder (no labels)
+- Did: `scripts/dependency_sample.py --build-overlap <labelled.csv>` implements ADR-0023 Amendment A — validates labeler 1's export (known row ids, exactly one labeler, no blank labels, whole wave covered, labels in the four classes), then writes `p3-03-wave1-overlap2-blind.csv`, `p3-03-wave1-overlap2-labeler.html` and `p3-03-wave1-overlap2-selection.json` (counts and row ids only, never labeler-1 labels).
+- Selection: all/nearly all `RELIES_ON` + round-robin across `MENTIONS`, `UNRELATED`, `insufficient_context`; floors are ≥30 rows AND ≥20% of the wave AND ≥6 negatives; blank labeler id; rows ordered by `sha256(seed:ctx_id)` so order leaks nothing. Tests: `tests/test_dependency_sample_overlap.py`, **13 passed**.
+- Superseded: the pre-built 30-row overlap keeps its files, gains a visible SUPERSEDED header in the labeler HTML plus `p3-03-wave1-overlap-SUPERSEDED.md`, and is not sent to the second labeler.
+- Amendment B in the data: `text_bearing` added to `p3-03-wave1-manifest.csv` **only** (116 text-bearing / 34 stub); no packet row, blind CSV or full labeler changed. Report regenerated text records the pre-registered stratum and the corrected cap wording.
+- State: branch `p3`; P3-03 stays `[~]` — blocked on owner labels, not on agent work.
+- Next: owner labels `eval/audit/p3-03/p3-03-wave1-labeler.html` and returns `dependency_audit_v1_wave1_labelled.csv`; then run the `--build-overlap` command.
+
 ### 2026-11-18 — Buffy — ADR-0023 accepted; CI numpy fix
 - Did: ADR-0023 marked **Accepted (2026-11-18)** with two owner amendments. **A:** the pre-built 30-row overlap is superseded; overlap 2 is built from the owner's returned wave-1 labels (all/nearly all `RELIES_ON` + round-robin spread across the other three classes; ≥30 rows and ≥20% of the wave and ≥6 negatives; separate blind file, blank labeler id, hash-ordered) and κ is reported as conditioned on labeler 1, with the inflation/deflation directions and a corpus-prevalence reweighting. **B:** the 34 title-only stub rows stay in the gold file and the weighted base rate, but become a **pre-registered report-only stratum** — primary precision/recall on the 116-row text-bearing frame (101 linked + 15 with an abstract); `text_bearing` goes in the manifest only, never the labeler payload.
 - Cap wording corrected from a replay of the sampler, not from memory: **7 sources truncated by the cap** (all enriched frame), **6 sources hold >8 wave rows in total, max 14**; the cap is applied **per frame**. Fixed in `docs/DECISIONS.md` §2, `docs/reports/P3-03-wave1-packet.md`, this file and the P3 TODO.
