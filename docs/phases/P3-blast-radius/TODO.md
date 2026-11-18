@@ -13,13 +13,15 @@
 
 ## Tasks
 
-### [~] P3-01 — Dependency labeling guideline
+### [!] P3-01 — Dependency labeling guideline
 - depends: P2 gate passed
 - what: Write docs/eval/DEPENDENCY_GUIDELINE.md (RELIES_ON / MENTIONS / UNRELATED) with examples and edge cases; pilot on 20 contexts and refine.
 - acceptance: Guideline v1 committed; pilot notes recorded.
   - agent: opencode | started: 2026-11-18 16:02 | branch: p3
   - notes:
     - 2026-11-18 16:02: P2 gate accepted; claiming P3-01. Plan: guideline v1 with illustrative edge cases, a seeded 20-context pilot packet, and blank labels. The agent will not create labels; the owner labels the packet and the notes drive guideline v1.1.
+    - 2026-11-18 16:09: guideline v1 + `scripts/dependency_pilot.py` + `eval/audit/dependency_pilot_v1.csv` committed as `dafa9dd`. Packet: **20 blank-label rows across 20 source papers**, seed `20261118`; it intentionally includes retraction notices, reference-list fragments, and grouped citations as edge cases. No labels created by the agent.
+    - **BLOCKED on owner:** label the 20 `label` cells in the CSV (add a `note` on every non-obvious row; fill `labeler` and `date`). Unblocks: return the labelled CSV; then compute agreement, refine the guideline to v1.1, record pilot notes, and mark this task `[x]`.
   - done: — | evidence: —
 
 ### [ ] P3-02 — Candidate generator
@@ -104,7 +106,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
-- (empty)
+- 2026-11-18 — opencode — P3-01 guideline v1 + 20-context blank pilot packet committed (`dafa9dd`); owner labeling pending — next: owner labels, then guideline v1.1 and P3-02
 
 ## Phase exit checklist
 - [ ] All tasks `[x]` or `[-]` with ADR
