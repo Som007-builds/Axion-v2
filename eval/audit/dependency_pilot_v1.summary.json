@@ -1,0 +1,24 @@
+{
+  "pilot": "P3-01",
+  "status": "calibration_only",
+  "responsibility": "owner",
+  "rows": 20,
+  "sources": 20,
+  "labels": {
+    "MENTIONS": 16,
+    "RELIES_ON": 2,
+    "UNRELATED": 2
+  },
+  "notes_filled": 20,
+  "blank_labels": [],
+  "labelers": {
+    "Soham": 20
+  },
+  "dates": {
+    "2026-11-18": 20
+  },
+  "guideline_versions": {
+    "P3-v1": 20
+  },
+  "report": "D:/Axion-v2/axion-v2/docs/reports/P3-01-pilot.md"
+}
