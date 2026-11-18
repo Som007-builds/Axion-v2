@@ -726,7 +726,7 @@ positives, extend uniformly toward 77, or narrow the claim to a stratified subse
 
 ## ADR-0025 — Wave 3 (if any) grows the gold **test** set, and the alternative is to narrow the claim
 
-2026-11-18 · **Proposed**
+2026-11-18 · **Accepted — narrow the gate claim; no wave 3**
 
 **Context.** P3-04 measured the three baselines on the 300 labelled rows and froze the test result
 (`eval/audit/p3-04/p3-04-test-frozen.json`). The text-bearing test frame has **18 `RELIES_ON` rows,
@@ -764,6 +764,18 @@ labeling time:
   rather than as an absolute recall floor that they cannot;
 - pool dev + test (37 positives) **only** with the explicit caveat that dev tuned the heuristic, so
   the pooled number is optimistic by construction and cannot be the headline.
+
+**Decision taken 2026-11-18 (owner).** The **narrowing option** is chosen and **no wave 3 is drawn**.
+The gate claim becomes: report the detector's recall **with its interval** at the operating point it
+actually reaches, alongside the **false-alarm reduction against the citation-level floor**, rather than
+asserting a 0.70/0.80 recall floor that 21 test positives cannot support. The wave-3 rows above stay
+recorded as the priced option if a later phase needs a tighter interval; they are not scheduled, and
+nothing below is triggered until a new decision says so.
+
+Concretely, P3-05's acceptance is read as: beat the citation-level baseline on **false alarms** at an
+acceptable **measured** recall, with both numbers carrying intervals, and state the operating point. A
+0.70 lower bound on recall may only be claimed if the measured interval supports it on whatever test
+rows exist at that time; otherwise the report says which claim the data supports and which it does not.
 
 **Consequences and guardrails.**
 

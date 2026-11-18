@@ -130,6 +130,14 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-18 — Buffy — wave-2 agreement under Amendment C; ADR-0025 decided (narrow, no wave 3)
+- `scripts/dependency_agreement.py --wave wave2` (+ 5 tests, 15 in the module): blinded-subset check, raw agreement, κ, PABAK, design-weighted κ, **negative-side κ**, off-diagonal count, and an isolation audit that reads the repo rather than asserting the rule.
+- **Result: 30/30 = 100%, κ 1.000, PABAK 1.000, design-weighted κ 1.000 — degenerate again (zero discordant pairs).** Negative side is now estimable (18 rows, floor 15): **negative-class κ 1.000**, labeler 2 keeps the row negative **18/18 = 100% [82.4%, 100%]**, calls none of them `RELIES_ON`.
+- Matrix is purely diagonal: 12 `RELIES_ON`, 9 `MENTIONS`, 9 `UNRELATED`, 0 skipped. The report says what that does and does not say: the partition is reproducible, but there is **no evidence about the ambiguous boundary**, and κ still cannot separate genuine reliability from a shared rubric reading or a shared heuristic.
+- **Isolation audit, all pass:** distinct labeler ids (`Soham` vs `friend`); the export sits in the declared `eval/audit/p3-03-labeler2/` handoff directory; that directory holds only the blind CSV, labeler HTML and README (no labeler-1 export, manifest or selection file); the export's columns match the blind schema (no weights/strata/split/cue). Pace 38 s/row vs 120 s/row is consistent with two people but recorded as **weak** corroboration, since the owner reported it and the script cannot measure it.
+- **ADR-0025 accepted with the narrowing option: no wave 3.** The gate becomes a measured recall with its interval plus the false-alarm reduction against the citation-level floor; the 0.70/0.80 recall floor may only be claimed if the interval supports it. Wave-3 rows stay recorded as a priced option, unscheduled.
+- Next: P3-05 staged detector, with the frozen P3-04 baselines as the floor to beat.
+
 ### 2026-11-18 — Buffy — P3-04 baselines measured and frozen; ADR-0025 Proposed
 - `scripts/dependency_baselines.py` (+ `tests/test_dependency_baselines.py`, 8 tests) scores citation-level, section/lexical heuristic and LLM-only on the 300 labelled rows: dev/test separately, weighted and unweighted, Wilson CIs, text-bearing (232) and stub (68) frames separate.
 - Heuristic tuned on **dev only** (30-point grid recorded in the JSON). **Test computed once and frozen** (`eval/audit/p3-04/p3-04-test-frozen.json`, spec `21faf8c921c32fb8`); a later run recomputes and refuses if any frozen number or the spec moved, and a baseline added afterwards is stamped `added_at` rather than overwriting.
