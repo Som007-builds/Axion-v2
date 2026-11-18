@@ -13,12 +13,13 @@
 
 ## Tasks
 
-### [ ] P3-01 — Dependency labeling guideline
+### [~] P3-01 — Dependency labeling guideline
 - depends: P2 gate passed
 - what: Write docs/eval/DEPENDENCY_GUIDELINE.md (RELIES_ON / MENTIONS / UNRELATED) with examples and edge cases; pilot on 20 contexts and refine.
 - acceptance: Guideline v1 committed; pilot notes recorded.
-  - agent: — | started: — | branch: p3
+  - agent: opencode | started: 2026-11-18 16:02 | branch: p3
   - notes:
+    - 2026-11-18 16:02: P2 gate accepted; claiming P3-01. Plan: guideline v1 with illustrative edge cases, a seeded 20-context pilot packet, and blank labels. The agent will not create labels; the owner labels the packet and the notes drive guideline v1.1.
   - done: — | evidence: —
 
 ### [ ] P3-02 — Candidate generator
