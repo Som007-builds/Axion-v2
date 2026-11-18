@@ -66,6 +66,43 @@ MERGE (c)-[points:POINTS_TO]->(source)
 SET points.stage = 'rules', points.run_id = $run_id
 """
 
+_SOURCE_CLAIM_QUERY = """
+UNWIND $rows AS row
+MERGE (claim:Claim {claim_id: row.claim_id})
+SET claim.text = row.text,
+    claim.section = row.section,
+    claim.evidence_span = row.evidence_span,
+    claim.claim_kind = row.claim_kind,
+    claim.stage = 'rules',
+    claim.run_id = $run_id
+WITH DISTINCT claim, row
+MATCH (source:Paper {pmcid: row.source_pmcid})
+MERGE (claim)-[extracted:EXTRACTED_FROM]->(source)
+SET extracted.stage = 'rules', extracted.run_id = $run_id
+"""
+
+_CANDIDATE_QUERY = """
+UNWIND $rows AS row
+MATCH (citer:Paper {pmcid: row.citer_pmcid})
+MATCH (source:Paper {pmcid: row.source_pmcid})
+MERGE (c:CitationContext {ctx_id: row.ctx_id})
+SET c.text = row.text,
+    c.paragraph_text = row.paragraph_text,
+    c.section = row.section,
+    c.paragraph_index = row.paragraph_index,
+    c.sentence_index = row.sentence_index,
+    c.marker = row.marker,
+    c.ref_id = row.ref_id,
+    c.citer_pmcid = row.citer_pmcid,
+    c.source_pmcid = row.source_pmcid,
+    c.source_claim_id = row.source_claim_id,
+    c.run_id = $run_id
+MERGE (c)-[inside:IN_PAPER]->(citer)
+SET inside.stage = 'rules', inside.run_id = $run_id
+MERGE (c)-[points:POINTS_TO]->(source)
+SET points.stage = 'rules', points.run_id = $run_id
+"""
+
 
 class Neo4jBackend:
     """Thin, batch-oriented Neo4j adapter.
@@ -121,6 +158,12 @@ class Neo4jBackend:
     def upsert_contexts(self, rows: Sequence[Mapping[str, object]], *, run_id: str) -> None:
         self._batched_write(_CONTEXT_QUERY, rows, run_id=run_id)
 
+    def upsert_source_claims(self, rows: Sequence[Mapping[str, object]], *, run_id: str) -> None:
+        self._batched_write(_SOURCE_CLAIM_QUERY, rows, run_id=run_id)
+
+    def upsert_candidates(self, rows: Sequence[Mapping[str, object]], *, run_id: str) -> None:
+        self._batched_write(_CANDIDATE_QUERY, rows, run_id=run_id)
+
     def count_nodes(self, label: str) -> int:
         with self._driver.session() as session:
             record = session.run(f"MATCH (n:{label}) RETURN count(n) AS n").single()
@@ -134,11 +177,13 @@ class Neo4jBackend:
     def counts(self) -> dict[str, int]:
         return {
             "Paper": self.count_nodes("Paper"),
+            "Claim": self.count_nodes("Claim"),
             "CitationContext": self.count_nodes("CitationContext"),
             "RetractionNotice": self.count_nodes("RetractionNotice"),
             "CITES": self.count_relationships("CITES"),
             "IN_PAPER": self.count_relationships("IN_PAPER"),
             "POINTS_TO": self.count_relationships("POINTS_TO"),
+            "EXTRACTED_FROM": self.count_relationships("EXTRACTED_FROM"),
             "RETRACTED_BY": self.count_relationships("RETRACTED_BY"),
         }
 

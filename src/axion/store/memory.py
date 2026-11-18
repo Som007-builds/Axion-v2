@@ -14,9 +14,11 @@ class InMemoryGraph:
         self.notices: dict[str, dict[str, object]] = {}
         self.cites: dict[tuple[str, str], int] = {}
         self.contexts: dict[str, dict[str, object]] = {}
+        self.source_claims: dict[str, dict[str, object]] = {}
         self.in_paper: set[tuple[str, str]] = set()
         self.points_to: set[tuple[str, str]] = set()
         self.retracted_by: set[tuple[str, str]] = set()
+        self.extracted_from: set[tuple[str, str]] = set()
 
     def apply_schema(self) -> None:
         return None
@@ -50,14 +52,29 @@ class InMemoryGraph:
             self.in_paper.add((ctx_id, str(row["citer_pmcid"])))
             self.points_to.add((ctx_id, str(row["source_pmcid"])))
 
+    def upsert_source_claims(self, rows: Sequence[Mapping[str, object]], *, run_id: str) -> None:
+        for row in rows:
+            claim_id = str(row["claim_id"])
+            self.source_claims[claim_id] = {**row, "run_id": run_id}
+            self.extracted_from.add((claim_id, str(row["source_pmcid"])))
+
+    def upsert_candidates(self, rows: Sequence[Mapping[str, object]], *, run_id: str) -> None:
+        for row in rows:
+            ctx_id = str(row["ctx_id"])
+            self.contexts[ctx_id] = {**row, "run_id": run_id}
+            self.in_paper.add((ctx_id, str(row["citer_pmcid"])))
+            self.points_to.add((ctx_id, str(row["source_pmcid"])))
+
     def counts(self) -> dict[str, int]:
         return {
             "Paper": len(self.papers),
+            "Claim": len(self.source_claims),
             "CitationContext": len(self.contexts),
             "RetractionNotice": len(self.notices),
             "CITES": len(self.cites),
             "IN_PAPER": len(self.in_paper),
             "POINTS_TO": len(self.points_to),
+            "EXTRACTED_FROM": len(self.extracted_from),
             "RETRACTED_BY": len(self.retracted_by),
         }
 
