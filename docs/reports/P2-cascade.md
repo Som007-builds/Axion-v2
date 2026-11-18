@@ -22,6 +22,7 @@ result plus the best frontier point.
   reports both retention numbers, and no measured row reaches 90% retention.
 - **Operating point adopted:** ADR-0022 selects `p2-05-length30-v1`; the config lock is now
   `status: accepted`. Stage 2 remains projected, not measured at scale.
+- **Why only one is recorded as the operating point:** both `sections-core` and `escalation-length30` passed the literal gate; ADR-0022 adopts only `escalation-length30` because it retains 56.7% of test output versus 27.8%.
 
 ## Measured rows
 
