@@ -415,6 +415,75 @@ which is projected to add $0.000335/paper (54.8% savings) and was never measured
 priced compute assumption, not a bill. If a later phase requires ≥90% retention, this operating point
 must be revisited; the negative-result alternative remains documented in `docs/reports/P2-cascade.md`.
 
+## ADR-0023 — P3-03 gold set: waves, two-frame sampling, source-level split
+
+**Date:** 2026-11-18 — **Status:** Proposed (owner decision pending; the owner is the labeler).
+
+**Context.** P3-02 produced **6,117 candidate contexts** over **258 source papers** with at least one
+context, and a source-claim proxy for **69.7%** of the frame (`docs/reports/P3-02-candidates.md`).
+The P3-01 pilot labelled 20 rows: **16 MENTIONS / 2 RELIES_ON / 2 UNRELATED**, a base rate of 10.0%
+(Wilson 95% **[2.8%, 30.1%]**) from a single labeler, on an edge-case-enriched packet. The PRD gate
+needs recall ≥0.70 (ratified ≥0.80) on `RELIES_ON` against a citation-level baseline, so the audit
+must produce enough positives that a recall estimate can be defended — not merely enough rows.
+
+**Decision.**
+
+1. **Waves, not one sample.** Wave 1 is **150 rows**. Each later wave draws from the pool remaining
+after earlier waves, so a wave never re-labels or invalidates an earlier draw. Every row carries a
+fixed inclusion probability and weight in `p3-03-wave1-manifest.csv`, and the dev/test split is fixed
+at source level, so waves are additive: row weights, strata and split are properties of the row, not
+of the wave. The owner decides after wave 1 whether to continue toward ~300–600 rows.
+2. **Two frames in every wave.** A **uniform random slice of 30 rows** (π = 30/6,117 = 0.004904,
+weight 203.9) gives an unbiased base rate; **120 cue-enriched rows**, stratified by citing section,
+give the positives. The cap is **8 rows per source** (5% of a 150-row wave) because 17 sources hold
+66% of all contexts; 5 sources hit the cap in wave 1. Cues are deterministic regexes over the citing
+sentence: `we_used` (0.3% of contexts), `based_on` (3.5%), `numeric_effect` (2.2%), `comparison`
+(6.5%), `method_word` (3.7%), `inference_connector` (3.0%), `prior_finding` (1.0%), leaving a
+cue-positive pool of 1,080 (17.7%). A bare-digit cue was rejected after measurement: it fired on
+99.8% of contexts and enriched nothing. Metrics are reported **weighted and unweighted**.
+3. **Split by source paper, frozen before any detector exists.** Seed `20261119` assigns whole source
+papers, balanced by context count: **34 dev / 34 test sources, 3,059 / 3,058 contexts**, wave rows
+**73 / 77**. Because assignment covers every source, no context can move split later. Nothing is tuned
+on test.
+4. **Linked and unlinked rows are both in the gold set.** 67.3% of wave rows carry a source-claim
+proxy; 49 do not. Of those, 15 show the source abstract and 34 have no abstract at all (retracted or
+withdrawn stub articles with a title only). Dropping the unlinked third would truncate the frame and
+bias prevalence, and those rows are exactly where retraction-notice `MENTIONS`/`UNRELATED` cases live.
+**Effect on the framing:** gold labels the context→source edge, so a corpus-level claim is about
+*context-source edges*, and claim-linking accuracy (P3-06) is reported on the linked subset only.
+5. **A reserved overlap set for a second labeler.** **30 rows (20% of the wave)** — 24 cue-enriched +
+6 uniform — are exported as a separate blind packet with a blank labeler-id field. Enrichment is what
+makes `RELIES_ON` and `UNRELATED` frequent enough for κ to be estimable; κ from an enriched overlap is
+prevalence-specific and is **not** the corpus κ. If a class is absent after labelling, the owner tops
+up with ≤10 rows from the remaining pool.
+6. **How many positives a recall claim needs** (measured by the script's Wilson table):
+
+| positives | recall 0.80 CI | recall 0.85 CI |
+| --: | :-- | :-- |
+| 15 | 0.548–0.930 | 0.621–0.963 |
+| 30 | 0.627–0.905 | 0.703–0.947 |
+| 60 | 0.682–0.882 | 0.739–0.919 |
+| 100 | 0.711–0.867 | 0.767–0.907 |
+
+At ~15 positives the interval straddles the gate and certifies nothing; **~30 positives** supports a
+decision-grade read at observed recall ≈0.85, and **~100** gives a lower bound above 0.70 at observed
+0.80. Wave 1 is expected to yield **3 positives under the pilot's own cue reading** (0 of 3
+cue-positive pilot rows were `RELIES_ON`) and **~21 if enrichment lifts the rate to 15%**; the realised
+count replaces this assumption before the owner decides on wave 2.
+
+**Alternatives considered.** One uniform sample of ~600 rows: unbiased and ~60 positives, but ≈5 hours
+of owner labeling and no class coverage guarantee for κ. Pure cue-enriched sampling: more positives,
+but no base rate, so false-alarm reduction could not be estimated. Labelling the whole 6,117-context
+frame: not feasible at one labeler.
+
+**Consequences and risks.** The cues are **unvalidated** — no cue separates `RELIES_ON` from
+`MENTIONS` in the 20-row pilot — so wave 1 is also a measurement of the cues; if the lift is near zero,
+wave 2 shifts rows to the uniform frame. The per-source cap makes enriched design weights approximate,
+and capped sources are listed in the report so the effect is checkable. The 30-row uniform slice yields
+only ~3 positives, so the base-rate interval stays wide until later waves. Estimated labeling time is
+50–112 minutes for wave 1 at 20–45 s/row; the P3-01 pilot recorded no duration, so that is arithmetic,
+not a measurement. No labels are created by the agent.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

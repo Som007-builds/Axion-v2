@@ -40,13 +40,20 @@
     - **P3-03 planning input (pilot + corpus):** the 20-label pilot gives a RELIES_ON base rate of 2/20 = 10.0%, Wilson 95% **[2.8%, 30.1%]** (`axion.eval.audit.wilson_interval`). At 10%, n=150 yields ~15 RELIES_ON and a recall estimate at 0.80 has CI 0.55–0.93 (±0.19) — too wide to certify the ≥0.70/≥0.80 recall gate. ±0.10 needs ~60 positives, i.e. ~600 contexts at that rate. The pilot also deliberately over-samples edge cases (retraction notices, reference-list fragments, grouped citations), so 10% is not a corpus estimate.
   - done: 2026-11-18 | evidence: commit `d00112f` (`src/axion/link/candidates.py`, `scripts/generate_candidates.py`, `tests/test_candidates.py`, store backends); reports `docs/reports/P3-02-candidates.md` + `docs/reports/P3-02-candidate-counts.csv` (285 rows); `.venv/Scripts/python.exe scripts/generate_candidates.py --twice` → backend `bolt://127.0.0.1:7888`, run `p3-02-candidates-aba53804bf5c`, 6,117 contexts / 285 sources / 258 with contexts / 214 proxies / 4,262 linked / idempotent `true`; `pytest -q` → **380 passed, 2 skipped**; ruff + `mypy src/axion` clean (54 files). No LLM calls, real spend **$0**.
 
-### [ ] P3-03 — Gold labeling set
+### [~] P3-03 — Gold labeling set
 - depends: P3-02
 - what: Stratified sample (>=100-150 contexts) by section and retracted paper; label; double-label >=20%; agreement stats; freeze paper-level dev/test. Gold is for evaluation only; exclude every gold dev/test paper from student training.
 - acceptance: eval/audit/dependency_audit_v1.csv committed; agreement reported; split is by paper. (Owner labels.)
-  - agent: — | started: — | branch: p3
+  - agent: Buffy | started: 2026-11-18 20:10 | branch: p3
   - notes:
-  - done: — | evidence: —
+    - 2026-11-18 20:10 (Buffy): claiming. Owner instruction: waves (wave 1 = 150, extendable without invalidating earlier draws), source + section stratification with a per-source cap, cue-enriched rows plus a uniform slice for an unbiased base rate, dev/test split by source frozen before any detector, an explicit linked/unlinked policy, a ≥20% overlap for a second labeler, and an extended blind labeler. ADR-0023 (Proposed) written first. The agent creates **no labels**.
+    - Agent-side work (packet, labelers, report, ADR) is complete now; **P3-03 stays `[~]` until the owner's labels exist.**
+    - **Built:** `scripts/dependency_sample.py` (deterministic sampler + packet + labelers + report), `docs/eval/audit_labeler_template.html` (extended blind tool: labeler-id field, autosave/resume, keyboard shortcuts, `insufficient_context`, note box, CSV export with labeler + date, unlinked-source abstract view), ADR-0023 (Proposed).
+    - **Wave 1 (measured, seed `20261119`):** **150 rows** = 30 uniform (weight 203.9) + 120 cue-enriched, stratified by section; **cap 8 rows/source** (5 sources capped, since 17 sources hold 66% of contexts). Split by source, frozen: **34 dev / 34 test sources, 3,059 / 3,058 contexts, 73 / 77 wave rows**. Linked 101/150 (67.3%); 49 unlinked, 15 with an abstract and 34 with none (retracted/withdrawn stubs). Overlap **30 rows** (24 enriched + 6 uniform) in a separate blind packet.
+    - **Cue measurement:** `we_used` 0.3%, `based_on` 3.5%, `numeric_effect` 2.2%, `comparison` 6.5%, `method_word` 3.7%, `inference_connector` 3.0%, `prior_finding` 1.0% → cue-positive pool 1,080 (17.7%). A bare-digit cue fired on 99.8% and was rejected after measurement.
+    - **Honest risk:** the cues are unvalidated — no cue fires on either pilot `RELIES_ON` row, so expected positives are **~3 under the pilot's reading** or **~21 if enrichment lifts the rate to 15%**. Wave 1 measures the cues; if the lift is ~0, wave 2 shifts to the uniform frame.
+    - **Files for the owner:** `eval/audit/p3-03/p3-03-wave1-labeler.html` (label this), `eval/audit/p3-03/p3-03-wave1-overlap-labeler.html` (second labeler). Design report: `docs/reports/P3-03-wave1-packet.md`.
+  - done: — (blocked on owner labels) | evidence: — `python scripts/dependency_sample.py` → 150 rows, 73/77 split, 30 overlap; ruff/format/mypy clean, `pytest -q` 380 passed / 2 skipped; no LLM calls, $0; **no labels created**.
 
 ### [ ] P3-04 — Baselines
 - depends: P3-03
@@ -114,6 +121,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-18 — Buffy — P3-03 wave 1 built: 150 rows (30 uniform + 120 cue-enriched, cap 8/source), 34/34 source split frozen, 30-row second-labeler overlap, labelers + ADR-0023 Proposed; no labels created, $0 — next: **owner** labels `eval/audit/p3-03/p3-03-wave1-labeler.html` and returns the exported CSV
 - 2026-11-18 — Buffy — P3-02 closed: 6,117 candidate contexts across 285 sources (258 with ≥1, 27 at zero), 214 source-claim proxies → 69.7% of contexts linked, idempotent on a populated Neo4j (0 duplicate keys), no LLM, $0 — next: **owner** labels the P3-03 gold set (agent must not start it)
 - 2026-11-18 — opencode — P3-01 closed: 20/20 pilot labels returned, guideline v1.1, measured pilot summary; single labeler so no agreement estimate — next: P3-02 candidate generator
 - 2026-11-18 — opencode — P3-01 blank-label HTML labeler added; packet now carries paragraph and source-claim proxy — next: owner exports labels, then guideline v1.1 and P3-02
