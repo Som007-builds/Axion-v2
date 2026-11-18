@@ -417,7 +417,7 @@ must be revisited; the negative-result alternative remains documented in `docs/r
 
 ## ADR-0023 — P3-03 gold set: waves, two-frame sampling, source-level split
 
-**Date:** 2026-11-18 — **Status:** Proposed (owner decision pending; the owner is the labeler).
+**Date:** 2026-11-18 — **Status:** Accepted (2026-11-18) with Amendments A and B; the owner is the labeler.
 
 **Context.** P3-02 produced **6,117 candidate contexts** over **258 source papers** with at least one
 context, and a source-claim proxy for **69.7%** of the frame (`docs/reports/P3-02-candidates.md`).
@@ -436,7 +436,11 @@ of the wave. The owner decides after wave 1 whether to continue toward ~300–60
 2. **Two frames in every wave.** A **uniform random slice of 30 rows** (π = 30/6,117 = 0.004904,
 weight 203.9) gives an unbiased base rate; **120 cue-enriched rows**, stratified by citing section,
 give the positives. The cap is **8 rows per source** (5% of a 150-row wave) because 17 sources hold
-66% of all contexts; 5 sources hit the cap in wave 1. Cues are deterministic regexes over the citing
+66% of all contexts, and it is applied **per frame** (uniform and enriched are capped separately).
+Replaying the sampler on the committed packet: **7 sources were truncated by the cap**, all of them
+in the enriched frame (`PMC7102549`, `PMC7133645`, `PMC7175452`, `PMC7185795`, `PMC7206931`,
+`PMC7255293`, `PMC7346803`); because the cap is per frame, **6 sources hold more than 8 wave rows
+in total, max 14** (`PMC7185795`). Cues are deterministic regexes over the citing
 sentence: `we_used` (0.3% of contexts), `based_on` (3.5%), `numeric_effect` (2.2%), `comparison`
 (6.5%), `method_word` (3.7%), `inference_connector` (3.0%), `prior_finding` (1.0%), leaving a
 cue-positive pool of 1,080 (17.7%). A bare-digit cue was rejected after measurement: it fired on
@@ -452,10 +456,11 @@ bias prevalence, and those rows are exactly where retraction-notice `MENTIONS`/`
 **Effect on the framing:** gold labels the context→source edge, so a corpus-level claim is about
 *context-source edges*, and claim-linking accuracy (P3-06) is reported on the linked subset only.
 5. **A reserved overlap set for a second labeler.** **30 rows (20% of the wave)** — 24 cue-enriched +
-6 uniform — are exported as a separate blind packet with a blank labeler-id field. Enrichment is what
+6 uniform — were exported as a separate blind packet with a blank labeler-id field. Enrichment is what
 makes `RELIES_ON` and `UNRELATED` frequent enough for κ to be estimable; κ from an enriched overlap is
-prevalence-specific and is **not** the corpus κ. If a class is absent after labelling, the owner tops
-up with ≤10 rows from the remaining pool.
+prevalence-specific and is **not** the corpus κ. **This pre-built overlap is SUPERSEDED by Amendment
+A** (it was selected without reference to labeler 1's labels); the files are retained and marked
+superseded, and no second labeler receives them.
 6. **How many positives a recall claim needs** (measured by the script's Wilson table):
 
 | positives | recall 0.80 CI | recall 0.85 CI |
@@ -479,10 +484,82 @@ frame: not feasible at one labeler.
 **Consequences and risks.** The cues are **unvalidated** — no cue separates `RELIES_ON` from
 `MENTIONS` in the 20-row pilot — so wave 1 is also a measurement of the cues; if the lift is near zero,
 wave 2 shifts rows to the uniform frame. The per-source cap makes enriched design weights approximate,
-and capped sources are listed in the report so the effect is checkable. The 30-row uniform slice yields
+and the truncated sources are listed in §2 above so the effect is checkable. The 30-row uniform slice yields
 only ~3 positives, so the base-rate interval stays wide until later waves. Estimated labeling time is
 50–112 minutes for wave 1 at 20–45 s/row; the P3-01 pilot recorded no duration, so that is arithmetic,
 not a measurement. No labels are created by the agent.
+
+## Amendments to ADR-0023 (Accepted 2026-11-18, owner)
+
+Both amendments were accepted **before wave-1 labels exist**, so nothing here is chosen after seeing
+results. Neither amendment redraws the packet, and the agent still creates no labels.
+
+### Amendment A — the second-labeler overlap is built *after* wave-1 labels, from labeler 1's labels
+
+**Decision.** The pre-built 30-row overlap in §5 is **SUPERSEDED**. The files
+`eval/audit/p3-03/p3-03-wave1-overlap-blind.csv` and `p3-03-wave1-overlap-labeler.html` are kept for
+the record, carry a visible superseded marker, and are **not** sent to the second labeler. Overlap 2 is
+built from labeler 1's returned wave-1 labels, by `scripts/dependency_sample.py --build-overlap
+<labelled.csv>`, with this rule:
+
+1. **Include all (or nearly all) of labeler 1's `RELIES_ON` rows.** An overlap drawn only from
+   negative classes cannot estimate agreement on the class the gate depends on.
+2. **Add a round-robin spread over `MENTIONS`, `UNRELATED` and `insufficient_context`**, taking one row
+   from each class in turn, so no negative class is absent from the overlap.
+3. **Minimum size:** at least **30 rows AND at least 20% of the wave AND at least 6 negatives** — the
+   binding constant is whichever is largest for the realised label distribution. Small negative counts
+   are what make κ unstable, so the floor is on negatives, not just on rows.
+4. **Blind, separate, order-neutral:** a separate file, blank `labeler` and `date` fields, every label
+   field empty, and rows ordered by `sha256(seed:ctx_id)` so neither position nor neighbour leaks the
+   selection rule. The labeler tool receives no labeler-1 label and no `overlap` flag.
+
+**κ is conditioned on labeler 1.** Labeler 1's labels define the strata, so the statistic is
+"labeler 2 versus labeler 1", not agreement between two exchangeable raters, and it measures
+reproducibility against one rater rather than truth. Three directional effects are recorded so the
+report cannot over-read the number:
+
+- **Inflation from class balance.** The overlap is balanced toward ~50/50 positives-and-negatives
+  instead of the corpus's low `RELIES_ON` prevalence. κ is prevalence-sensitive and rises as classes
+  balance (the classic prevalence effect: at fixed per-class agreement, κ falls toward S/(1+S) as one
+  class becomes rare). So the overlap κ should be read as an **upper** bound relative to a corpus-κ.
+- **Inflation from under-sampled false negatives.** Rows labeler 1 called `MENTIONS` that are really
+  `RELIES_ON` are the hardest disagreements, and the round-robin spread samples that cell only in
+  proportion to its class, not to its difficulty. Leaving hard cells out **inflates** agreement.
+- **Deflation from borderline positives.** "All `RELIES_ON`" drags in labeler 1's most doubtful
+  positive calls, which are exactly where a second reader is most likely to disagree. That
+  **deflates** κ.
+
+**Reporting rule.** Report raw agreement next to κ, the overlap's class counts, and κ recomputed at
+corpus prevalence (reweighting the strata by their wave weights) so the size of the prevalence effect
+is visible rather than asserted. At ≥30 rows the interval is wide; κ is reported with an interval and
+is never used alone to certify a gate.
+
+### Amendment B — the 34 title-only stub rows are a pre-registered reporting stratum
+
+**Measured on the committed wave (recounted from the packet, not from memory).** Of 150 wave rows,
+**101 are linked** to a source claim, **15 are unlinked but show the source abstract**, and **34 are
+retracted/withdrawn stubs with a title and no abstract element** (22.7% of the wave: 14 dev / 20 test,
+26 enriched / 8 uniform, from 11 source papers — one contributes 11 rows and another 9). Those 34
+carry **25.9% of the wave's uniform weight mass** (1,862.99 of 7,193.0), so they are not a rounding
+error in any weighted statistic.
+
+**Decision (pre-registered).** All 34 stay in `p3-03-wave1-blind.csv` and in the weighted corpus base
+rate. They are **not** removed from the gold set and no packet is redrawn. Detector metrics are
+reported as follows:
+
+1. **Primary precision/recall are reported on the text-bearing frame: 116 rows** = 101 linked + 15
+   unlinked-with-abstract. That is the frame a detector can actually read evidence from.
+2. **The 34 stubs are reported as a separate stratum** — their own precision/recall and their share of
+   false alarms — never folded into the headline numbers.
+3. **The weighted base rate uses all 150 rows**, stubs included, because the workload contains them.
+4. `text_bearing` (true/false) is added to `p3-03-wave1-manifest.csv` **only**. It is never added to
+   the labeler payload or shown to either labeler: the labeler must judge the row as it stands.
+
+**Why a stratum rather than a split.** A stub row shows a title and no evidence, so `RELIES_ON` is not
+plausibly available to any labeler; the rows are near-certain `MENTIONS`/`UNRELATED`. Dropping them from
+the headline flatters precision on the real workload (27% of the weight mass would silently vanish),
+while folding them in lets title-only rows dominate false alarms and dilute recall. Reporting both
+keeps the detector-facing number and the workload-representative number separately honest.
 
 ## ADR template
 ```

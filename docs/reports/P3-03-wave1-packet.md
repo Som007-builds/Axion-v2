@@ -11,7 +11,7 @@
 | Uniform random | 30 | 30/6,117 = 0.004904 | 203.9 | unbiased base rate |
 | Cue-enriched, stratified by section | 120 | per-stratum n/N | per row in manifest | positives for recall |
 
-Per-source cap: **8 rows** (5% of a 150-row wave). Sources hitting the cap: **7** (`PMC7102549`, `PMC7133645`, `PMC7175452`, `PMC7185795`, `PMC7206931`, `PMC7255293` ...).
+Per-source cap: **8 rows** (5% of a 150-row wave), applied **per frame** (uniform and enriched are capped separately). Truncated by the cap in wave 1: **7 sources**, all in the enriched frame (`PMC7102549`, `PMC7133645`, `PMC7175452`, `PMC7185795`, `PMC7206931`, `PMC7255293`, `PMC7346803`). Because the cap is per frame, **6 sources hold more than 8 wave rows in total, max 14** (`PMC7185795`).
 
 ## Strata
 
