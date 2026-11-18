@@ -724,6 +724,60 @@ measured point inside it. Results:
 and wave 2 combined. Options are recorded in `docs/PROGRESS.md`: accept a decision-grade read at ~37–60
 positives, extend uniformly toward 77, or narrow the claim to a stratified subset.
 
+## ADR-0025 — Wave 3 (if any) grows the gold **test** set, and the alternative is to narrow the claim
+
+2026-11-18 · **Proposed**
+
+**Context.** P3-04 measured the three baselines on the 300 labelled rows and froze the test result
+(`eval/audit/p3-04/p3-04-test-frozen.json`). The text-bearing test frame has **18 `RELIES_ON` rows,
+21 in test overall**, which is the wrong side of thin for a 0.70/0.80 recall gate: the heuristic's
+test recall is 83.3% with a 95% interval of **[60.8%, 94.2%]**, so the lower end sits below the gate
+even though the point estimate clears it. ADR-0024's stop rule fired: 37 positives exist, 77 were the
+target, and the remaining rows are a decision for the owner rather than an automatic next wave.
+
+**Decision.** If a third wave is drawn at all, it is drawn **from test-split sources only, uniformly,
+with design weights** — the frozen source assignment from `scripts/dependency_sample.py` is not
+redrawn, and no dev row is added. The pool is the **2,909 unlabelled contexts in the 129 test-split
+sources** (3,058 contexts total, 149 already labelled), so π = rows / 2,909, weight = 1/π, cap 8
+rows/source (129 × 8 = 1,032 rows are reachable, so every option below is feasible). No cue filter and
+no section stratum: wave 2 showed the cue frame does not beat the uniform draw.
+
+| Option | Extra test positives | Rows | π | Weight | Rows at 8.0% | Rows at 15.8% | Labeling time at 38 s/row |
+| :-- | --: | --: | --: | --: | --: | --: | --: |
+| Reach **40** test positives | +19 | — | — | — | **238** | **121** | 2 h 31 min / 1 h 17 min |
+| Reach **77** test positives | +56 | — | — | — | **700** | **355** | 7 h 23 min / 3 h 45 min |
+| Same rows, as π | | 238 / 700 / 121 / 355 | 0.0818 / 0.2406 / 0.0416 / 0.1220 | 12.22 / 4.16 / 24.03 / 8.20 | | | |
+
+The two rate columns are the **measured** uniform rates: 8.0% is wave 2's own rate (n = 150, the
+better-measured slice) and 15.8% is the pooled design-weighted rate over all 180 uniform rows. They
+differ by ~2x, which is why the row count is a range rather than a number; the 8.0% column is the
+planning assumption and the 15.8% column is the optimistic one. Times use the owner's **measured
+38 s/row**, not the 20–45 s arithmetic from ADR-0023.
+
+**Alternatives, and the default.** The owner may instead **narrow the gate claim**, which costs no
+labeling time:
+
+- replace "0.70 lower bound at 0.80 observed recall" with a reported recall **interval** at the
+  operating point the detector actually reaches, plus the false-alarm contrast against the
+  citation-level floor;
+- state the gate as a **false-alarm reduction at fixed recall**, which 21 test positives can carry,
+  rather than as an absolute recall floor that they cannot;
+- pool dev + test (37 positives) **only** with the explicit caveat that dev tuned the heuristic, so
+  the pooled number is optimistic by construction and cannot be the headline.
+
+**Consequences and guardrails.**
+
+- Wave 3 extends the **test** set after P3-04's freeze. The frozen P3-04 numbers stay as published;
+  re-scoring a baseline on the extended test set is a **new evaluation** (the P3-05 gate) and must be
+  declared with both denominators in the same report. Nothing is silently re-frozen.
+- Wave 3 rows carry a different π from the existing test rows, so every metric must use each row's own
+  weight; averaging the two inclusion probabilities would bias the base rate.
+- The gold test set stays owner-labelled. The second-labeler overlap for any wave 3 packet follows
+  Amendment C: blind files in their own directory, ≥15 negative rows, the export checked against the
+  blinded subset before comparison.
+- **Default if the owner does nothing:** no wave 3, and the P3-05 gate is reported with the narrowed
+  claim above. That is a legitimate outcome, not a failure — the measurement is what the labels support.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

@@ -130,6 +130,14 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-18 — Buffy — P3-04 baselines measured and frozen; ADR-0025 Proposed
+- `scripts/dependency_baselines.py` (+ `tests/test_dependency_baselines.py`, 8 tests) scores citation-level, section/lexical heuristic and LLM-only on the 300 labelled rows: dev/test separately, weighted and unweighted, Wilson CIs, text-bearing (232) and stub (68) frames separate.
+- Heuristic tuned on **dev only** (30-point grid recorded in the JSON). **Test computed once and frozen** (`eval/audit/p3-04/p3-04-test-frozen.json`, spec `21faf8c921c32fb8`); a later run recomputes and refuses if any frozen number or the spec moved, and a baseline added afterwards is stamped `added_at` rather than overwriting.
+- **Text-bearing test, 18 positives:** citation-level P 16.4% / R 100% / FAR 100%; heuristic P 30.0% / R 83.3% [60.8, 94.2] / FAR 38.0% [28.8, 48.2]; LLM-only P 75.0% / R 16.7% [5.8, 39.2] / FAR 1.1%. **21 test positives overall** — the report states plainly that any recall claim has a wide interval.
+- **LLM-only cost, stated before the call:** 300 rows, ~96k prompt + 18k completion tokens (heuristic token count), list price **$0.0739**, billing free tier. Ran live after a 3-call smoke: **300/300 rows, $0 real spend**, ledger run `p3-04-llm-2026-11-18`. 0 of 450 daily requests were used before the run.
+- **ADR-0025 (Proposed):** a wave 3, if drawn, is test-split sources only, uniform, from the 2,909-context test pool (π = rows/2,909, weight 1/π, cap 8/source). Reaching 40 test positives needs **238 rows at 8.0%** (2 h 31 min at 38 s/row) or **121 at 15.8%** (1 h 17 min); 77 needs **700** (7 h 23 min) or **355** (3 h 45 min). The alternative — narrow the gate to a recall interval plus the false-alarm contrast — costs no labeling time and is the default.
+- Next: owner reads P3-04 and decides wave 3 vs narrowing the claim; the wave-2 overlap agreement report follows when the export is handed over.
+
 ### 2026-11-18 — Buffy — wave-2 labels received; overlap built; stop rule applied
 - Owner returned `eval/audit/p3-03/dependency_audit_v1_wave2_labelled.csv`: **150/150 rows, 0 blanks, 150 notes**, **12 `RELIES_ON` / 129 `MENTIONS` / 9 `UNRELATED`** (labeler field `soham`, normalised to `Soham` per the standing rule). **Measured pace: 1 h 35 min = 95 min for 150 rows = 38 s/row** — inside the 20–45 s assumption, upper half.
 - **Wave 2 came in under target:** 8.0% positives, not ~35 (23.3%). Combined: **37 positives / 300 rows**. Uniform base rate now heterogeneous — wave 1 7/30 = 23.3% [11.8, 40.9] vs wave 2 12/150 = 8.0% [4.6, 13.5]; pooled design-weighted 15.8% [10.3, 24.9], pooled unweighted 10.6%. Recorded as provisional, with no homogeneity test claimed.
