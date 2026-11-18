@@ -25,14 +25,20 @@
     - 2026-11-18: received `eval/audit/dependency_pilot_v1_labelled.csv`: 20/20 rows, 20/20 notes, labeler `Soham` (owner responsibility), date `2026-11-18`; labels **16 MENTIONS / 2 RELIES_ON / 2 UNRELATED**, 0 blank. Single labeler, so agreement/κ is not estimable. Two review corrections (`P3P-010`, `P3P-014`) drove the v1.1 corroboration rule. Summary: `docs/reports/P3-01-pilot.md`; metrics: `scripts/dependency_pilot_metrics.py`.
   - done: 2026-11-18 | evidence: `docs/eval/DEPENDENCY_GUIDELINE.md` v1.1; `eval/audit/dependency_pilot_v1_labelled.csv`; `docs/reports/P3-01-pilot.md`; `eval/audit/dependency_pilot_v1.summary.json`; `python scripts/dependency_pilot_metrics.py` → 20 rows / 16 MENTIONS / 2 RELIES_ON / 2 UNRELATED / 0 blank, single-labeler agreement not estimable; `pytest -q` 374 passed / 2 skipped.
 
-### [~] P3-02 - Candidate generator
+### [x] P3-02 - Candidate generator
 - depends: P3-01
 - what: For each retracted paper, collect all in-corpus citing contexts via JATS xrefs; link to source paper claims; store in Neo4j. No LLM.
 - acceptance: Counts per retracted paper reported; idempotent run.
-  - agent: opencode | started: 2026-11-18 18:20 | branch: p3
+  - agent: Buffy | started: 2026-11-18 18:20 (claimed by opencode) | branch: p3
   - notes:
     - 2026-11-18 18:20: Claiming P3-02. Plan: reuse the deterministic JATS parser and reference matcher, emit stable candidate context IDs, report counts per source, and load idempotently into Neo4j. No LLM calls. The 20-row P3-01 pilot is calibration only and will not be treated as gold or training data.
-  - done: - | evidence: -
+    - 2026-11-18 19:05 (Buffy, resumed after a usage-limit cut): found the WIP untracked and green-except-lint. Fixed `tests/test_candidates.py` (the abstract-removal helper could never match the wrapped fixture, so the unlinked-context test was passing/failing for the wrong reason — it asserted a pointer that was still there; now `re.sub(..., flags=re.DOTALL)`), removed the two E501s, reformatted. No duplicate fixtures were present in the file: each fixture has one `journal-meta`, one `abstract`, one entry per paper, one `mkdir`.
+    - Deeper Neo4j container was down at handover; started Docker Desktop and the project container (healthy on `127.0.0.1:7888`) to do the real load rather than only the in-memory one.
+    - **Measured (`--twice`, Neo4j):** 285 source papers with a citer edge, **258 with ≥1 candidate context, 27 with zero**, **6,117 candidate contexts**, 3,357 citer papers, **3,976 citer→source edges with contexts** (both totals equal the P1 manifest's `contexts_total` 6117 and `edges_with_contexts` 3976, which the script enforces). **214 of 285 sources (75.1%)** yield an abstract-sentence source-claim proxy, so **4,262 contexts (69.7%) carry a pointer and 1,855 (30.3%) are unlinked** — the unlinked ones are contexts whose source abstract yields no usable sentence (missing, withdrawn, background-only, or shorter than 60 chars).
+    - **Idempotency:** loaded onto an already-populated graph (Claim 0 → 214, EXTRACTED_FROM 0 → 214, every other count unchanged); second load identical. Independent Cypher checks after the run: 6,117 contexts, 4,262 with a pointer, 258 distinct sources, **0 duplicate `ctx_id`, 0 duplicate `pmcid`**, all `IN_PAPER`/`POINTS_TO`/`EXTRACTED_FROM` edges `stage='rules'`.
+    - **Skew that matters for P3-03:** contexts per source are mean 21.5, **median 4**, max 775; **17 sources hold 4,054 of the 6,117 contexts (66%)**, while 45 sources have exactly 1. A context-level uniform sample would be dominated by a handful of papers, so P3-03 must stratify by source paper as well as by section.
+    - **P3-03 planning input (pilot + corpus):** the 20-label pilot gives a RELIES_ON base rate of 2/20 = 10.0%, Wilson 95% **[2.8%, 30.1%]** (`axion.eval.audit.wilson_interval`). At 10%, n=150 yields ~15 RELIES_ON and a recall estimate at 0.80 has CI 0.55–0.93 (±0.19) — too wide to certify the ≥0.70/≥0.80 recall gate. ±0.10 needs ~60 positives, i.e. ~600 contexts at that rate. The pilot also deliberately over-samples edge cases (retraction notices, reference-list fragments, grouped citations), so 10% is not a corpus estimate.
+  - done: 2026-11-18 | evidence: commit `d00112f` (`src/axion/link/candidates.py`, `scripts/generate_candidates.py`, `tests/test_candidates.py`, store backends); reports `docs/reports/P3-02-candidates.md` + `docs/reports/P3-02-candidate-counts.csv` (285 rows); `.venv/Scripts/python.exe scripts/generate_candidates.py --twice` → backend `bolt://127.0.0.1:7888`, run `p3-02-candidates-aba53804bf5c`, 6,117 contexts / 285 sources / 258 with contexts / 214 proxies / 4,262 linked / idempotent `true`; `pytest -q` → **380 passed, 2 skipped**; ruff + `mypy src/axion` clean (54 files). No LLM calls, real spend **$0**.
 
 ### [ ] P3-03 — Gold labeling set
 - depends: P3-02
@@ -108,6 +114,7 @@
 
 ## Phase handoff log (append newest first)
 <!-- Format: YYYY-MM-DD — agent — what changed — next step -->
+- 2026-11-18 — Buffy — P3-02 closed: 6,117 candidate contexts across 285 sources (258 with ≥1, 27 at zero), 214 source-claim proxies → 69.7% of contexts linked, idempotent on a populated Neo4j (0 duplicate keys), no LLM, $0 — next: **owner** labels the P3-03 gold set (agent must not start it)
 - 2026-11-18 — opencode — P3-01 closed: 20/20 pilot labels returned, guideline v1.1, measured pilot summary; single labeler so no agreement estimate — next: P3-02 candidate generator
 - 2026-11-18 — opencode — P3-01 blank-label HTML labeler added; packet now carries paragraph and source-claim proxy — next: owner exports labels, then guideline v1.1 and P3-02
 - 2026-11-18 — opencode — P3-01 guideline v1 + 20-context blank pilot packet committed (`dafa9dd`); owner labeling pending — next: owner labels, then guideline v1.1 and P3-02
