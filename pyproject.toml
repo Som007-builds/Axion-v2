@@ -21,6 +21,11 @@ dependencies = [
 dev = [
   "pre-commit==4.0.1",
   "mypy==1.14.0",
+  # src/axion/train/student.py imports numpy at module level and strict mypy
+  # typechecks src/axion; tests/test_student.py imports numpy directly. CI
+  # installs only this extra, so numpy must be declared here as well as in
+  # `train`. Same pin in both places on purpose.
+  "numpy==2.4.6",
   "pytest==8.3.4",
   "ruff==0.8.4",
   "types-PyYAML==6.0.12.20240917",
