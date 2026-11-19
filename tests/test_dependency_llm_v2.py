@@ -18,6 +18,7 @@ def _row(
     claim: str = "A claims X.",
     abstract: str = "",
     context: str = "B mentions the topic [1].",
+    section: str = "Discussion",
 ) -> dict[str, str]:
     return {
         "row_id": row_id,
@@ -26,7 +27,7 @@ def _row(
         "text_bearing": "true" if (claim or abstract) else "false",
         "weight": "1.0",
         "frame": "text_bearing" if (claim or abstract) else "stub",
-        "section": "Discussion",
+        "section": section,
         "section_bucket": "discussion",
         "label": label,
         "context_text": context,
@@ -126,3 +127,27 @@ def test_v2_checkpoint_round_trips(tmp_path: Path) -> None:
     loaded = json.loads(json.dumps(lv2.read_v2(path)))
     assert loaded["a"]["score"] == "88"
     assert loaded["a"]["cue"] == "uses A"
+
+
+def test_dev_metrics_compares_v1_v2_and_the_heuristic() -> None:
+    rows = [
+        _row("p1", label="RELIES_ON", claim="we used the assay from A."),
+        _row("p2", label="RELIES_ON", claim="A claims X."),
+        _row("n1", label="MENTIONS", context="has been reviewed in [1].", section="Introduction"),
+    ]
+    v2 = {"p1": {"score": "90"}, "p2": {"score": "10"}, "n1": {"score": "10"}}
+    v1 = {"p1": {"label": "RELIES_ON"}, "p2": {"label": "MENTIONS"}, "n1": {"label": "MENTIONS"}}
+
+    metrics = lv2.dev_metrics(rows, v2, v1)
+
+    distribution = metrics["score_distribution"]
+    assert isinstance(distribution, dict)
+    assert distribution["band_ge_70"] == 1
+    assert distribution["band_le_30"] == 2
+    table = metrics["table"]
+    assert isinstance(table, dict)
+    frame = table["text_bearing"]
+    assert isinstance(frame, dict)
+    assert frame["v1"]["recall"] == 0.5
+    assert frame["v2@70"]["recall"] == 0.5
+    assert set(frame) >= {"v1", "heuristic", "v2@70"}

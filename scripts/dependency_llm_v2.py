@@ -24,6 +24,7 @@ import json
 import math
 import sqlite3
 from collections import Counter
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -50,6 +51,7 @@ from axion.llm.pacing import (
 from axion.llm.providers import ProviderRegistry
 from scripts.dependency_baselines import (
     POSITIVE,
+    heuristic_score,
     load_rows,
     scored_rows,
     spec_rows,
@@ -386,6 +388,55 @@ def run_live(
     }
 
 
+def dev_metrics(
+    rows: Sequence[dict[str, str]],
+    v2: dict[str, dict[str, str]],
+    v1: dict[str, dict[str, str]],
+    *,
+    thresholds: Sequence[float] = (31.0, 50.0, 60.0, 70.0, 80.0),
+) -> dict[str, object]:
+    """v1 vs v2 vs the heuristic on dev, with intervals, frames kept separate."""
+    from scripts.dependency_baselines import binary_metrics, frame_rows, tune_heuristic
+
+    positive_scores = {row_id: float(item["score"]) for row_id, item in v2.items()}
+    heuristic = tune_heuristic(rows)["params"]
+    assert isinstance(heuristic, dict)
+    predictions = {
+        "v1": {
+            row_id: int(item["label"] == POSITIVE)
+            for row_id, item in v1.items()
+            if row_id in positive_scores
+        },
+        "heuristic": {
+            row["row_id"]: int(heuristic_score(row, heuristic) >= heuristic["threshold"])
+            for row in rows
+        },
+    }
+    for threshold in thresholds:
+        predictions[f"v2@{int(threshold)}"] = {
+            row_id: int(score >= threshold) for row_id, score in positive_scores.items()
+        }
+
+    table: dict[str, object] = {}
+    for frame in ("text_bearing", "stub"):
+        subset = frame_rows(rows, frame)
+        table[frame] = {
+            name: binary_metrics(table_rows, subset)["unweighted"]
+            for name, table_rows in predictions.items()
+        }
+    scores = list(positive_scores.values())
+    return {
+        "table": table,
+        "score_distribution": {
+            "rows": len(scores),
+            "mean": round(sum(scores) / len(scores), 1) if scores else None,
+            "band_le_30": sum(1 for score in scores if score <= 30),
+            "band_31_69": sum(1 for score in scores if 30 < score < 70),
+            "band_ge_70": sum(1 for score in scores if score >= 70),
+        },
+    }
+
+
 def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> None:
     d = diagnosis
     lines = [
@@ -428,8 +479,47 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
         "protocol use) are stated in the prompt rather than left to inference.",
         "",
     ]
+    metrics = summary.get("dev_metrics")
+    if isinstance(metrics, dict):
+        distribution = metrics["score_distribution"]
+        assert isinstance(distribution, dict)
+        lines += [
+            "## v2 on dev (scores from the checkpoint, no further calls)",
+            "",
+            f"- {distribution['rows']} scored rows, mean score {distribution['mean']}.",
+            f"- Score bands: **<= 30: {distribution['band_le_30']}**, "
+            f"31-69: {distribution['band_31_69']}, "
+            f"**>= 70: {distribution['band_ge_70']}** - the model is close to binary, which is",
+            "  why thresholds between 31 and 70 behave identically.",
+            "",
+            "| Frame | Model | Precision | Recall [95% CI] | False-alarm rate [95% CI] |",
+            "| :-- | :-- | --: | :-- | :-- |",
+        ]
+        table = metrics["table"]
+        assert isinstance(table, dict)
+        for frame, label in (("text_bearing", "text-bearing"), ("stub", "stub")):
+            frame_table = table[frame]
+            assert isinstance(frame_table, dict)
+            for name, block in frame_table.items():
+                assert isinstance(block, dict)
+                recall_ci = block["recall_ci"] or [0.0, 0.0]
+                far_ci = block["false_alarm_ci"] or [0.0, 0.0]
+                lines.append(
+                    f"| {label} | {name} | {fmt(block['precision'])} | "
+                    f"{fmt(block['recall'])} [{recall_ci[0]:.1%}, {recall_ci[1]:.1%}] | "
+                    f"{fmt(block['false_alarm_rate'])} "
+                    f"[{far_ci[0]:.1%}, {far_ci[1]:.1%}] |"
+                )
+        lines += [
+            "",
+            "v2 trades v1's silence for reach: recall rises and false alarms rise with it. The",
+            "stage-2 threshold is tuned on dev in `scripts/p3_05_staged.py`, not here, and the",
+            "frozen cascade spec records which threshold test will use.",
+            "",
+        ]
     llm = summary.get("run")
-    if not llm:
+    checkpoint_rows = int(summary.get("checkpoint_rows") or 0)
+    if not llm and not checkpoint_rows:
         lines += [
             "## Status: no v2 call has been made",
             "",
@@ -445,6 +535,17 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             "It writes `eval/audit/p3-05/p3-05-llm-v2-dev.csv` incrementally, so it can be stopped",
             "and resumed, and it refuses to start if the estimate exceeds the budget, if the daily",
             "cap is reached, or if the last ledger attempts show provider errors.",
+            "",
+        ]
+    if not llm and checkpoint_rows:
+        lines += [
+            "## Status: dev scores exist, produced outside this invocation",
+            "",
+            f"`eval/audit/p3-05/p3-05-llm-v2-dev.csv` holds **{checkpoint_rows}** scored rows, so",
+            "the v2 numbers above are measured. The live run was executed with the owner's",
+            "authorisation (151 calls, $0.052 list price estimate, $0 real spend on the free",
+            "tier); the ledger reconciliation against `llm_calls` is in",
+            "`docs/reports/P3-08-cost-scaffold.md`.",
             "",
         ]
     if llm:
@@ -501,7 +602,12 @@ def main(argv: list[str] | None = None) -> int:
     rows = scored_rows(load_rows())
     dev = spec_rows(rows, "dev")
     summary: dict[str, object] = {}
-    diagnosis = diagnose(dev, read_v1())
+    v1 = read_v1()
+    diagnosis = diagnose(dev, v1)
+    checkpoint = read_v2()
+    summary["checkpoint_rows"] = len(checkpoint)
+    if checkpoint:
+        summary["dev_metrics"] = dev_metrics(dev, checkpoint, v1)
 
     if args.split == "test" and not args.allow_test:
         raise LLMv2Error("test rows are refused here; Block 6 evaluates test once under a freeze")
