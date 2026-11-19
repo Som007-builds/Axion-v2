@@ -1,0 +1,20 @@
+{
+  "frozen": true,
+  "frozen_at": "2026-11-19T07:21:45+00:00",
+  "scheduler": "linked +1.0, retraction-mentioned +0.5, else heuristic score",
+  "spec_hash": "b85dc5d5c94eb375",
+  "stage1": {
+    "candidate_threshold": 0.0,
+    "heuristic": {
+      "mention_weight": 1.0,
+      "reliance_weight": 1.0,
+      "section_scale": 0.5,
+      "threshold": 0.0
+    }
+  },
+  "stage2": {
+    "prompt_version": "p3-05-llm-v2",
+    "threshold": 60.0
+  },
+  "test_evaluated": false
+}

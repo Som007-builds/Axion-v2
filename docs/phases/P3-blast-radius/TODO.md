@@ -87,15 +87,19 @@
   - notes:
     - 2026-11-19: claiming. ADR-0026 pre-registers the comparison **before** any detector exists (citation-level is a scale reference, primary comparison is staged vs the dev-tuned heuristic at matched recall >= 0.80 on the text-bearing test frame, intervals decide superiority, stubs separate).
     - Scope for this session: stage 1 = cheap deterministic features; stage 2 = LLM v2 on rows stage 1 cannot clear; thresholds tuned on dev only; escalation rate `e` and cost per context reported. **No student is trained** — the P2-03b teacher-distilled student is not built, so `s` (student share) is reported as not-applicable rather than invented.
-  - done: — | evidence: —
+    - **LLM v1 diagnosed (dev, no calls):** 12 predicted positives, recall 4/16 = 25.0% [10.2, 49.5], FAR 5.9% [3.0, 11.3], 0 parse failures; A's text was present for 122/151 dev rows (93 claim, 29 abstract-only) and absent only for the 29 stubs. Cause: a three-way label with no confidence gave nothing to tune or escalate. Prompt v2 (`p3-05-llm-v2`) asks only the counterfactual and returns a 0-100 score.
+    - **Stage-2 live run: BLOCKED.** Cost stated first (151 dev rows, $0.0519 list price, free tier); the environment's tool policy refused the live-LLM command twice, so **no v2 score exists** and no stage-2 number is claimed. Command in `docs/reports/P3-05-llm-v2-calibration.md`.
+    - **Cascade redesigned on evidence:** stage 1 is the recall stage, not a reject filter (the reject-filter grid lost positives or escalated 25-50% with worse precision). Candidate threshold 0.0, **e = 45.0%** (68/151), ceiling 14/16 positives. No staged number printed without stage 2.
+    - **Freeze:** spec `b85dc5d5c94eb375`, `test_evaluated: false`. **Test NOT evaluated** — `--evaluate-test` refuses in code; the single look waits for stage-2 scores and a dev-tuned stage-2 threshold (re-freeze allowed only while test is unseen, recorded in `history`).
+  - done: — (partial: dev cascade design, diagnosis, calibration and freeze in; stage-2 numbers and test evaluation outstanding) | evidence: `scripts/{dependency_llm_v2,p3_05_staged}.py`, `docs/reports/{P3-05-llm-v2-calibration,P3-05-detector-dev}.md`, `eval/audit/p3-05/{p3-05-dev-detector.json,p3-05-spec-frozen.json}`, `tests/test_{dependency_llm_v2,p3_05_staged}.py` (8 + 8).
 
-### [ ] P3-05b — Priority / lazy scheduling
+### [~] P3-05b — Priority / lazy scheduling
 - depends: P3-05
 - what: Implement a risk-ordered queue (contexts citing flagged papers first), idempotent hash-keyed incremental runs, and explicit hot/cold corpus states. Cold items remain unprocessed until needed.
 - acceptance: Re-running produces identical counts/decisions; queue order documented; cold corpus items demonstrably untouched; no duplicate processing.
-  - agent: — | started: — | branch: p3
-  - notes:
-  - done: — | evidence: —
+  - agent: Buffy | started: 2026-11-19 | branch: p3
+  - notes: Risk ordering implemented and measured on dev (`risk = claim linkage +1.0, retraction mention +0.5, else heuristic score`): recall 12.5% [3.5, 36.0] at top 10% of contexts, 43.8% [23.1, 66.8] at 20-25%, 68.8% [44.4, 85.8] at 50%. Ordering is deterministic (ties break on row_id). **Not yet done:** hash-keyed idempotent re-runs, hot/cold corpus state, and the "cold items untouched" demonstration — the acceptance criteria are not met, so this stays `[~]`.
+  - done: — (partial) | evidence: `scripts/p3_05_staged.py` (`risk_score`, `scheduler_curve`), `docs/reports/P3-05-detector-dev.md`, `tests/test_p3_05_staged.py`.
 
 ### [ ] P3-06 — Claim linking
 - depends: P3-05
@@ -113,13 +117,13 @@
   - notes:
   - done: — | evidence: —
 
-### [ ] P3-08 — Cost accounting
+### [~] P3-08 — Cost accounting
 - depends: P3-05
 - what: Compute $/retraction analyzed, per-stage breakdown, escalation rate `e`, and student cost ratio `s` from the ledger; compare against baselines.
 - acceptance: Script outputs table; numbers match ledger; `e` and `s` reported.
-  - agent: — | started: — | branch: p3
-  - notes:
-  - done: — | evidence: —
+  - agent: Buffy | started: 2026-11-19 | branch: p3
+  - notes: **Scaffold, not done.** `scripts/p3_08_cost.py` computes from the frozen files: `e` = 45.0% (dev), $0.000256 per LLM call, **$0.000115 per context**, 21.46 contexts per retraction, **$0.00247 per retraction analysed**, and a corpus projection of **$0.71** / 2,754.5 requests / 6.1 free-tier days labelled **PROJECTED** with its assumptions (285 of 792 sources, 6,117 contexts, `pricing.yaml` list prices, zero real spend on the free tier). **`s` is reported as not applicable** — no student exists, and a fabricated share would describe a stage that never ran. Still missing for acceptance: ledger reconciliation (the numbers here come from the pricing table and the dev `e`, not from a `llm_calls` sum), per-stage share from a real staged run, and the baseline comparison. So `[~]`, not `[x]`.
+  - done: — (scaffold only) | evidence: `scripts/p3_08_cost.py`, `docs/reports/P3-08-cost-scaffold.md`, `eval/audit/p3-05/p3-08-cost.json`, `tests/test_p3_08_cost.py` (6).
 
 ### [ ] P3-09 — Case studies
 - depends: P3-07, P3-08

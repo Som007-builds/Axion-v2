@@ -94,8 +94,8 @@
     "positives_in_candidates": 14,
     "positives_total": 16
   },
-  "frozen": false,
-  "frozen_at": null,
+  "frozen": true,
+  "frozen_at": "2026-11-19T07:21:45+00:00",
   "scheduler": [
     {
       "fraction_inspected": 0.1,

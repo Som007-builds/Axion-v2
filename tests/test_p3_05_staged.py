@@ -156,8 +156,19 @@ def test_freeze_refuses_a_changed_spec(tmp_path: Path, monkeypatch) -> None:
     # Same spec passes.
     assert staged.verify_or_write_freeze(payload, write=False)["spec_hash"] == written["spec_hash"]
 
-    # A changed threshold is a new spec, refused once the freeze exists.
+    # A changed threshold is a new spec: refused while test is unseen unless declared,
+    # and refused outright once test has been evaluated.
     changed = json.loads(json.dumps(payload))
     changed["stage2"]["threshold"] = 70.0
-    with pytest.raises(staged.DetectorError, match="does not match"):
+    with pytest.raises(staged.DetectorError, match="re-run with --refreeze"):
         staged.verify_or_write_freeze(changed, write=False)
+
+    refrozen = staged.verify_or_write_freeze(changed, write=False, refreeze=True)
+    assert refrozen["spec_hash"] != written["spec_hash"]
+    assert refrozen["test_evaluated"] is False
+    assert refrozen["history"][0]["previous_spec_hash"] == written["spec_hash"]
+
+    evaluated = dict(refrozen, test_evaluated=True)
+    freeze.write_text(json.dumps(evaluated), encoding="utf-8")
+    with pytest.raises(staged.DetectorError, match="already been evaluated"):
+        staged.verify_or_write_freeze(payload, write=False, refreeze=True)

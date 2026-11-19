@@ -252,16 +252,49 @@ def spec_hash(payload: dict[str, object]) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:16]
 
 
-def verify_or_write_freeze(payload: dict[str, object], *, write: bool) -> dict[str, object]:
+def verify_or_write_freeze(
+    payload: dict[str, object], *, write: bool, refreeze: bool = False
+) -> dict[str, object]:
+    """Freeze the spec before test; allow declared re-freezing only while test is unseen.
+
+    The stage-2 threshold cannot be tuned until v2 scores exist, so the first freeze
+    may carry a default. A later dev-tuned change is legitimate *only* while
+    ``test_evaluated`` is false, and it is recorded in ``history`` so the number that
+    was used on test is always traceable.
+    """
     digest = spec_hash(payload)
     if SPEC_FREEZE.exists():
         frozen = json.loads(SPEC_FREEZE.read_text(encoding="utf-8"))
-        if frozen.get("spec_hash") != digest:
+        if frozen.get("spec_hash") == digest:
+            return frozen
+        if frozen.get("test_evaluated"):
             raise DetectorError(
-                "the frozen detector spec does not match this configuration "
-                f"({frozen.get('spec_hash')} vs {digest}); the test set has been seen"
+                "the test set has already been evaluated under spec "
+                f"{frozen.get('spec_hash')}; a changed spec cannot reuse that evaluation"
             )
-        return frozen
+        if not refreeze:
+            raise DetectorError(
+                f"spec changed ({frozen.get('spec_hash')} vs {digest}) while test is still "
+                "unseen; re-run with --refreeze to record the change in history"
+            )
+        history = list(frozen.get("history") or [])
+        history.append(
+            {
+                "previous_spec_hash": frozen.get("spec_hash"),
+                "replaced_at": datetime.now(UTC).isoformat(timespec="seconds"),
+                "reason": "dev-tuned stage-2 threshold before any test evaluation",
+            }
+        )
+        updated = dict(payload)
+        updated["spec_hash"] = digest
+        updated["frozen_at"] = datetime.now(UTC).isoformat(timespec="seconds")
+        updated["frozen"] = True
+        updated["test_evaluated"] = False
+        updated["history"] = history
+        SPEC_FREEZE.write_text(
+            json.dumps(updated, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        return updated
     if not write:
         return {"spec_hash": digest, "frozen_at": None, "frozen": False}
     frozen = dict(payload)
@@ -410,6 +443,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stage2-threshold", type=float, default=60.0)
     parser.add_argument("--tune-stage2", action="store_true")
     parser.add_argument("--freeze", action="store_true")
+    parser.add_argument("--refreeze", action="store_true")
     parser.add_argument("--evaluate-test", action="store_true")
     parser.add_argument("--summary", type=Path, default=SUMMARY)
     args = parser.parse_args(argv)
@@ -444,7 +478,7 @@ def main(argv: list[str] | None = None) -> int:
         stage2_threshold=stage2_threshold,
         scheduler_rule="linked +1.0, retraction-mentioned +0.5, else heuristic score",
     )
-    frozen = verify_or_write_freeze(payload, write=args.freeze)
+    frozen = verify_or_write_freeze(payload, write=args.freeze, refreeze=args.refreeze)
     if args.evaluate_test:
         if frozen.get("test_evaluated"):
             raise DetectorError("test has already been evaluated under this frozen spec")
