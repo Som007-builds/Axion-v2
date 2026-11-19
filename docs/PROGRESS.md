@@ -130,6 +130,15 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-19 — Buffy — prompt v3 built and costed; live run blocked by the environment
+- **Owner decision: option 1, capped** — build v3 on dev only, at most two variants beyond v2, log every variant, and only supersede the frozen spec if a variant reaches **recall >= 0.80 at FAR < 42.6%**. Test still **not evaluated**; silver plan still **NO-GO**.
+- **v3 built**: two separate ordinal judgements (B's use of A's **result**, 0-3; B's use of A's **method**, 0-3), each with its own evidence quote, combined 3:1 into a 0-100 score (16 level pairs -> 13 distinct scores). **v3b built** as the single permitted fallback: a fact checklist weighted into a graded score, for the case where v3 still answers at the extremes.
+- **The v2 problem is now quantified in the variant log**: 110 rows in 0-20, **1 row in 21-40**, 0 in 41-60, 0 in 61-80, 40 in 81-100 -> interior share **0.7%**, and the log records `graded: no`. The 30/70 split I reported earlier hid that single row; the 20-point bands show it and still refuse to call it a scale.
+- **Cost stated before any live call** (dry-run over the 151 dev rows): v3 **91,569 prompt tokens, $0.057671** list; v3b **68,991 prompt tokens, $0.050897** list; both $0 real on the free tier. Quota at the time: **154/450** requests used today, **296** left, so v3 (151) fits and v3b (151) **would not** fit in the same Pacific day.
+- **Two calls were paid for and produced nothing: $0.000758.** My own bug, twice: first the request pinned v2's answer schema while the v3 prompt asked for different fields; then the request was right but the client was still told to parse v2's model. Fixed by making the variant own the prompt, the request schema and the parse model (`build_request`), with a test asserting they travel together. Both failures are printed in the calibration report under "Calls paid for that produced no scored row", not netted out.
+- **Then the environment refused further live calls** for v3 ("latest authorization covers v2, not v3"). I stopped there rather than work around it. **No v3 score exists**, so there is no v3 recall, no v3 FAR and no re-freeze: the spec stays **`6612eae9cbf24a60`**.
+- ADR-0026 gained **Amendment A** recording the cap, the logging rule and the unchanged decision rule, written before any v3 score exists.
+
 ### 2026-11-19 — Buffy — v2 dev scores in; stage-2 tuned; spec re-frozen before any test look
 - The owner authorised the dev-only v2 run and the checkpoint exists: `eval/audit/p3-05/p3-05-llm-v2-dev.csv`, **151/151 dev rows**, scores 0-100, mean 28.5, prompt `p3-05-llm-v2`.
 - **Score distribution is nearly binary:** 111 rows <= 30, **0 rows between 31 and 69**, 40 rows >= 70. Every threshold from 31 to 80 therefore behaves identically; the model is expressing a decision, not a calibrated probability.

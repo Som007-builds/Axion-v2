@@ -835,6 +835,34 @@ useful (cheaper, or better at a different recall); the report has to say which. 
 comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that
 expensive.
 
+**Amendment A — the v3 variant cap (2026-11-19, before any v3 score exists).** The dev result
+(c) left one cause untested: v2's answer was effectively binary (111 rows <= 30, one row at 35, 40
+>= 70), so no threshold had a range to tune and the cascade missed the 0.80 floor. The owner
+authorised a capped attempt to fix the *measurement*, not to relax the criterion:
+
+- **Cap: two variants beyond v2 — v3, and v3b only if v3 still answers at the extremes.** No fourth
+  prompt, no prompt iteration after seeing a per-row error analysis. `v3` asks two separate ordinal
+  judgements (B's use of A's *result*; B's use of A's *method*), each with an evidence quote, and
+  combines them 3:1 into a 0-100 score. `v3b` asks which of several overlapping facts hold and
+  weights the count, so a graded score exists even if the model is only confident about yes/no.
+- **Every variant tried is logged** in `eval/audit/p3-05/p3-05-llm-variants.json` with its dev
+  recall, false-alarm rate, intervals and score distribution, and the report states how many
+  variants were measured next to the headline number. A best-of-N dev number is a maximum over N,
+  and the count is what makes that visible.
+- **The decision rule is unchanged and fixed in advance (b, c).** A variant supersedes the frozen
+  spec only if it reaches **recall >= 0.80 on dev at a false-alarm rate below the heuristic's
+  42.6%**. Otherwise the current spec stays frozen exactly as it is and the finding is recorded as:
+  *"LLM verification stage did not beat the heuristic on dev; cascade reported as a high-precision
+  operating-point alternative."*
+- **Nothing about (a), (c), (d) or (e) is softened.** Improving v2's score range is not evidence
+  about test, and a graded score does not license a matched-recall claim the intervals do not
+  support.
+
+**Consequences.** The staged detector may lose to the heuristic at matched recall and still be
+useful (cheaper, or better at a different recall); the report has to say which. Any change to the
+comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that
+expensive.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

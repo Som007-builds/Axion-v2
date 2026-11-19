@@ -151,3 +151,112 @@ def test_dev_metrics_compares_v1_v2_and_the_heuristic() -> None:
     assert frame["v1"]["recall"] == 0.5
     assert frame["v2@70"]["recall"] == 0.5
     assert set(frame) >= {"v1", "heuristic", "v2@70"}
+
+
+def test_combine_judgements_gives_a_graded_range() -> None:
+    scores = {lv2.combine_judgements(result, method) for result in range(4) for method in range(4)}
+
+    assert lv2.combine_judgements(0, 0) == 0
+    assert lv2.combine_judgements(3, 3) == 100
+    assert len(scores) > 3
+    assert min(scores) < 40 < 60 < max(scores)
+    assert lv2.combine_judgements(3, 0) > lv2.combine_judgements(0, 3)
+
+
+def test_combine_checklist_caps_corroboration() -> None:
+    answer = lv2.DependencyChecklist(
+        uses_result_number=True,
+        uses_method=True,
+        uses_definition_or_parameter=True,
+        rests_on_conclusion=True,
+        background_or_corroboration=True,
+    )
+
+    assert lv2.combine_checklist(answer) == lv2.CORROBORATION_CAP
+    plain = lv2.DependencyChecklist(uses_result_number=True, uses_method=True)
+    assert lv2.combine_checklist(plain) == 60
+
+
+def test_score_bands_detects_an_extreme_only_variant() -> None:
+    v2_like = lv2.score_bands([0, 5, 10, 95, 100, 100])
+
+    assert v2_like["extreme_only"] is True
+    assert v2_like["graded"] is False
+    assert v2_like["interior_rows"] == 0
+
+
+def test_score_bands_detects_a_graded_variant() -> None:
+    graded = lv2.score_bands([0, 25, 50, 75, 100, 100])
+
+    assert graded["extreme_only"] is False
+    assert graded["graded"] is True
+    assert graded["interior_rows"] == 3
+    assert graded["distinct_scores"] == 5
+
+
+def test_variant_metrics_reports_points_and_distribution(tmp_path: Path) -> None:
+    rows = [
+        _row("p1", label="RELIES_ON", claim="we used the assay from A."),
+        _row("n1", label="MENTIONS", context="has been reviewed [1].", section="Introduction"),
+        _row("n2", label="MENTIONS", context="see [1] for background.", section="Introduction"),
+    ]
+    v1 = {row["row_id"]: {"label": "MENTIONS"} for row in rows}
+    scores = {"p1": {"score": "90"}, "n1": {"score": "10"}, "n2": {"score": "55"}}
+
+    block = lv2.variant_metrics(rows, scores, v1)
+
+    assert block["rows_scored"] == 3
+    distribution = block["distribution"]
+    assert isinstance(distribution, dict)
+    assert distribution["interior_rows"] == 1
+    points = block["points"]
+    assert isinstance(points, dict)
+    assert points["@80"]["recall"] == 1.0
+    assert points["@80"]["false_alarm_rate"] == 0.0
+
+
+def test_record_variant_replaces_rather_than_duplicates(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    log_path = tmp_path / "variants.json"
+    monkeypatch.setattr(lv2, "VARIANTS_FILE", log_path)
+    metrics = {"distribution": {"interior_rows": 1, "distinct_scores": 4}}
+
+    monkeypatch.setattr(lv2, "VARIANTS_FILE", log_path)
+    lv2.record_variant("v3", {"variant": "v3", "prompt_version": "a", "metrics": metrics})
+    log = lv2.record_variant("v3", {"variant": "v3", "prompt_version": "b", "metrics": metrics})
+
+    assert log["variants_tried"] == 1
+    entries = log["variants"]
+    assert entries[0]["prompt_version"] == "b"
+    assert "best of 1" in log["selection_effect"]
+
+
+def test_request_schema_and_prompt_come_from_the_same_variant() -> None:
+    """The bug this guards: a v3 prompt sent with v2's answer schema."""
+    row = _row("p1", label="RELIES_ON", claim="we used the assay from A.")
+
+    for name, expected in (("v2", lv2.DependencyScore), ("v3", lv2.DependencyJudgement)):
+        variant = lv2.get_variant(name)
+        request = lv2.build_request(row, variant, "run-1")
+        assert request.response_schema is expected
+        assert request.prompt == variant.prompt(row)
+        assert "result_level" in request.prompt if name == "v3" else True
+
+    v3b = lv2.build_request(row, lv2.get_variant("v3b"), "run-1")
+    assert v3b.response_schema is lv2.DependencyChecklist
+    assert "uses_result_number" in v3b.prompt
+
+
+def test_variant_stage_keeps_v2_ledgered_under_its_original_name() -> None:
+    assert lv2.variant_stage(lv2.get_variant("v2")) == "dependency_llm_v2"
+    assert lv2.variant_stage(lv2.get_variant("v3")) == "dependency_llm_v3"
+
+
+def test_one_stray_interior_row_is_not_a_graded_score() -> None:
+    """v2's actual shape: 110 low, 1 middle, 40 high - a decision, not a scale."""
+    bands = lv2.score_bands([5] * 110 + [35] + [95] * 39 + [100])
+
+    assert bands["interior_rows"] == 1
+    assert bands["interior_band_populated"] is True
+    assert bands["graded"] is False
