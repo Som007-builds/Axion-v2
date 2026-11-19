@@ -260,3 +260,119 @@ def test_one_stray_interior_row_is_not_a_graded_score() -> None:
     assert bands["interior_rows"] == 1
     assert bands["interior_band_populated"] is True
     assert bands["graded"] is False
+
+
+def test_require_complete_names_the_shortfall_and_how_to_resume() -> None:
+    rows = [_row("p1"), _row("p2"), _row("p3")]
+
+    with pytest.raises(lv2.IncompleteCheckpoint) as caught:
+        lv2.require_complete(rows, {"p1": {"score": "50"}}, "dev rows")
+
+    assert str(caught.value) == "incomplete: 1 of 3 dev rows scored, run again to resume"
+
+
+def test_require_complete_is_silent_when_every_row_is_scored() -> None:
+    rows = [_row("p1"), _row("p2")]
+
+    lv2.require_complete(rows, {"p1": {"score": "50"}, "p2": {"score": "0"}}, "dev rows")
+
+
+def test_metrics_refuse_a_partial_checkpoint_instead_of_imputing() -> None:
+    """The failure the owner hit: 17 of 151 rows, then a BaselineError inside metrics."""
+    rows = [_row(f"p{index}", label="RELIES_ON") for index in range(4)]
+    partial = {row["row_id"]: {"score": "50"} for row in rows[:2]}
+    v1 = {row["row_id"]: {"label": "MENTIONS"} for row in rows}
+
+    with pytest.raises(lv2.IncompleteCheckpoint):
+        lv2.dev_metrics(rows, partial, v1)
+    with pytest.raises(lv2.IncompleteCheckpoint):
+        lv2.variant_metrics(rows, partial, v1)
+
+
+def test_main_reports_incomplete_checkpoint_and_exits_two(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(lv2, "REPORT", tmp_path / "report.md")
+    monkeypatch.setattr(lv2, "VARIANTS_FILE", tmp_path / "variants.json")
+    partial = {
+        "P3W1-001": {"score": "25", "prompt_version": "p3-05-llm-v3"},
+    }
+    monkeypatch.setattr(lv2, "read_v2", lambda path=None: partial)
+
+    code = lv2.main(["--variant", "v3"])
+
+    out = capsys.readouterr().out
+    assert code == 2
+    assert "incomplete: 1 of 151 dev rows scored, run again to resume" in out
+    assert "no recall and no false-alarm rate" in (tmp_path / "report.md").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_report_lists_failed_attempts_for_an_incomplete_stage(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The section the owner asked for: totals plus each failed call, not just a count."""
+    ledger_path = tmp_path / "ledger.sqlite3"
+    import sqlite3
+
+    with sqlite3.connect(ledger_path) as connection:
+        connection.execute(
+            "CREATE TABLE llm_calls (id INTEGER PRIMARY KEY, stage TEXT, ts TEXT,"
+            " paper_id TEXT, error_class TEXT, error TEXT, cache_hit INTEGER,"
+            " prompt_tokens INTEGER, completion_tokens INTEGER, usd TEXT)"
+        )
+        connection.executemany(
+            "INSERT INTO llm_calls VALUES (NULL,?,?,?,?,?,?,?,?,?)",
+            [
+                (
+                    "dependency_llm_v3",
+                    "2026-11-19T10:00:00+00:00",
+                    "P3W1-001",
+                    None,
+                    None,
+                    0,
+                    700,
+                    90,
+                    "0.0004",
+                ),
+                (
+                    "dependency_llm_v3",
+                    "2026-11-19T10:00:10+00:00",
+                    "P3W1-018",
+                    "ReadError",
+                    "TransientProviderError: Gemini transport error: ReadError: [SSL: "
+                    "SSLV3_ALERT_BAD_RECORD_MAC]",
+                    0,
+                    None,
+                    None,
+                    None,
+                ),
+            ],
+        )
+
+    activity = lv2.ledger_activity("dependency_llm_v3", ledger_path)
+    assert activity is not None
+    assert activity["attempts"] == 2
+    assert activity["succeeded"] == 1
+    assert activity["errors"] == 1
+    assert activity["failures"][0]["error_class"] == "ReadError"
+
+    from scripts.dependency_baselines import load_rows, scored_rows, spec_rows
+
+    dev = spec_rows(scored_rows(load_rows()), "dev")
+    diagnosis = lv2.diagnose(dev, lv2.read_v1())
+
+    monkeypatch.setattr(lv2, "REPORT", tmp_path / "report.md")
+    lv2.write_report(
+        diagnosis,
+        {
+            "variant": "v3",
+            "incomplete": "incomplete: 17 of 151 dev rows scored, run again to resume",
+            "ledger_activity": activity,
+        },
+    )
+    text = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "**incomplete: 17 of 151 dev rows scored, run again to resume.**" in text
+    assert "| P3W1-018 | `ReadError` |" in text
+    assert "nothing was imputed or dropped" in text

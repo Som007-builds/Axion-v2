@@ -130,6 +130,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-19 — Buffy — v3 partial run (17/151), recovery from a transport failure and an inverter bug
+- The owner ran the v3 dev command. **First run: 17 rows scored, then P3W1-018 failed 3 times on `ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC]`** (all three attempts are in the ledger, no tokens, $0). **Rerun: crashed in dev_metrics with `BaselineError: no prediction for P3W1-018` before making a single call** — my bug: `variant_metrics` was computed on the partial checkpoint at startup.
+- **Checkpoint: 17 of 151 dev rows** (`P3W1-001`..`P3W1-017`), 0 blanks, 17 distinct ids, all `p3-05-llm-v3`. **Missing 134**, of which exactly one (`P3W1-018`) was ever attempted; the other 133 were never reached.
+- **Ledger `dependency_llm_v3`: 23 attempts = 18 succeeded + 5 failed**, 0 cache hits, **12,661 prompt + 1,556 completion tokens, $0.007688 list price**. The 5 failures: 1 `structured_output` parse (my schema bug, 09:53), 1 `TransientProviderError` 503 on `P3W1-015` (recovered on retry), **3 `ReadError` SSL on `P3W1-018`** (no tokens, $0).
+- **Fixed (`IncompleteCheckpoint`)**: metrics now refuse a partial checkpoint and print exactly `incomplete: 17 of 151 dev rows scored, run again to resume`, exit code 2. Nothing is imputed and no row is dropped: the missing rows are provider failures, not a random sample. A provider failure inside the loop now ends the run cleanly with `stopped_reason: provider_error: ...` instead of throwing away the rows already paid for.
+- **Still to regenerate:** the report body. The environment refused to run the script again (off mode included), so `docs/reports/P3-05-llm-v2-calibration.md` keeps its previous generated body and the new incomplete/ledger section is proven by a test instead. Regenerate with `--variant v3` (off) once the run resumes.
+
 ### 2026-11-19 — Buffy — prompt v3 built and costed; live run blocked by the environment
 - **Owner decision: option 1, capped** — build v3 on dev only, at most two variants beyond v2, log every variant, and only supersede the frozen spec if a variant reaches **recall >= 0.80 at FAR < 42.6%**. Test still **not evaluated**; silver plan still **NO-GO**.
 - **v3 built**: two separate ordinal judgements (B's use of A's **result**, 0-3; B's use of A's **method**, 0-3), each with its own evidence quote, combined 3:1 into a 0-100 score (16 level pairs -> 13 distinct scores). **v3b built** as the single permitted fallback: a fact checklist weighted into a graded score, for the case where v3 still answers at the extremes.

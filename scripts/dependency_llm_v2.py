@@ -38,7 +38,7 @@ from axion.config.pricing import estimate_cost_details, load_pricing
 from axion.config.settings import DEFAULT_RATE_LIMITS_PATH, Settings
 from axion.eval.audit import wilson_interval
 from axion.llm.client import LLMClient, RetryPolicy
-from axion.llm.errors import DailyQuotaError
+from axion.llm.errors import DailyQuotaError, PermanentProviderError, TransientProviderError
 from axion.llm.gemini import GeminiAdapter
 from axion.llm.ledger import SQLiteLedger
 from axion.llm.models import LLMRequest
@@ -79,6 +79,31 @@ BAND_RELIES = 70
 
 class LLMv2Error(Exception):
     """The v2 run cannot proceed."""
+
+
+class IncompleteCheckpoint(LLMv2Error):
+    """Metrics were asked for on a checkpoint that does not cover the dev frame.
+
+    Partial scores are not a smaller version of a full run: the missing rows are
+    rows where the provider failed, and they are not missing at random. Imputing
+    them or silently scoring the remainder would turn a transport failure into a
+    recall number, so this raises instead and the caller prints how to resume.
+    """
+
+
+def require_complete(
+    rows: Sequence[dict[str, str]],
+    scores: dict[str, dict[str, str]],
+    label: str = "rows",
+) -> None:
+    """Refuse to compute metrics unless every dev row has a score."""
+    missing = [row["row_id"] for row in rows if row["row_id"] not in scores]
+    if not missing:
+        return
+    raise IncompleteCheckpoint(
+        f"incomplete: {len(rows) - len(missing)} of {len(rows)} {label} scored, "
+        "run again to resume"
+    )
 
 
 class DependencyScore(BaseModel):
@@ -630,6 +655,22 @@ def run_live(
         except DailyQuotaError:
             stopped = "daily_quota_reached"
             break
+        except (TransientProviderError, PermanentProviderError) as error:
+            # One row failing must not throw away the rows already paid for. The
+            # checkpoint keeps them and the next invocation resumes at this row.
+            return {
+                "estimate": cost,
+                "variant": variant.name,
+                "run_id": run_id,
+                "tokens_today_before": used_today,
+                "daily_cap": rate.daily_cap,
+                "calls_made": calls,
+                "stopped_reason": f"provider_error: {type(error).__name__}",
+                "failed_row": row["row_id"],
+                "run_list_price_usd": str(SQLiteLedger(ledger_path).run_usd(run_id)),
+                "run_real_usd": str(SQLiteLedger(ledger_path).run_real_usd(run_id)),
+                "predicted_rows": len(done),
+            }
         parsed = variant.answer_type.model_validate_json(result.text)
         score = variant.to_score(parsed)
         append_variant(variant, row["row_id"], parsed, score)
@@ -660,6 +701,7 @@ def dev_metrics(
     """v1 vs v2 vs the heuristic on dev, with intervals, frames kept separate."""
     from scripts.dependency_baselines import binary_metrics, frame_rows, tune_heuristic
 
+    require_complete(rows, v2)
     positive_scores = {row_id: float(item["score"]) for row_id, item in v2.items()}
     heuristic = tune_heuristic(rows)["params"]
     assert isinstance(heuristic, dict)
@@ -740,6 +782,7 @@ def variant_metrics(
     """Dev recall and FAR with intervals for one variant, plus the heuristic line."""
     from scripts.dependency_baselines import binary_metrics, frame_rows, tune_heuristic
 
+    require_complete(rows, scores, "dev rows")
     heuristic = tune_heuristic(list(rows))["params"]
     assert isinstance(heuristic, dict)
     text_rows = frame_rows(list(rows), "text_bearing")
@@ -905,6 +948,7 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             "cap is reached, or if the last ledger attempts show provider errors.",
             "",
         ]
+    incomplete_note = summary.get("incomplete")
     waste = summary.get("spent_without_checkpoint")
     if isinstance(waste, dict):
         lines += [
@@ -922,15 +966,15 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             "The duplicate is visible in the ledger, not netted out.",
             "",
         ]
-    if not llm and checkpoint_rows:
+    if not llm and not isinstance(incomplete_note, str) and checkpoint_rows:
+        name = str(summary.get("variant") or "v2")
         lines += [
-            "## Status: dev scores exist, produced outside this invocation",
+            f"## Status: `{name}` dev scores exist, produced outside this invocation",
             "",
-            f"`eval/audit/p3-05/p3-05-llm-v2-dev.csv` holds **{checkpoint_rows}** scored rows, so",
-            "the v2 numbers above are measured. The live run was executed with the owner's",
-            "authorisation (151 calls, $0.052 list price estimate, $0 real spend on the free",
-            "tier); the ledger reconciliation against `llm_calls` is in",
-            "`docs/reports/P3-08-cost-scaffold.md`.",
+            f"`{registry_checkpoint(name).name}` holds **{checkpoint_rows}** scored rows, so the",
+            "numbers above are measured. The run was executed with the owner's authorisation",
+            "($0 real spend on the free tier); the ledger reconciliation against `llm_calls` is",
+            "in `docs/reports/P3-08-cost-scaffold.md`.",
             "",
         ]
     if llm:
@@ -1023,6 +1067,46 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             "dev-tuned operating point, so the comparison is variant-vs-fixed-baseline.",
             "",
         ]
+    if isinstance(incomplete_note, str):
+        activity = summary.get("ledger_activity")
+        lines += [
+            "## Status: checkpoint is incomplete, so no metric is reported",
+            "",
+            f"**{incomplete_note}.**",
+            "",
+            "Partial scores are not a smaller version of a full run: the missing rows are the "
+            "ones where the provider failed, and a transport failure is not missing at random. "
+            "This report therefore shows **no recall and no false-alarm rate** for this variant, "
+            "and nothing was imputed or dropped to produce one.",
+            "",
+        ]
+        if isinstance(activity, dict):
+            lines += [
+                "### Ledger reconciliation for this stage",
+                "",
+                f"- Attempts **{activity['attempts']}** = **{activity['succeeded']} succeeded** + "
+                f"**{activity['errors']} failed**; cache hits **{activity['cache_hits']}**.",
+                f"- Tokens: **{activity['prompt_tokens']:,} prompt**, "
+                f"{activity['completion_tokens']:,} completion.",
+                f"- Ledger list price **${activity['list_price_usd']}** "
+                f"(real spend $0 on the free tier); first attempt {activity['first_attempt']}, "
+                f"last {activity['last_attempt']}.",
+                "",
+                "| Attempt | Row | Error class | Message |",
+                "| :-- | :-- | :-- | :-- |",
+            ]
+            for failure in activity["failures"]:
+                message = str(failure["error"]).replace("|", "/")[:120]
+                lines.append(
+                    f"| {failure['ts']} | {failure['row_id']} | "
+                    f"`{failure['error_class']}` | {message} |"
+                )
+            lines += [
+                "",
+                "A failed attempt with no tokens is a transport failure: the request never "
+                "reached a billable response, so it costs quota but no money.",
+                "",
+            ]
     lines += [
         "## Scope",
         "",
@@ -1039,6 +1123,57 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
 def registry_checkpoint(name: str) -> Path:
     """The checkpoint path a variant writes, without needing a live Settings object."""
     return variant_registry()[name].checkpoint
+
+
+def ledger_activity(stage: str, ledger_path: Path) -> dict[str, object] | None:
+    """Every attempt this stage has ever made, with the failures listed separately.
+
+    Totals alone hide the shape of a partial run: how many attempts it took to get
+    the rows that exist, which rows never produced a score, and whether the missing
+    rows failed or were never reached.
+    """
+    if not ledger_path.exists():
+        return None
+    with sqlite3.connect(ledger_path) as connection:
+        totals = connection.execute(
+            """
+            SELECT count(*),
+                   sum(case when error is null then 1 else 0 end),
+                   sum(case when error is not null then 1 else 0 end),
+                   sum(cache_hit),
+                   sum(coalesce(prompt_tokens, 0)),
+                   sum(coalesce(completion_tokens, 0)),
+                   sum(coalesce(usd, 0)),
+                   min(ts),
+                   max(ts)
+            FROM llm_calls WHERE stage = ?
+            """,
+            (stage,),
+        ).fetchone()
+        failures = [
+            {"ts": ts, "row_id": row_id, "error_class": error_class, "error": (error or "")[:160]}
+            for ts, row_id, error_class, error in connection.execute(
+                "SELECT ts, paper_id, error_class, error FROM llm_calls "
+                "WHERE stage = ? AND error IS NOT NULL ORDER BY id",
+                (stage,),
+            )
+        ]
+    if not totals or not totals[0]:
+        return None
+    attempts, ok, errors, cached, prompt_tokens, completion_tokens, usd, first, last = totals
+    return {
+        "stage": stage,
+        "attempts": int(attempts),
+        "succeeded": int(ok or 0),
+        "errors": int(errors or 0),
+        "cache_hits": int(cached or 0),
+        "prompt_tokens": int(prompt_tokens or 0),
+        "completion_tokens": int(completion_tokens or 0),
+        "list_price_usd": str(usd),
+        "first_attempt": first,
+        "last_attempt": last,
+        "failures": failures,
+    }
 
 
 def spent_without_checkpoint(stage: str, ledger_path: Path) -> dict[str, object] | None:
@@ -1116,24 +1251,6 @@ def main(argv: list[str] | None = None) -> int:
         waste = spent_without_checkpoint(variant_stage(variant), Settings().resolved_ledger_path)
         if waste:
             summary["spent_without_checkpoint"] = waste
-    if checkpoint:
-        summary["dev_metrics"] = dev_metrics(dev, checkpoint, v1)
-        summary["variant_metrics"] = variant_metrics(dev, checkpoint, v1)
-        summary["variants"] = record_variant(
-            variant.name,
-            {
-                "variant": variant.name,
-                "prompt_version": variant.prompt_version,
-                "rows_scored": len(checkpoint),
-                "metrics": summary["variant_metrics"],
-            },
-        )
-    if variant.name == "v2" and not checkpoint:
-        legacy = read_v2()
-        summary["checkpoint_rows"] = len(legacy)
-        if legacy:
-            summary["dev_metrics"] = dev_metrics(dev, legacy, v1)
-            summary["variant_metrics"] = variant_metrics(dev, legacy, v1)
 
     if args.estimate_variants:
         settings = Settings()
@@ -1166,25 +1283,39 @@ def main(argv: list[str] | None = None) -> int:
                 variant=variant,
             )
             print(json.dumps({"llm_run": summary["run"]}, indent=2, default=str))
-            scored_now = read_v2(variant.checkpoint)
-            if scored_now:
-                summary["variant_metrics"] = variant_metrics(dev, scored_now, v1)
-                summary["variants"] = record_variant(
-                    variant.name,
-                    {
-                        "variant": variant.name,
-                        "prompt_version": variant.prompt_version,
-                        "rows_scored": len(scored_now),
-                        "metrics": summary["variant_metrics"],
-                        "run": summary["run"],
-                    },
-                )
+
+    scored_now = read_v2(variant.checkpoint)
+    summary["checkpoint_rows"] = len(scored_now)
+    incomplete: str | None = None
+    try:
+        require_complete(dev, scored_now, "dev rows")
+    except IncompleteCheckpoint as error:
+        incomplete = str(error)
+    if incomplete is None:
+        summary["dev_metrics"] = dev_metrics(dev, scored_now, v1)
+        summary["variant_metrics"] = variant_metrics(dev, scored_now, v1)
+        summary["variants"] = record_variant(
+            variant.name,
+            {
+                "variant": variant.name,
+                "prompt_version": variant.prompt_version,
+                "rows_scored": len(scored_now),
+                "metrics": summary["variant_metrics"],
+            },
+        )
+    else:
+        summary["incomplete"] = incomplete
+        activity = ledger_activity(variant_stage(variant), Settings().resolved_ledger_path)
+        if activity:
+            summary["ledger_activity"] = activity
 
     if args.diagnose or not summary:
         print(json.dumps(diagnosis, indent=2))
+    if incomplete is not None:
+        print(incomplete)
     write_report(diagnosis, summary)
     print(f"report: {REPORT}")
-    return 0
+    return 0 if incomplete is None else 2
 
 
 if __name__ == "__main__":
