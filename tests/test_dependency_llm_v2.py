@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -376,3 +377,67 @@ def test_report_lists_failed_attempts_for_an_incomplete_stage(
     assert "**incomplete: 17 of 151 dev rows scored, run again to resume.**" in text
     assert "| P3W1-018 | `ReadError` |" in text
     assert "nothing was imputed or dropped" in text
+
+
+def _ledger_with(rows: list[tuple[str, str | None, int | None]], tmp_path: Path) -> Path:
+    import sqlite3
+
+    path = tmp_path / "ledger.sqlite3"
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "CREATE TABLE llm_calls (id INTEGER PRIMARY KEY, ts TEXT, error_class TEXT,"
+            " http_status INTEGER)"
+        )
+        connection.executemany("INSERT INTO llm_calls VALUES (NULL,?,?,?)", rows)
+    return path
+
+
+def test_provider_window_blocks_while_a_fresh_failure_is_recent(tmp_path: Path) -> None:
+    """The owner's resume: three SSL failures minutes old must block."""
+    path = _ledger_with(
+        [
+            ("2026-11-19T10:15:56+00:00", None, None),
+            ("2026-11-19T10:16:11+00:00", "ReadError", None),
+            ("2026-11-19T10:16:26+00:00", "ReadError", None),
+        ],
+        tmp_path,
+    )
+    now = datetime(2026, 11, 19, 10, 17, 30, tzinfo=UTC)
+
+    window = lv2.provider_window(path, now=now, cooldown_s=300)
+
+    assert window["blocked"] is True
+    assert window["age_s"] == 64
+    assert "inside the 300s cooldown" in window["reason"]
+
+
+def test_provider_window_lets_a_stale_failure_through(tmp_path: Path) -> None:
+    """Same ledger six hours later is not an outage, and must not block a resume."""
+    path = _ledger_with(
+        [
+            ("2026-11-19T10:15:56+00:00", None, None),
+            ("2026-11-19T10:16:26+00:00", "ReadError", None),
+        ],
+        tmp_path,
+    )
+    now = datetime(2026, 11, 19, 16, 30, 0, tzinfo=UTC)
+
+    window = lv2.provider_window(path, now=now, cooldown_s=300)
+
+    assert window["blocked"] is False
+    assert "outside the 300s cooldown" in window["reason"]
+
+
+def test_provider_window_allows_a_run_after_a_success(tmp_path: Path) -> None:
+    path = _ledger_with(
+        [
+            ("2026-11-19T10:16:11+00:00", "ReadError", None),
+            ("2026-11-19T10:17:00+00:00", None, None),
+        ],
+        tmp_path,
+    )
+
+    window = lv2.provider_window(path, now=datetime(2026, 11, 19, 10, 17, 30, tzinfo=UTC))
+
+    assert window["blocked"] is False
+    assert window["reason"] == "the most recent attempt succeeded"

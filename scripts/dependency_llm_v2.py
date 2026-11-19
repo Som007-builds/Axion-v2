@@ -524,6 +524,58 @@ def recent_failures(ledger_path: Path, limit: int = 8) -> list[dict[str, object]
     ]
 
 
+WINDOW_COOLDOWN_S = 300
+
+
+def provider_window(
+    ledger_path: Path,
+    *,
+    now: datetime | None = None,
+    cooldown_s: int = WINDOW_COOLDOWN_S,
+) -> dict[str, object]:
+    """Is the provider visibly broken *right now*? Age matters, absence of failure does not.
+
+    The first version of this guard refused whenever any of the last three attempts
+    had failed. That is wrong twice: a transport failure on one row is not a window,
+    and a stale failure blocks a resume forever. A guard that cannot tell an outage
+    from a bad minute is a guard that stops the work, so this one asks two questions -
+    did the most recent attempt fail, and did it fail recently.
+    """
+    recent = recent_failures(ledger_path, limit=5)
+    if not recent:
+        return {"blocked": False, "reason": "no attempts on record"}
+    moment = now or datetime.now(UTC)
+    newest = recent[0]
+    if not newest["error_class"] and not newest["http_status"]:
+        return {"blocked": False, "reason": "the most recent attempt succeeded"}
+    try:
+        failed_at = datetime.fromisoformat(str(newest["ts"]))
+    except ValueError:
+        return {"blocked": False, "reason": "unreadable ledger timestamp"}
+    age = (moment - failed_at).total_seconds()
+    within = [item for item in recent if item["error_class"]]
+    if age < cooldown_s:
+        return {
+            "blocked": True,
+            "reason": (
+                f"the most recent attempt failed {int(age)}s ago ({newest['error_class']}), "
+                f"inside the {cooldown_s}s cooldown; {len(within)} of the last {len(recent)} "
+                "attempts failed"
+            ),
+            "age_s": int(age),
+            "recent_failures": len(within),
+        }
+    return {
+        "blocked": False,
+        "reason": (
+            f"the most recent failure was {int(age / 60)} minutes ago, outside the "
+            f"{cooldown_s}s cooldown, so this is not an active window"
+        ),
+        "age_s": int(age),
+        "recent_failures": len(within),
+    }
+
+
 def read_v2(path: Path = V2_DEV_PREDICTIONS) -> dict[str, dict[str, str]]:
     if not path.exists():
         return {}
@@ -1267,13 +1319,12 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"llm_estimate": cost}, indent=2))
         if args.llm_mode == "live":
             recent = recent_failures(settings.resolved_ledger_path)
-            print(json.dumps({"recent_ledger_attempts": recent}, indent=2))
-            failures = sum(1 for item in recent[:3] if item["error_class"])
-            if failures:
-                raise LLMv2Error(
-                    "the last attempts include provider errors (possible 503 window); "
-                    "refusing to start a live run now"
-                )
+            window = provider_window(settings.resolved_ledger_path)
+            print(
+                json.dumps({"recent_ledger_attempts": recent, "provider_window": window}, indent=2)
+            )
+            if window["blocked"]:
+                raise LLMv2Error(f"refusing to start a live run now: {window['reason']}")
             summary["run"] = run_live(
                 target,
                 settings=settings,
