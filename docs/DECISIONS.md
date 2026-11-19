@@ -790,6 +790,51 @@ rows exist at that time; otherwise the report says which claim the data supports
 - **Default if the owner does nothing:** no wave 3, and the P3-05 gate is reported with the narrowed
   claim above. That is a legitimate outcome, not a failure — the measurement is what the labels support.
 
+## ADR-0026 — P3-05 pre-registration: what counts as beating the baselines
+
+2026-11-19 · **Proposed** (written before any staged detector, scheduler or LLM-v2 call exists)
+
+**Context.** P3-04 produced three frozen baselines on 300 gold rows and exposed a gap: the
+section/lexical heuristic reaches high recall with heavy false alarms, and LLM-only v1 is
+near-silent (16.7% test recall, 1.1% false alarms). P3-05 adds a staged detector, and a scheduler
+adds risk ordering. Without a pre-registered comparison, a staged detector tuned on dev can very
+easily be reported as a win on a test set that contains 18 text-bearing positives.
+
+**Decision — the comparison is fixed now, before the detector exists.**
+
+**(a) Citation-level is not the opponent.** "All affected" flags every citation, so it recalls
+everything by construction. Beating it on false alarms is arithmetic, not evidence: any detector
+that predicts at least one negative does it. The citation-level row stays in the tables as the
+floor that defines the false-alarm scale, never as a result.
+
+**(b) Primary comparison.** Staged detector **vs the dev-tuned section/lexical heuristic**, at a
+**matched-recall operating point**: recall **>= 0.80 chosen on dev**, evaluated on the
+**text-bearing frame** of test (110 rows, 18 positives). The primary claims are, in order: the
+difference in **false-alarm rate** at that matched recall, and **cost per context** at list price.
+The threshold grid and the chosen point are written to the summary, so the operating point is
+auditable and not selected after seeing test.
+
+**(c) Reporting shape (ADR-0025).** Recall is reported **with its interval**, alongside the
+false-alarm contrast. Superiority is claimed **only if the intervals separate**. With 18 test
+positives the Wilson interval on recall spans roughly +/-15 points at 80%, so the expected outcome
+is "not distinguishable at 18 test positives"; that sentence is an acceptable result and must be
+written when it is true, not replaced by a point-estimate comparison.
+
+**(d) Stubs are separate.** The 68 title-only rows (no source claim or abstract) are reported as
+their own stratum and never pooled into the primary frame. A method that needs A's claim cannot be
+credited or blamed for stub rows.
+
+**(e) Known limits of the gold set.** The rubric agreement is 61 overlap rows with **zero
+discordant pairs** (waves 1 and 2), which shows the partition is reproducible but gives **no
+evidence about borderline rows**: the overlap could not test the rubric's fragile boundary because
+both labelers agreed everywhere. Any precision/recall number here inherits that: it is measured
+against one labeler's reading of a rubric whose hard cases were never independently sampled.
+
+**Consequences.** The staged detector may lose to the heuristic at matched recall and still be
+useful (cheaper, or better at a different recall); the report has to say which. Any change to the
+comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that
+expensive.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title
