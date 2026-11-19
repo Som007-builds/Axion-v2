@@ -1,0 +1,25 @@
+{
+  "contexts_per_retraction": 21.46,
+  "escalation_rate_e": 0.4503,
+  "list_price_per_context_usd": "0.0001152768",
+  "list_price_per_llm_call_usd": "0.000256",
+  "list_price_per_retraction_usd": "0.002474204159999999999999999999",
+  "projection": {
+    "assumptions": {
+      "citer_coverage": "285 of 792 sources",
+      "citer_sources": 285,
+      "corpus_contexts": 6117,
+      "corpus_sources": 792,
+      "escalation_rate_source": "dev candidate rate from the staged detector",
+      "prices": "pricing.yaml list prices, model gemini-3.5-flash-lite",
+      "real_spend": "zero on the free tier; list price is the comparable number"
+    },
+    "corpus_list_price_usd": "0.7051481856",
+    "corpus_requests": 2754.5,
+    "free_tier_days_at_450_per_day": 6.1,
+    "label": "PROJECTED"
+  },
+  "stage1_share": 0.5497,
+  "student_share_note": "no student exists in P3-05 (P2-03b not built), so s is not applicable; reporting a number here would invent a stage that was never run",
+  "student_share_s": null
+}

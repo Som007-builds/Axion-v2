@@ -1,0 +1,20 @@
+{
+  "excluded": {
+    "gold_row": 300,
+    "test_source_context": 2909
+  },
+  "price": {
+    "billing": "free_tier (list price recorded, no charge)",
+    "list_price_per_call_usd": "0.0002727537826685006877579092160",
+    "list_price_usd": "0.793168",
+    "model": "gemini-3.5-flash-lite"
+  },
+  "tokens": {
+    "completion_tokens": 232640,
+    "max_prompt_tokens": 475,
+    "mean_prompt_tokens": 242.5,
+    "prompt_tokens": 705225,
+    "rows": 2908,
+    "token_count_is": "heuristic ceil((context chars + 700 template chars) / 4)"
+  }
+}
