@@ -1,0 +1,152 @@
+row_id,score,would_change,cue,model,prompt_version
+P3W1-001,10,none,background literature on polyfunctional T cells,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-002,0,none,standard protocol cited for method,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-003,20,none,background literature on peripheral CD8+ T cell responses,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-004,0,none,standard cell viability assay reference,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-005,0,none,citing ethical concerns about source study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-006,0,none,background citation not dependent on A's central claim,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-007,10,none,background information on avian paramyxovirus serotypes,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-008,0,none,background general citation of tuberculosis burden,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-009,0,none,background information on interferon side effects,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-010,10,none,general definition of Cox proportional hazard model,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-011,0,none,background information or topic pointer,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-012,90,"A systematic review containing observational studies to evaluate the VE from database inception to 2016 showed that compared to prior season vaccination only, vaccination in both seasons was associated with greater protection",used systematic review data and findings,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-013,0,none,background citation of previous results,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-014,90,reductions in the risk and impact of both upper and lower respiratory tract infections such as the common cold,recent meta-analyses concluded significant reductions,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-015,0,none,general virus family background,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-016,85,pregnant women experience similar or even lower rates of serious illness compared with non-pregnant women,supports its claim about pregnant women with,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-017,0,none,contrasting with results from China,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-018,10,none,previously published reports suggesting zero mortality,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-019,0,none,contrasting literature findings,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-020,0,none,contrasting literature findings,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-021,0,none,background literature review list of adverse outcomes,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-022,95,pregnant women were not at an increased risk of COVID-19-related complications,early reports from China initially suggested that,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-023,10,none,previous research findings which provide evidence of,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-024,10,none,background citation for study context,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-025,0,none,background citation for lung imaging improvements,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-026,0,none,A non-RCT reported patients with COVID-19,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-027,0,none,background outbreak mention,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-028,10,none,background information on favipiravir use,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-029,10,none,background citation for context,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-030,10,none,corroboration of clinical trial results,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-031,0,none,background information on ongoing clinical trial,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-032,95,showed a faster viral clearance and a better chest computed tomography (CT) change for the favipiravir group,relies on the study for clinical evidence,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-033,85,available published evidence,based on the available published evidence,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-034,10,none,background general context outbreak statement,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-035,5,none,background outbreak context or general topic pointer,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-036,10,none,background citation regarding the initial endorsement of favipiravir,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-037,10,none,background citation of earlier clinical studies,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-038,10,none,background citation in a list of references supporting a general inflammatory response,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-039,0,none,background literature on COVID-19 risk factors,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-040,15,none,example in a list of duplicate articles,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-041,95,"In fact, the largest analysis to date of the risks and benefits of treating COVID-19 patients with these anti-malarial drugs was unable to confirm a benefit of hydroxychloroquine or chloroquine, when used alone or with a macrolide, on in-hospital outcomes for COVID-19.",largest analysis to date of the risks and benefits,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-042,95,"In fact, the largest analysis to date of the risks and benefits of treating COVID-19 patients with these anti-malarial drugs was unable to confirm a benefit of hydroxychloroquine or chloroquine, when used alone or with a macrolide, on in-hospital outcomes for COVID-19.",largest analysis to date of the risks and benefits,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-043,0,none,retract published,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-044,90,France has also stopped recommending the use of CQ/HCQ,Following the same report,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-045,100,observational studies reporting that the drug ‘hydroxychloroquine’ is linked to severe adverse events and mortality among patients with COVID-19,cited retracted studies on hydroxychloroquine adverse events,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-046,0,none,citation used as a general example of accelerated research,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-047,85,registry studies based on electronic medical records did not mention the dosage or included several dosages of the chloroquine derivatives used,registry studies based on electronic medical records,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-048,95,No difference in mortality after multivariable logistic regression,results and findings of the cited cohort study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-049,0,none,retracted by the Lancet,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-050,0,none,mentioned in policy documents,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-051,0,none,retraction itself being cited,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-052,10,none,contradictory with Xia et al,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-053,10,none,cited as an observational retrospective study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-054,0,none,bibliographic list of probe types,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-055,10,none,topic pointer for scoring systems,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-056,0,none,background citation for scoring systems,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-057,10,none,topic pointer,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-058,0,none,B cites A as background or a general topic pointer,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-059,85,"acupuncture has been used as a supplementary treatment of COVID-19 in China, and its curative effect has been proved by research",its curative effect has been proved by research,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-060,95,Thirty-five studies conducted in various parts of the country were included in the systematic review,included in the systematic review,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-061,90,COVID-19 patients with dyslipidemia may worsen mortality and severity,relies on systematic review for severity risk,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-062,100,"dyslipidemia was associated with severe COVID-19 (RR: 1.39; 95% IC = 1.03-1.87; I2: 57.4%, p=.029)","evaluating 9 studies with 3663 patients, found that subgroup analysis showed",gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-063,10,none,literature search inclusion of studies,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-064,10,none,background general medical knowledge citation,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-065,10,none,corroboration of a specific study finding,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-066,85,vitamin D supplementation was shown to significantly reduce serum inflammatory markers associated with COVID‐19,vitamin D supplementation was shown to significantly reduce,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-067,0,none,citing A as retracted,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-068,10,none,background mention of vaccine hesitancy causes in other countries,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-069,100,thus showing a benefit of proxalutamide in newly diagnosed COVID-19 patients,citing retracted paper for clinical trial findings,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-070,100,It could reduce by 91% the hospitalization rate in male outpatients with COVID-19,proxalutamide reduces hospitalization rate in male outpatients,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-071,0,none,citing the studies as retracted,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-072,0,none,source does not provide central claim,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W1-073,0,none,background information on vaccine allergic reactions,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-001,15,none,background information on HDAC3 function,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-002,10,none,general background on neurologic damage mechanisms,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-003,10,none,background literature citation in a list of references,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-004,0,none,background literature contrast,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-005,10,none,background general knowledge citation,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-006,0,none,background information on miliary tuberculosis,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-007,10,none,background citation regarding general tuberculosis statistics,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-008,10,none,background literature support for reduced risk,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-009,0,none,never stated that PCR,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-010,15,none,general statement of pathogen virulence factors,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-011,90,19.3% in Chitwan and Dang in 2013,seroprevalence finding from cited study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-012,10,none,background citation of mechanism,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-013,10,none,background information on peripheral serotonin function,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-014,0,none,standard method reference,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-015,0,none,retraction notice citing the retracted article,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-016,0,none,background citation for vertical transmission,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-017,85,caesarean delivery was by far the most common mode of delivery for COVID-19 pregnant women,In the first publications from China,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-018,90,have not reported maternal deaths,review of cases in four case report series,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-019,10,none,corroboration of symptoms in literature,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-020,10,none,cited among many pooled studies,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-021,0,none,bibliographic citation pointer for work progress,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-022,10,none,background mention of previous coronavirus-related diseases,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-023,100,"(22, 24, 28)",cited as evidence for specific obstetric outcomes,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-024,85,shorter viral clearance durations and improved chest imaging in patients diagnosed with COVID-19 compared to controls,report showed shorter viral clearance durations,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-025,90,favipiravir exhibited significant improvements in chest CT scans and viral clearance in COVID-19 patients,results and findings of clinical study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-026,10,none,background citation for favipiravir in COVID-19 treatment,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-027,5,none,background information and previous association,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-028,0,none,bibliographic citation of background literature,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-029,0,none,citation used as an example in a list,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-030,0,none,background citation of previous trials,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-031,10,none,background general context citing outbreak background,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-032,30,none,background literature review,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-033,95,hydroxychloroquine and azithromycin were not associated with any clinical benefit,cited as finding in multinational registry analysis,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-034,95,found no benefit to treating patients with chloroquine or HCQ on in-hospital outcomes for COVID-19,recent study found no benefit to treating,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-035,0,none,retracted from the journal as independent auditing,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-036,0,none,background mechanism about chloroquine and lysosomes,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-037,10,none,reporting findings of a multinational task team,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-038,10,none,cited as a since-retracted publication raising concerns,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-039,0,none,citing the retraction of the source,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-040,10,none,citing the retraction itself,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-041,0,none,background general context or unrelated topic pointer,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-042,90,a higher initial viral load was associated with a shorter duration of the symptoms,reported that a higher initial viral load was associated,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-043,90,ruled out any association of initial viral load to the severity or chances of developing acute respiratory distress syndrome in SARS-CoV-2 patients,contrasting or agreeing with A's finding on viral load,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-044,10,none,contrasting with previous conflicting studies,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-045,10,none,conflicting data regarding this relationship in COVID-19,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-046,0,none,A is cited as general background literature,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-047,10,none,others have found that symptomatic hospitalized patients,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-048,0,none,background literature citation,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-049,10,none,paucity of studies reporting the clinical characteristics,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-050,0,none,background information and literature list,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-051,10,none,citing general pandemic background context,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-052,90,The risk of vitamin D insufficiency and the benefits of pre-illness supplementation,highlighted in an Iranian study of 235 patients,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-053,10,none,background literature about vaccination concerns,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-054,10,none,one of eight studies citing demographic findings,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-055,100,medical students reported higher COVID-19 vaccine trust than dentistry students and administrative workers,finding sourced directly from cited study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-056,0,none,past experience of vaccinations,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-057,10,none,cited as an example among others,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-058,10,none,topic pointer in a list of references,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-059,90,Community-wide wearing of FCs in public is effective in preventing interhuman transmission,citing citation as evidence for mask effectiveness,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-060,90,the Republic of Malta (61.8% were willing to receive vaccination) [42],utilizes data point from retracted paper,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-061,10,none,general background on natural world therapies,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-062,10,none,cited as general background reference,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-063,95,"the association was stronger in older patients, male, and hypertensive17",citation 17 supports the specific association reported,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-064,10,none,background general knowledge citation,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-065,10,none,background citation for rumors and misinformation,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-066,10,none,background citation for social media use,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-067,10,none,background literature on pandemic teaching challenges,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-068,100,supplementing vitamin D in addition to standard care improved inflammatory markers significantly,reported that supplementing vitamin D improved inflammatory markers,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-069,90,"COVID-19 patients with hypovitaminosis D had evaluated IL6 levels and IL6 levels were reduced in patients supplemented with 60,000 IUs/daily of vitamin D",citing specific findings from the retracted study,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-070,0,none,corroboration of conflicting findings in literature,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-071,0,none,citing retracted notes,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-072,85,"Rabie’s verified techniques.11,12,15−18",depends primarily on Rabie's verified techniques,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-073,10,none,general background on nucleoside analogues,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-074,90,genuine protocol and methodology of Rabie,based on the genuine protocol and methodology of,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-075,10,none,broad-spectrum antiparasitic agent with previously reported antiviral activity,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-076,0,none,background information on vaccination rollout,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-077,90,can inhibit repair of damaged DNA,demonstrated that the spike protein can inhibit,gemini-3.5-flash-lite,p3-05-llm-v2
+P3W2-078,90,The SARS-CoV-2 virus spike protein may cause dysregulation of DNA damage response by preventing the recruitment of key DNA repair proteins,relies on A's central claim about spike impairing DNA damage,gemini-3.5-flash-lite,p3-05-llm-v2

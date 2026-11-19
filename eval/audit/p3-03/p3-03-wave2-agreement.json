@@ -1,0 +1,132 @@
+{
+  "agree": 30,
+  "cohen_kappa": 1.0,
+  "confusion": {
+    "MENTIONS": {
+      "MENTIONS": 9,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "RELIES_ON": {
+      "MENTIONS": 0,
+      "RELIES_ON": 12,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "UNRELATED": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 9,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "insufficient_context": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    },
+    "skip": {
+      "MENTIONS": 0,
+      "RELIES_ON": 0,
+      "UNRELATED": 0,
+      "insufficient_context": 0,
+      "skip": 0
+    }
+  },
+  "degenerate": true,
+  "design_weighted_kappa": 1.0,
+  "disagreements": [],
+  "isolation": [
+    {
+      "check": "labeler ids differ",
+      "evidence": "'Soham' vs 'friend'",
+      "verdict": "pass"
+    },
+    {
+      "check": "export sits in the declared handoff directory",
+      "evidence": "eval/audit/p3-03-labeler2 vs handoff_dir=eval/audit/p3-03-labeler2",
+      "verdict": "pass"
+    },
+    {
+      "check": "handoff directory holds only blind artefacts",
+      "evidence": "no manifest, selection or foreign export",
+      "verdict": "pass"
+    },
+    {
+      "check": "export carries no internal columns",
+      "evidence": "export columns match the blind schema",
+      "verdict": "pass"
+    },
+    {
+      "check": "labeling pace differs (weak corroboration only)",
+      "evidence": "38 s/row (labeler 1) vs 120 s/row (labeler 2), ratio 3.2x - reported by the owner, not measured here",
+      "verdict": "weak"
+    }
+  ],
+  "isolation_failures": [],
+  "kappa_ci95": [
+    1.0,
+    1.0
+  ],
+  "labeler_1": [
+    "Soham"
+  ],
+  "labeler_2": [
+    "friend"
+  ],
+  "negative_rows": 18,
+  "negative_side": {
+    "called_positive_by_labeler_2": 0,
+    "classes_seen": [
+      "MENTIONS",
+      "UNRELATED"
+    ],
+    "kappa": 1.0,
+    "rows": 18,
+    "specificity": 1.0,
+    "specificity_ci": [
+      0.8241,
+      1.0
+    ]
+  },
+  "negative_side_estimable": true,
+  "notes": [
+    "kappa is conditioned on labeler 1: labeler 1's labels chose these rows",
+    "18 negative rows: negative-class agreement is the least stable part",
+    "the overlap is positive-heavy, so kappa is depressed relative to a balanced design",
+    "degenerate: zero discordant pairs, so kappa is exactly 1 and the bootstrap interval cannot move; this cannot separate genuine reliability from a shared heuristic or from labeler 2 having seen labeler 1's labels"
+  ],
+  "off_diagonal_cells": 0,
+  "pabak": 1.0,
+  "per_class": {
+    "MENTIONS": {
+      "agreed": 9,
+      "rows": 9
+    },
+    "RELIES_ON": {
+      "agreed": 12,
+      "rows": 12
+    },
+    "UNRELATED": {
+      "agreed": 9,
+      "rows": 9
+    },
+    "insufficient_context": {
+      "agreed": 0,
+      "rows": 0
+    },
+    "skip": {
+      "agreed": 0,
+      "rows": 0
+    }
+  },
+  "positive_prevalence_labeler_1": 0.4,
+  "raw_agreement": 1.0,
+  "rows": 30,
+  "wave": "wave 2"
+}

@@ -66,7 +66,9 @@
     - **Wave-2 labels received (2026-11-18, owner):** `dependency_audit_v1_wave2_labelled.csv` — 150/150, 0 blanks, 150 notes, **12 `RELIES_ON` / 129 `MENTIONS` / 9 `UNRELATED`** (labeler normalised to `Soham`). Measured pace **95 min = 38 s/row**.
     - **Combined metrics:** 300 rows, **37 positives**; uniform base rate heterogeneous (wave 1 23.3% [11.8, 40.9] vs wave 2 8.0% [4.6, 13.5]); pooled weighted 15.8% [10.3, 24.9], unweighted 10.6%; dev 16/151, test 21/149; text-bearing 232 rows / 32 positives; stubs 68 rows / 5 positives. Stop rule: 77 needed, 40 outstanding, 254–500 more rows depending on rate. Report `docs/reports/P3-03-wave1-wave2-metrics.md`.
     - **Wave-2 overlap built (Amendment C):** 30 rows = 12 `RELIES_ON` + 18 negatives (9 + 9), floor met; blind files isolated in `eval/audit/p3-03-labeler2/` (no labeler-1 file, no manifest, no selection counts).
-    - **Still open:** second labeler labels the wave-2 overlap, then agreement; then the owner's wave-3 decision. P3-03 stays `[~]`.
+    - **Wave-2 agreement (2026-11-18):** `scripts/dependency_agreement.py --wave wave2` — **30/30 = 100%, κ 1.000 degenerate (zero discordant pairs)**, negative side estimable at last: **negative-class κ 1.000**, specificity 18/18 = 100% [82.4, 100]. Matrix fully diagonal (12/9/9). Isolation audit all pass (distinct ids, declared handoff dir, no foreign export, blind schema only; pace 38 vs 120 s/row recorded as weak). Report `docs/reports/P3-03-wave2-agreement.md`.
+    - **Wave-3 decision (ADR-0025, accepted 2026-11-18): narrow the gate claim, no wave 3.** P3-05 reports measured recall with its interval plus the false-alarm reduction vs the citation-level floor; the 0.70/0.80 recall floor is only claimable if the interval supports it.
+    - **Still open:** P3-05 staged detector. P3-03 stays `[~]` until the P3-05 gate report exists.
   - done: — (in progress: labels, overlap 2, agreement and wave-1 metrics are in; wave-2 decision and P3-04 pending) | evidence: — `eval/audit/p3-03/{dependency_audit_v1_wave1_labelled.csv,dependency_audit_v1_wave1_overlap2_labelled.csv,p3-03-wave1-overlap2-*,p3-03-agreement.json,p3-03-wave1-metrics.json}`; `scripts/dependency_{agreement,metrics}.py`; no LLM calls, $0; **no labels created by the agent**.
 
 ### [x] P3-04 — Baselines
@@ -77,21 +79,31 @@
   - notes: `scripts/dependency_baselines.py` scores all three on the 300 labelled rows, dev/test separately, weighted and unweighted, with Wilson CIs, on the 232-row text-bearing frame and the 68-row stub stratum separately. Heuristic tuned on **dev only** (30-point grid in the JSON); **test computed once and frozen** in `eval/audit/p3-04/p3-04-test-frozen.json` — a later run refuses if a frozen number or the spec moved. LLM-only ran live through `LLMClient` on the Gemini free tier after a dry-run estimate: **300/300 rows, list price $0.0739, real spend $0**, 3+297 calls, ledger run `p3-04-llm-2026-11-18`.
   - done: 2026-11-18 | evidence: `docs/reports/P3-04-baselines.md`, `eval/audit/p3-04/{p3-04-baselines.json,p3-04-test-frozen.json,p3-04-llm-predictions.csv}`, `tests/test_dependency_baselines.py` (8 tests). Text-bearing test (18 positives): citation-level P 16.4% / R 100% / FAR 100%; heuristic P 30.0% / R 83.3% [60.8, 94.2] / FAR 38.0% [28.8, 48.2]; LLM-only P 75.0% / R 16.7% [5.8, 39.2] / FAR 1.1%. 21 test positives overall — recall claims are wide, stated in the report. ADR-0025 (Proposed) records the wave-3 option and the narrow-the-claim alternative.
 
-### [ ] P3-05 — Staged detector
+### [~] P3-05 — Staged detector
 - depends: P3-04, P2-03b
 - what: Heuristic features -> teacher-distilled student (silver labels from teacher on candidate contexts, paper-level split, gold dev/test) -> calibrated LLM escalation; tune on gold dev; evaluate on frozen gold test; report per-stage cost, `e`, and `s`.
 - acceptance: Gold-test metrics with CIs; per-stage cost share; `e` and `s` reported; no student evaluation on teacher-labeled data; no paper overlap between train and gold dev/test.
-  - agent: — | started: — | branch: p3
+  - agent: Buffy | started: 2026-11-19 | branch: p3
   - notes:
-  - done: — | evidence: —
+    - 2026-11-19: claiming. ADR-0026 pre-registers the comparison **before** any detector exists (citation-level is a scale reference, primary comparison is staged vs the dev-tuned heuristic at matched recall >= 0.80 on the text-bearing test frame, intervals decide superiority, stubs separate).
+    - Scope for this session: stage 1 = cheap deterministic features; stage 2 = LLM v2 on rows stage 1 cannot clear; thresholds tuned on dev only; escalation rate `e` and cost per context reported. **No student is trained** — the P2-03b teacher-distilled student is not built, so `s` (student share) is reported as not-applicable rather than invented.
+    - **LLM v1 diagnosed (dev, no calls):** 12 predicted positives, recall 4/16 = 25.0% [10.2, 49.5], FAR 5.9% [3.0, 11.3], 0 parse failures; A's text was present for 122/151 dev rows (93 claim, 29 abstract-only) and absent only for the 29 stubs. Cause: a three-way label with no confidence gave nothing to tune or escalate. Prompt v2 (`p3-05-llm-v2`) asks only the counterfactual and returns a 0-100 score.
+    - **Stage-2 live run: BLOCKED.** Cost stated first (151 dev rows, $0.0519 list price, free tier); the environment's tool policy refused the live-LLM command twice, so **no v2 score exists** and no stage-2 number is claimed. Command in `docs/reports/P3-05-llm-v2-calibration.md`.
+    - **Cascade redesigned on evidence:** stage 1 is the recall stage, not a reject filter (the reject-filter grid lost positives or escalated 25-50% with worse precision). Candidate threshold 0.0, **e = 45.0%** (68/151), ceiling 14/16 positives. No staged number printed without stage 2.
+    - **Freeze:** spec `b85dc5d5c94eb375`, `test_evaluated: false`. **Test NOT evaluated** — `--evaluate-test` refuses in code; the single look waits for stage-2 scores and a dev-tuned stage-2 threshold (re-freeze allowed only while test is unseen, recorded in `history`).
+    - **v2 dev scores received (2026-11-19, owner-authorised run):** 151/151 rows, mean score 28.5, **nearly binary** (111 <= 30, 0 in 31-69, 40 >= 70). Text-bearing dev: **P 21.9%, R 50.0% [26.8, 73.2], FAR 23.2% [16.2, 31.9]** vs v1 R 14.3% / FAR 7.4% and heuristic R 85.7% / FAR 42.6%.
+    - **Stage-2 threshold tuned on dev = 70.0, `meets_floor: false`** — no threshold reaches the pre-registered 0.80 recall floor; the cascade tops out at 50% recall (31-80 all tie). Cascade on dev: **P 31.6%, R 42.9% [21.4, 67.4], FAR 12.0%**. **No superiority claim** (ADR-0026).
+    - **Ledger reconciled:** 154 attempts / 151 ok / 3 errors / 2 cache hits, 71,359 + 5,948 tokens, **$0.036276** list price vs $0.051885 estimated (prompt -1.3%, completion -50.8%, price -30%).
+    - **Spec re-frozen before any test look: `6612eae9cbf24a60`** (`test_evaluated: false`, history keeps `b85dc5d5c94eb375`). Test remains **unread** and awaits the owner's go.
+  - done: — (partial: calibration, dev cascade and freeze complete; **test evaluation outstanding**) | evidence: `scripts/{dependency_llm_v2,p3_05_staged}.py`, `docs/reports/{P3-05-llm-v2-calibration,P3-05-detector-dev}.md`, `eval/audit/p3-05/{p3-05-llm-v2-dev.csv,p3-05-dev-detector.json,p3-05-spec-frozen.json}`, `tests/test_{dependency_llm_v2,p3_05_staged}.py` (9 + 8).
 
-### [ ] P3-05b — Priority / lazy scheduling
+### [~] P3-05b — Priority / lazy scheduling
 - depends: P3-05
 - what: Implement a risk-ordered queue (contexts citing flagged papers first), idempotent hash-keyed incremental runs, and explicit hot/cold corpus states. Cold items remain unprocessed until needed.
 - acceptance: Re-running produces identical counts/decisions; queue order documented; cold corpus items demonstrably untouched; no duplicate processing.
-  - agent: — | started: — | branch: p3
-  - notes:
-  - done: — | evidence: —
+  - agent: Buffy | started: 2026-11-19 | branch: p3
+  - notes: Risk ordering implemented and measured on dev (`risk = claim linkage +1.0, retraction mention +0.5, else heuristic score`): recall 12.5% [3.5, 36.0] at top 10% of contexts, 43.8% [23.1, 66.8] at 20-25%, 68.8% [44.4, 85.8] at 50%. Ordering is deterministic (ties break on row_id). **Not yet done:** hash-keyed idempotent re-runs, hot/cold corpus state, and the "cold items untouched" demonstration — the acceptance criteria are not met, so this stays `[~]`.
+  - done: — (partial) | evidence: `scripts/p3_05_staged.py` (`risk_score`, `scheduler_curve`), `docs/reports/P3-05-detector-dev.md`, `tests/test_p3_05_staged.py`.
 
 ### [ ] P3-06 — Claim linking
 - depends: P3-05
@@ -109,13 +121,14 @@
   - notes:
   - done: — | evidence: —
 
-### [ ] P3-08 — Cost accounting
+### [~] P3-08 — Cost accounting
 - depends: P3-05
 - what: Compute $/retraction analyzed, per-stage breakdown, escalation rate `e`, and student cost ratio `s` from the ledger; compare against baselines.
 - acceptance: Script outputs table; numbers match ledger; `e` and `s` reported.
-  - agent: — | started: — | branch: p3
-  - notes:
-  - done: — | evidence: —
+  - agent: Buffy | started: 2026-11-19 | branch: p3
+  - notes: **Scaffold, not done.** `scripts/p3_08_cost.py` computes from the frozen files: `e` = 45.0% (dev), $0.000256 per LLM call, **$0.000115 per context**, 21.46 contexts per retraction, **$0.00247 per retraction analysed**, and a corpus projection of **$0.71** / 2,754.5 requests / 6.1 free-tier days labelled **PROJECTED** with its assumptions (285 of 792 sources, 6,117 contexts, `pricing.yaml` list prices, zero real spend on the free tier). **`s` is reported as not applicable** — no student exists, and a fabricated share would describe a stage that never ran. Still missing for acceptance: ledger reconciliation (the numbers here come from the pricing table and the dev `e`, not from a `llm_calls` sum), per-stage share from a real staged run, and the baseline comparison. So `[~]`, not `[x]`.
+    - **Ledger reconciliation done (2026-11-19):** the scaffold now sums `llm_calls` for the v2 run (154 attempts, 151 ok, 3 errors, 2 cache hits) and reconciles against the pre-run estimate: prompt -1.3%, completion -50.8%, list price $0.051885 -> **$0.036276**. Per-context and per-retraction figures use the **ledger** price: **$0.000108 per context**, **$0.00232 per retraction**, corpus projection $0.63. Mismatch stated in the report, not smoothed over.
+  - done: — (scaffold only; per-stage share from a real staged run and the baseline comparison still missing) | evidence: `scripts/p3_08_cost.py`, `docs/reports/P3-08-cost-scaffold.md`, `eval/audit/p3-05/p3-08-cost.json`, `tests/test_p3_08_cost.py` (8).
 
 ### [ ] P3-09 — Case studies
 - depends: P3-07, P3-08
