@@ -858,6 +858,18 @@ authorised a capped attempt to fix the *measurement*, not to relax the criterion
   about test, and a graded score does not license a matched-recall claim the intervals do not
   support.
 
+**Amendment B — status note, no decision (2026-11-19).** The v3 dev run reached 17 of 151 rows and
+then stopped on `ReadError: SSLV3_ALERT_BAD_RECORD_MAC`. The subsequent resume made **zero**
+requests because this project's own provider-window guard refused to start: it treated three SSL
+failures on a single row as an active outage and would have done so permanently. That guard now
+asks whether the most recent attempt failed *and* whether it failed inside a 300s cooldown.
+
+No clause of (b) or (c) has been applied, because neither branch of the rule is reachable: there is
+no v3 recall and no v3 false-alarm rate to compare with the heuristic's 42.6%, so the spec is
+**not** re-frozen and the dev-negative sentence is **not** written. Recording the dev-negative here
+before v3 is measured would report a result that does not exist. Amendment A's rule stands
+unchanged and unspent.
+
 **Consequences.** The staged detector may lose to the heuristic at matched recall and still be
 useful (cheaper, or better at a different recall); the report has to say which. Any change to the
 comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that

@@ -130,6 +130,14 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-19 — Buffy — the resume never ran: checkpoint still 17/151, guard fixed
+- **The CSV is unchanged at 17 of 151 rows.** The resume made **zero requests**: the ledger has nothing after `2026-11-19T10:16:26`. My provider-window guard refused to start because it counted *any* failure among the last three attempts — the three SSL `ReadError`s on `P3W1-018` — and would have refused forever, since those rows never leave the ledger.
+- **Fixed (`provider_window`)**: blocked only when the most recent attempt failed *inside* a 300s cooldown. Same ledger at 10:17 → blocked; now (34 minutes later) → `blocked: False`, with the reason printed. Estimate, budget, daily-cap and quota checks untouched.
+- **Ledger reconciled to the checkpoint**: 23 attempts = **18 succeeded + 5 failed**, 0 cache hits, **12,661 prompt + 1,556 completion tokens, $0.007688**; the 17 unique successful rows are exactly the 17 checkpoint rows (no ok-but-unscored, no scored-but-not-ok). The 18th success is the discarded `P3W1-001` attempt from my schema bug.
+- **v3 cost vs estimate: +18.4% per row.** Actual **744.8 prompt / 91.5 completion tokens, $0.000452 per row** against the stated 606.4 / 80.0 / $0.000382. Projected over the full 151 rows that is **112,459 + 13,821 tokens ≈ $0.068290**, not $0.057671 — the longer two-judgement answers cost more per row, as the prompt length implies.
+- **No v3 metric, so no ADR-0026 decision.** Not re-frozen, and the dev-negative was **not** written: writing it now would report a result that does not exist. Amendment B records the status only.
+- Next: 134 rows needed, 273 of 450 requests left today.
+
 ### 2026-11-19 — Buffy — v3 partial run (17/151), recovery from a transport failure and an inverter bug
 - The owner ran the v3 dev command. **First run: 17 rows scored, then P3W1-018 failed 3 times on `ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC]`** (all three attempts are in the ledger, no tokens, $0). **Rerun: crashed in dev_metrics with `BaselineError: no prediction for P3W1-018` before making a single call** — my bug: `variant_metrics` was computed on the partial checkpoint at startup.
 - **Checkpoint: 17 of 151 dev rows** (`P3W1-001`..`P3W1-017`), 0 blanks, 17 distinct ids, all `p3-05-llm-v3`. **Missing 134**, of which exactly one (`P3W1-018`) was ever attempted; the other 133 were never reached.
