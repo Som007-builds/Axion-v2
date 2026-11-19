@@ -49,7 +49,7 @@ TARGET_RECALL = 0.80
 # verification threshold. Both grids are small on purpose: dev has 14 text-bearing
 # positives, so anything richer would be fitted noise.
 GRID_CANDIDATE: tuple[float, ...] = (-0.5, 0.0, 0.25, 0.5)
-GRID_STAGE2: tuple[float, ...] = (40.0, 50.0, 60.0, 70.0, 80.0)
+GRID_STAGE2: tuple[float, ...] = (31.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0)
 SCHEDULER_KS: tuple[float, ...] = (0.1, 0.2, 0.25, 0.5, 1.0)
 
 
@@ -140,12 +140,20 @@ def tune_stage2(
     *,
     target_recall: float = TARGET_RECALL,
 ) -> dict[str, object]:
-    """Choose the verification threshold on dev: recall floor first, then FAR."""
+    """Choose the verification threshold on dev.
+
+    If any threshold holds the recall floor, pick the one with the lowest false-alarm
+    rate. If **none** does, say so, and fall back to the highest achievable recall with
+    the lowest false-alarm rate - a threshold that leaves the nomination intact. That
+    fallback is a finding about stage 2, not a configuration win, so it is reported as
+    ``meets_floor: false``.
+    """
     candidates = [row for row in rows if stage1.candidate(row)]
     positives = sum(1 for row in rows if row["label"] == POSITIVE)
     negatives = len(rows) - positives
     grid: list[dict[str, object]] = []
-    best: tuple[tuple[float, float], float] | None = None
+    best_with_floor: tuple[tuple[float, float], float] | None = None
+    best_any: tuple[tuple[float, float, float], float] | None = None
     for threshold in GRID_STAGE2:
         predicted = {
             row["row_id"]: int(scores.get(row["row_id"], 0.0) >= threshold) for row in rows
@@ -165,17 +173,21 @@ def tune_stage2(
                 "false_alarm_rate": round(far, 4),
             }
         )
-        if recall + 1e-9 < target_recall:
-            continue
-        key = (round(far, 6), threshold)
-        if best is None or key < best[0]:
-            best = (key, threshold)
-    if best is None:
-        raise DetectorError(
-            f"no stage-2 threshold holds recall {target_recall:.0%} on dev; "
-            "the cascade cannot meet its own floor"
-        )
-    return {"stage2_threshold": best[1], "grid": grid}
+        if recall + 1e-9 >= target_recall:
+            key = (round(far, 6), threshold)
+            if best_with_floor is None or key < best_with_floor[0]:
+                best_with_floor = (key, threshold)
+        fallback = (-round(recall, 6), round(far, 6), abs(threshold - 70.0))
+        if best_any is None or fallback < best_any[0]:
+            best_any = (fallback, threshold)
+    meets_floor = best_with_floor is not None
+    chosen = best_with_floor[1] if best_with_floor else best_any[1]
+    return {
+        "stage2_threshold": chosen,
+        "meets_floor": meets_floor,
+        "target_recall": target_recall,
+        "grid": grid,
+    }
 
 
 def cascade_predictions(
@@ -378,6 +390,34 @@ def write_report(summary: dict[str, object]) -> Path:
         f"- Stage-2 prompt `{PROMPT_VERSION}`; verification threshold "
         f"**{summary['stage2_threshold']}**.",
         "",
+    ]
+    tuning2 = summary.get("stage2_tuning")
+    if isinstance(tuning2, dict):
+        lines += [
+            "## Stage-2 threshold tuned on dev only",
+            "",
+            f"- Chosen threshold **{tuning2['stage2_threshold']}**; it holds the "
+            f"{float(tuning2['target_recall']):.0%} recall floor: "
+            f"**{tuning2['meets_floor']}**.",
+            "",
+            "| Threshold | Recall (cascade) | False-alarm rate |",
+            "| --: | --: | --: |",
+        ]
+        for point in tuning2["grid"]:  # type: ignore[union-attr]
+            assert isinstance(point, dict)
+            lines.append(
+                f"| {point['stage2_threshold']} | {float(point['recall']):.1%} | "
+                f"{float(point['false_alarm_rate']):.1%} |"
+            )
+        lines.append("")
+        if not tuning2["meets_floor"]:
+            lines += [
+                "**No threshold holds the floor.** The fallback keeps the highest recall it",
+                "can and reports the shortfall; it is not a configuration win, and no",
+                "superiority is claimed (ADR-0026).",
+                "",
+            ]
+    lines += [
         "## Dev results (text-bearing frame, 122 rows / 14 positives)",
         "",
         "| Model | Precision | Recall [95% CI] | False-alarm rate |",
@@ -416,8 +456,16 @@ def write_report(summary: dict[str, object]) -> Path:
         "  buys, not a tuned result, and its top-10% point rests on 2 positives.",
         "- **No staged number is claimed without stage 2.** With stage 2 absent the cascade *is*",
         "  the heuristic, so printing it as a result would be a relabelling.",
-        "",
     ]
+    tuning2 = summary.get("stage2_tuning")
+    if isinstance(tuning2, dict) and not tuning2["meets_floor"]:
+        lines += [
+            "- **The cascade misses the pre-registered recall floor on dev.** Stage 2 rejects",
+            "  positives the heuristic would have kept, so at this threshold the cascade trades",
+            "  recall for fewer false alarms instead of dominating. The staged detector is",
+            "  therefore **not** compared at matched recall, and no superiority is claimed.",
+            "",
+        ]
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     return REPORT

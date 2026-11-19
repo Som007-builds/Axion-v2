@@ -91,7 +91,11 @@
     - **Stage-2 live run: BLOCKED.** Cost stated first (151 dev rows, $0.0519 list price, free tier); the environment's tool policy refused the live-LLM command twice, so **no v2 score exists** and no stage-2 number is claimed. Command in `docs/reports/P3-05-llm-v2-calibration.md`.
     - **Cascade redesigned on evidence:** stage 1 is the recall stage, not a reject filter (the reject-filter grid lost positives or escalated 25-50% with worse precision). Candidate threshold 0.0, **e = 45.0%** (68/151), ceiling 14/16 positives. No staged number printed without stage 2.
     - **Freeze:** spec `b85dc5d5c94eb375`, `test_evaluated: false`. **Test NOT evaluated** — `--evaluate-test` refuses in code; the single look waits for stage-2 scores and a dev-tuned stage-2 threshold (re-freeze allowed only while test is unseen, recorded in `history`).
-  - done: — (partial: dev cascade design, diagnosis, calibration and freeze in; stage-2 numbers and test evaluation outstanding) | evidence: `scripts/{dependency_llm_v2,p3_05_staged}.py`, `docs/reports/{P3-05-llm-v2-calibration,P3-05-detector-dev}.md`, `eval/audit/p3-05/{p3-05-dev-detector.json,p3-05-spec-frozen.json}`, `tests/test_{dependency_llm_v2,p3_05_staged}.py` (8 + 8).
+    - **v2 dev scores received (2026-11-19, owner-authorised run):** 151/151 rows, mean score 28.5, **nearly binary** (111 <= 30, 0 in 31-69, 40 >= 70). Text-bearing dev: **P 21.9%, R 50.0% [26.8, 73.2], FAR 23.2% [16.2, 31.9]** vs v1 R 14.3% / FAR 7.4% and heuristic R 85.7% / FAR 42.6%.
+    - **Stage-2 threshold tuned on dev = 70.0, `meets_floor: false`** — no threshold reaches the pre-registered 0.80 recall floor; the cascade tops out at 50% recall (31-80 all tie). Cascade on dev: **P 31.6%, R 42.9% [21.4, 67.4], FAR 12.0%**. **No superiority claim** (ADR-0026).
+    - **Ledger reconciled:** 154 attempts / 151 ok / 3 errors / 2 cache hits, 71,359 + 5,948 tokens, **$0.036276** list price vs $0.051885 estimated (prompt -1.3%, completion -50.8%, price -30%).
+    - **Spec re-frozen before any test look: `6612eae9cbf24a60`** (`test_evaluated: false`, history keeps `b85dc5d5c94eb375`). Test remains **unread** and awaits the owner's go.
+  - done: — (partial: calibration, dev cascade and freeze complete; **test evaluation outstanding**) | evidence: `scripts/{dependency_llm_v2,p3_05_staged}.py`, `docs/reports/{P3-05-llm-v2-calibration,P3-05-detector-dev}.md`, `eval/audit/p3-05/{p3-05-llm-v2-dev.csv,p3-05-dev-detector.json,p3-05-spec-frozen.json}`, `tests/test_{dependency_llm_v2,p3_05_staged}.py` (9 + 8).
 
 ### [~] P3-05b — Priority / lazy scheduling
 - depends: P3-05
@@ -123,7 +127,8 @@
 - acceptance: Script outputs table; numbers match ledger; `e` and `s` reported.
   - agent: Buffy | started: 2026-11-19 | branch: p3
   - notes: **Scaffold, not done.** `scripts/p3_08_cost.py` computes from the frozen files: `e` = 45.0% (dev), $0.000256 per LLM call, **$0.000115 per context**, 21.46 contexts per retraction, **$0.00247 per retraction analysed**, and a corpus projection of **$0.71** / 2,754.5 requests / 6.1 free-tier days labelled **PROJECTED** with its assumptions (285 of 792 sources, 6,117 contexts, `pricing.yaml` list prices, zero real spend on the free tier). **`s` is reported as not applicable** — no student exists, and a fabricated share would describe a stage that never ran. Still missing for acceptance: ledger reconciliation (the numbers here come from the pricing table and the dev `e`, not from a `llm_calls` sum), per-stage share from a real staged run, and the baseline comparison. So `[~]`, not `[x]`.
-  - done: — (scaffold only) | evidence: `scripts/p3_08_cost.py`, `docs/reports/P3-08-cost-scaffold.md`, `eval/audit/p3-05/p3-08-cost.json`, `tests/test_p3_08_cost.py` (6).
+    - **Ledger reconciliation done (2026-11-19):** the scaffold now sums `llm_calls` for the v2 run (154 attempts, 151 ok, 3 errors, 2 cache hits) and reconciles against the pre-run estimate: prompt -1.3%, completion -50.8%, list price $0.051885 -> **$0.036276**. Per-context and per-retraction figures use the **ledger** price: **$0.000108 per context**, **$0.00232 per retraction**, corpus projection $0.63. Mismatch stated in the report, not smoothed over.
+  - done: — (scaffold only; per-stage share from a real staged run and the baseline comparison still missing) | evidence: `scripts/p3_08_cost.py`, `docs/reports/P3-08-cost-scaffold.md`, `eval/audit/p3-05/p3-08-cost.json`, `tests/test_p3_08_cost.py` (8).
 
 ### [ ] P3-09 — Case studies
 - depends: P3-07, P3-08

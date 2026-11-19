@@ -119,11 +119,24 @@ def test_tune_stage2_picks_the_threshold_that_holds_recall() -> None:
     assert isinstance(grid, list) and len(grid) == len(staged.GRID_STAGE2)
 
 
-def test_tune_stage2_raises_when_no_threshold_holds_recall() -> None:
+def test_tune_stage2_reports_when_the_floor_is_unreachable() -> None:
+    """An unreachable floor is a finding, not an exception.
+
+    The fallback keeps the highest recall it can and says so, instead of silently
+    picking a threshold that looks like a configuration win.
+    """
     stage1 = staged.Stage1(candidate_threshold=0.0, heuristic=HEURISTIC)
-    rows = [_row("p1", POSITIVE)]
-    with pytest.raises(staged.DetectorError):
-        staged.tune_stage2(rows, stage1, {"p1": 10.0}, target_recall=0.8)
+    rows = [_row("p1", POSITIVE), _row("p2", POSITIVE), _row("p3", POSITIVE)]
+
+    # Best achievable recall is 2/3, so no threshold holds a 0.8 floor.
+    tuning = staged.tune_stage2(
+        rows, stage1, {"p1": 50.0, "p2": 50.0, "p3": 5.0}, target_recall=0.8
+    )
+
+    assert tuning["meets_floor"] is False
+    # 31/40/50 tie on (recall, FAR); the tie-break prefers the prompt's own band
+    # boundary (70), so 50 wins as the closest of the tied thresholds.
+    assert tuning["stage2_threshold"] == 50.0
 
 
 def test_scheduler_finds_positives_earlier_than_random() -> None:

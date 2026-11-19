@@ -1,8 +1,15 @@
 {
   "frozen": true,
-  "frozen_at": "2026-11-19T07:21:45+00:00",
+  "frozen_at": "2026-11-19T09:22:34+00:00",
+  "history": [
+    {
+      "previous_spec_hash": "b85dc5d5c94eb375",
+      "reason": "dev-tuned stage-2 threshold before any test evaluation",
+      "replaced_at": "2026-11-19T09:22:34+00:00"
+    }
+  ],
   "scheduler": "linked +1.0, retraction-mentioned +0.5, else heuristic score",
-  "spec_hash": "b85dc5d5c94eb375",
+  "spec_hash": "6612eae9cbf24a60",
   "stage1": {
     "candidate_threshold": 0.0,
     "heuristic": {
@@ -14,7 +21,7 @@
   },
   "stage2": {
     "prompt_version": "p3-05-llm-v2",
-    "threshold": 60.0
+    "threshold": 70.0
   },
   "test_evaluated": false
 }
