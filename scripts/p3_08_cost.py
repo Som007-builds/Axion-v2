@@ -19,11 +19,15 @@ import argparse
 import csv
 import json
 import math
+import sqlite3
 from collections import Counter
 from decimal import Decimal
 from pathlib import Path
 
 from axion.config.pricing import estimate_cost_details, load_pricing
+from axion.config.settings import Settings
+from scripts.dependency_baselines import load_rows, scored_rows, spec_rows
+from scripts.dependency_llm_v2 import estimate
 from scripts.dependency_sample import SEED as SAMPLE_SEED
 from scripts.dependency_sample import _assign_splits
 
@@ -167,7 +171,79 @@ def price(tokens: dict[str, object], pricing_path: Path) -> dict[str, object]:
     }
 
 
-def cost_section(detector_summary: Path, pricing_path: Path) -> dict[str, object]:
+def ledger_run(ledger_path: Path, stage: str = "dependency_llm_v2") -> dict[str, object]:
+    """Real ledger totals for the v2 dev run, straight from ``llm_calls``."""
+    if not ledger_path.exists():
+        raise CostError(f"ledger not found: {ledger_path}")
+    with sqlite3.connect(ledger_path) as connection:
+        row = connection.execute(
+            """
+            SELECT count(*),
+                   sum(case when error is null then 1 else 0 end),
+                   sum(case when error is not null then 1 else 0 end),
+                   sum(cache_hit),
+                   sum(prompt_tokens),
+                   sum(completion_tokens),
+                   sum(usd),
+                   min(ts),
+                   max(ts)
+            FROM llm_calls WHERE stage = ?
+            """,
+            (stage,),
+        ).fetchone()
+    if row is None or not row[0]:
+        raise CostError(f"no ledger rows for stage {stage!r}")
+    attempts, ok, errors, cached, prompt_tokens, completion_tokens, usd, first, last = row
+    return {
+        "stage": stage,
+        "attempts": int(attempts),
+        "succeeded": int(ok or 0),
+        "errors": int(errors or 0),
+        "cache_hits": int(cached or 0),
+        "prompt_tokens": int(prompt_tokens or 0),
+        "completion_tokens": int(completion_tokens or 0),
+        "list_price_usd": str(usd),
+        "first_attempt": first,
+        "last_attempt": last,
+    }
+
+
+def reconcile(ledger: dict[str, object], estimate_block: dict[str, object]) -> dict[str, object]:
+    """Compare the pre-run estimate with the ledger totals and name the gap."""
+    est_prompt = int(estimate_block["prompt_tokens_estimate"])
+    est_completion = int(estimate_block["completion_tokens_estimate"])
+    act_prompt = int(ledger["prompt_tokens"])
+    act_completion = int(ledger["completion_tokens"])
+    est_usd = Decimal(str(estimate_block["list_price_usd"] or "0"))
+    act_usd = Decimal(str(ledger["list_price_usd"] or "0"))
+    return {
+        "prompt_tokens_estimate": est_prompt,
+        "prompt_tokens_actual": act_prompt,
+        "prompt_token_delta_pct": round((act_prompt - est_prompt) / est_prompt, 4)
+        if est_prompt
+        else None,
+        "completion_tokens_estimate": est_completion,
+        "completion_tokens_actual": act_completion,
+        "completion_token_delta_pct": round((act_completion - est_completion) / est_completion, 4)
+        if est_completion
+        else None,
+        "list_price_estimate_usd": str(est_usd),
+        "list_price_actual_usd": str(act_usd),
+        "list_price_delta_usd": str(act_usd - est_usd),
+        "note": (
+            "the completion estimate assumed 80 tokens per reply; the JSON answers are about "
+            "half that, so the estimate overshoots on output and is close on input"
+        ),
+    }
+
+
+def cost_section(
+    detector_summary: Path,
+    pricing_path: Path,
+    *,
+    ledger_path: Path | None = None,
+    dev_rows: int = 151,
+) -> dict[str, object]:
     if not detector_summary.exists():
         raise CostError(f"detector summary not found: {detector_summary}; run p3_05_staged.py")
     summary = json.loads(detector_summary.read_text(encoding="utf-8"))
@@ -175,21 +251,42 @@ def cost_section(detector_summary: Path, pricing_path: Path) -> dict[str, object
     escalation = float(dev["candidate_rate"])
     sample = token_estimate([{"text": "B uses A's reported effect size in its model [1]."}])
     unit = price(sample, pricing_path)
-    per_call = Decimal(str(unit["list_price_per_call_usd"]))
+    per_call_estimate = Decimal(str(unit["list_price_per_call_usd"]))
+
+    ledger_block: dict[str, object] | None = None
+    reconciliation: dict[str, object] | None = None
+    if ledger_path is not None and ledger_path.exists():
+        ledger_block = ledger_run(ledger_path)
+        # The estimate must be the one that was stated before the run: the same prompt
+        # over the same real dev rows, not a scaled one-row sample.
+        dev_rows_actual = spec_rows(scored_rows(load_rows()), "dev")
+        estimate_block = estimate(dev_rows_actual, pricing_path)
+        reconciliation = reconcile(ledger_block, estimate_block)
+
+    succeeded = int(ledger_block["succeeded"]) if ledger_block else dev_rows
+    per_call = (
+        Decimal(str(ledger_block["list_price_usd"])) / Decimal(succeeded)
+        if ledger_block and succeeded
+        else per_call_estimate
+    )
     cost_per_context = per_call * Decimal(str(escalation))
     contexts_per_retraction = Decimal(CORPUS_CONTEXTS) / Decimal(CITER_SOURCES)
     return {
         "escalation_rate_e": escalation,
+        "ledger": ledger_block,
+        "reconciliation": reconciliation,
         "stage1_share": round(1 - escalation, 4),
         "student_share_s": None,
         "student_share_note": (
             "no student exists in P3-05 (P2-03b not built), so s is not applicable; "
             "reporting a number here would invent a stage that was never run"
         ),
-        "list_price_per_llm_call_usd": str(per_call),
-        "list_price_per_context_usd": str(cost_per_context),
+        "list_price_per_llm_call_usd": str(per_call.quantize(Decimal("0.00000001"))),
+        "list_price_per_context_usd": str(cost_per_context.quantize(Decimal("0.00000001"))),
         "contexts_per_retraction": float(round(contexts_per_retraction, 2)),
-        "list_price_per_retraction_usd": str(cost_per_context * contexts_per_retraction),
+        "list_price_per_retraction_usd": str(
+            (cost_per_context * contexts_per_retraction).quantize(Decimal("0.00000001"))
+        ),
         "projection": {
             "label": "PROJECTED",
             "assumptions": {
@@ -232,6 +329,43 @@ def write_cost_report(block: dict[str, object]) -> None:
         f"| Contexts per retraction | {block['contexts_per_retraction']} |",
         f"| List price per retraction analysed | **${block['list_price_per_retraction_usd']}** |",
         "",
+        "## Ledger reconciliation (real `llm_calls` rows)",
+        "",
+    ]
+    ledger = block.get("ledger")
+    reconciliation = block.get("reconciliation")
+    if isinstance(ledger, dict) and isinstance(reconciliation, dict):
+        lines += [
+            f"- Run stage `{ledger['stage']}`: **{ledger['attempts']} attempts**, "
+            f"{ledger['succeeded']} succeeded, {ledger['errors']} errored, "
+            f"{ledger['cache_hits']} cache hits ({ledger['first_attempt']} to "
+            f"{ledger['last_attempt']}).",
+            f"- Ledger tokens: **{ledger['prompt_tokens']:,} prompt**, "
+            f"{ledger['completion_tokens']:,} completion.",
+            f"- Ledger list price: **${ledger['list_price_usd']}** "
+            "(real spend $0 on the free tier).",
+            "",
+            "| Quantity | Pre-run estimate | Ledger actual | Delta |",
+            "| :-- | --: | --: | --: |",
+            f"| Prompt tokens | {reconciliation['prompt_tokens_estimate']:,} | "
+            f"{reconciliation['prompt_tokens_actual']:,} | "
+            f"{float(reconciliation['prompt_token_delta_pct']):+.1%} |",
+            f"| Completion tokens | {reconciliation['completion_tokens_estimate']:,} | "
+            f"{reconciliation['completion_tokens_actual']:,} | "
+            f"{float(reconciliation['completion_token_delta_pct']):+.1%} |",
+            f"| List price | ${reconciliation['list_price_estimate_usd']} | "
+            f"${reconciliation['list_price_actual_usd']} | "
+            f"${reconciliation['list_price_delta_usd']} |",
+            "",
+            f"**Mismatch, stated plainly:** {reconciliation['note']}.",
+            "",
+            "The per-context and per-retraction figures below use the **ledger** price per",
+            "successful call, not the estimate.",
+            "",
+        ]
+    else:
+        lines += ["No ledger rows were found for the v2 run; figures below use the estimate.", ""]
+    lines += [
         "## PROJECTED corpus totals",
         "",
         "Not measured. This is arithmetic on the assumptions below, which is why it is labelled.",
@@ -317,7 +451,9 @@ def main(argv: list[str] | None = None) -> int:
     pricing_path = args.pricing or (ROOT / "src" / "axion" / "config" / "pricing.yaml")
 
     if args.section == "cost":
-        block = cost_section(DETECTOR_SUMMARY, pricing_path)
+        block = cost_section(
+            DETECTOR_SUMMARY, pricing_path, ledger_path=Settings().resolved_ledger_path
+        )
         COST_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
         COST_SUMMARY.write_text(
             json.dumps(block, indent=2, sort_keys=True) + "\n", encoding="utf-8"

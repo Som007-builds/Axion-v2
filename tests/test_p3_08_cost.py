@@ -84,3 +84,50 @@ def test_cost_section_reports_e_s_and_the_projection(tmp_path: Path) -> None:
 def test_cost_section_requires_the_detector_summary(tmp_path: Path) -> None:
     with pytest.raises(cost.CostError):
         cost.cost_section(tmp_path / "missing.json", Settings().resolved_pricing_path)
+
+
+def _ledger(tmp_path: Path) -> Path:
+    import sqlite3
+
+    path = tmp_path / "ledger.sqlite3"
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "CREATE TABLE llm_calls (stage TEXT, ts TEXT, error TEXT, cache_hit INTEGER,"
+            " prompt_tokens INTEGER, completion_tokens INTEGER, usd TEXT)"
+        )
+        connection.executemany(
+            "INSERT INTO llm_calls VALUES (?,?,?,?,?,?,?)",
+            [
+                ("dependency_llm_v2", "2026-11-19T08:00:00+00:00", None, 0, 400, 40, "0.0002"),
+                ("dependency_llm_v2", "2026-11-19T08:00:05+00:00", None, 1, 400, 40, "0"),
+                ("dependency_llm_v2", "2026-11-19T08:00:10+00:00", "Transient", 0, 0, 0, "0"),
+                ("other_stage", "2026-11-19T08:00:15+00:00", None, 0, 999, 99, "9"),
+            ],
+        )
+    return path
+
+
+def test_ledger_run_reads_only_its_stage(tmp_path: Path) -> None:
+    block = cost.ledger_run(_ledger(tmp_path))
+
+    assert block["attempts"] == 3
+    assert block["succeeded"] == 2
+    assert block["errors"] == 1
+    assert block["cache_hits"] == 1
+    assert block["prompt_tokens"] == 800
+    assert block["list_price_usd"] == "0.0002"
+
+
+def test_reconcile_names_the_gap_in_both_directions() -> None:
+    ledger = {"prompt_tokens": 71359, "completion_tokens": 5948, "list_price_usd": "0.036276"}
+    estimate = {
+        "prompt_tokens_estimate": 72283,
+        "completion_tokens_estimate": 12080,
+        "list_price_usd": "0.051885",
+    }
+
+    block = cost.reconcile(ledger, estimate)
+
+    assert block["prompt_token_delta_pct"] == pytest.approx(-0.0128, abs=1e-4)
+    assert block["completion_token_delta_pct"] == pytest.approx(-0.5076, abs=1e-4)
+    assert block["list_price_actual_usd"] == "0.036276"
