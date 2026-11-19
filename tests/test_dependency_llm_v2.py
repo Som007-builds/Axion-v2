@@ -11,6 +11,7 @@ import pytest
 import scripts.dependency_llm_v2 as lv2
 
 from axion.config.settings import Settings
+from axion.llm.errors import AllProvidersFailedError
 
 
 def _row(
@@ -441,3 +442,133 @@ def test_provider_window_allows_a_run_after_a_success(tmp_path: Path) -> None:
 
     assert window["blocked"] is False
     assert window["reason"] == "the most recent attempt succeeded"
+
+
+class _Ask:
+    """A stand-in for the provider: fails listed rows, then behaves."""
+
+    def __init__(self, fail_rows: set[str], fail_times: int = 99) -> None:
+        self.fail_rows = set(fail_rows)
+        self.fail_times = fail_times
+        self.calls: list[str] = []
+
+    def __call__(self, row: dict[str, str]) -> lv2.DependencyJudgement:
+        self.calls.append(row["row_id"])
+        if row["row_id"] in self.fail_rows and self.fail_times > 0:
+            self.fail_times -= 1
+            raise AllProvidersFailedError("all providers failed: ReadError")
+        return lv2.DependencyJudgement(result_level=3, method_level=0)
+
+
+def _rows(n: int) -> list[dict[str, str]]:
+    return [_row(f"p{index}", label="RELIES_ON") for index in range(n)]
+
+
+def _score(tmp_path: Path, rows: list[dict[str, str]], ask: _Ask, max_calls: int = 50) -> dict:
+    variant = lv2.get_variant("v3")
+    checkpoint = tmp_path / "cp.csv"
+    failures_file = tmp_path / "failures.csv"
+    failures: dict[str, dict[str, object]] = {}
+    run = lv2.score_rows(
+        rows,
+        variant=variant,
+        ask=ask,
+        done={},
+        failures=failures,
+        failures_path=failures_file,
+        checkpoint_path=checkpoint,
+        max_calls=max_calls,
+    )
+    run["checkpoint"] = lv2.read_v2(checkpoint) if checkpoint.exists() else {}
+    run["failures_on_disk"] = lv2.read_failures(failures_file)
+    return run
+
+
+def test_a_failing_row_does_not_halt_the_run(tmp_path: Path) -> None:
+    """The owner's bug: one ReadError killed the whole invocation."""
+    rows = _rows(4)
+    ask = _Ask(fail_rows={"p1"})
+
+    run = _score(tmp_path, rows, ask)
+
+    assert set(run["checkpoint"]) == {"p0", "p2", "p3"}
+    assert run["stopped_reason"] is None
+    assert run["failed_rows"] == ["p1"]
+    assert "p1" not in run["checkpoint"]
+    assert run["failures_on_disk"]["p1"]["error_class"] == "AllProvidersFailedError"
+
+
+def test_the_end_of_run_retry_pass_scores_a_row_that_failed_once(tmp_path: Path) -> None:
+    rows = _rows(3)
+    ask = _Ask(fail_rows={"p1"}, fail_times=1)
+
+    run = _score(tmp_path, rows, ask)
+
+    assert set(run["checkpoint"]) == {"p0", "p1", "p2"}
+    assert run["retry_pass_rows"] == ["p1"]
+    assert ask.calls.count("p1") == 2
+    assert run["failures_on_disk"] == {}
+
+
+def test_a_row_that_keeps_failing_stays_unscored_and_recorded(tmp_path: Path) -> None:
+    rows = _rows(3)
+    ask = _Ask(fail_rows={"p2"})
+
+    run = _score(tmp_path, rows, ask)
+
+    assert set(run["checkpoint"]) == {"p0", "p1"}
+    assert run["failed_rows"] == ["p2"]
+    record = run["failures_on_disk"]["p2"]
+    assert record["attempts"] == "2"  # one pass, one retry
+    assert record["row_id"] == "p2"
+
+
+def test_score_rows_stops_at_the_call_cap(tmp_path: Path) -> None:
+    rows = _rows(5)
+
+    run = _score(tmp_path, rows, _Ask(fail_rows=set()), max_calls=2)
+
+    assert run["stopped_reason"] == "max_calls_reached"
+    assert len(run["checkpoint"]) == 2
+
+
+def _partial_v3_checkpoint(tmp_path: Path) -> dict[str, dict[str, str]]:
+    return {
+        "P3W1-001": {"score": "25", "prompt_version": "p3-05-llm-v3"},
+        "P3W1-002": {"score": "8", "prompt_version": "p3-05-llm-v3"},
+    }
+
+
+def test_main_refuses_metrics_on_a_partial_checkpoint_without_the_flag(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(lv2, "REPORT", tmp_path / "report.md")
+    monkeypatch.setattr(lv2, "VARIANTS_FILE", tmp_path / "variants.json")
+    monkeypatch.setattr(lv2, "read_v2", lambda path=None: _partial_v3_checkpoint(tmp_path))
+
+    code = lv2.main(["--variant", "v3"])
+
+    out = capsys.readouterr().out
+    assert code == 2
+    assert "incomplete: 2 of 151 dev rows scored, run again to resume" in out
+    assert "Recall" not in out
+
+
+def test_the_flag_prints_metrics_with_both_denominators_and_names_the_unscored_rows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(lv2, "REPORT", tmp_path / "report.md")
+    monkeypatch.setattr(lv2, "VARIANTS_FILE", tmp_path / "variants.json")
+    monkeypatch.setattr(lv2, "read_v2", lambda path=None: _partial_v3_checkpoint(tmp_path))
+
+    code = lv2.main(["--variant", "v3", "--allow-incomplete-metrics"])
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "2 of 151 dev rows scored" in out
+    assert "not missing at random" in out
+    report = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "FLAGGED: metrics on a partial checkpoint" in report
+    assert "**2 of 151 dev rows scored.**" in report
+    assert "P3W1-003" in report  # named, not silently dropped
+    assert "151 frame rows, 2 scored" in report

@@ -38,7 +38,11 @@ from axion.config.pricing import estimate_cost_details, load_pricing
 from axion.config.settings import DEFAULT_RATE_LIMITS_PATH, Settings
 from axion.eval.audit import wilson_interval
 from axion.llm.client import LLMClient, RetryPolicy
-from axion.llm.errors import DailyQuotaError, PermanentProviderError, TransientProviderError
+from axion.llm.errors import (
+    ConfigurationError,
+    DailyQuotaError,
+    LLMError,
+)
 from axion.llm.gemini import GeminiAdapter
 from axion.llm.ledger import SQLiteLedger
 from axion.llm.models import LLMRequest
@@ -626,6 +630,51 @@ def append_v2(path: Path, row_id: str, scored: DependencyScore) -> None:
     append_variant(get_variant("v2"), row_id, scored, scored.score, path)
 
 
+FAILURE_FIELDS = ("row_id", "error_class", "attempts", "last_ts", "message")
+
+
+def failures_path_for(variant: Variant) -> Path:
+    return variant.checkpoint.with_name(variant.checkpoint.stem + "-failures.csv")
+
+
+def read_failures(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        return {row["row_id"]: row for row in csv.DictReader(handle)}
+
+
+def write_failures(path: Path, failures: dict[str, dict[str, object]]) -> None:
+    """Rewrite the failure list. Small, stable, and never contains a score."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FAILURE_FIELDS, lineterminator=chr(10))
+        writer.writeheader()
+        for row_id in sorted(failures):
+            writer.writerow(failures[row_id])
+
+
+def one_line(text: str, limit: int = 200) -> str:
+    flat = " ".join(text.split())
+    return flat[:limit]
+
+
+def coverage(
+    rows: Sequence[dict[str, str]], scores: dict[str, dict[str, str]]
+) -> dict[str, object]:
+    """How much of the frame actually has a score, and which rows do not."""
+    unscored = [row["row_id"] for row in rows if row["row_id"] not in scores]
+    return {
+        "frame_rows": len(rows),
+        "scored_rows": len(rows) - len(unscored),
+        "unscored_rows": unscored,
+        "caveat": (
+            "the unscored rows failed at the provider; they are not missing at random, so these "
+            "metrics describe the rows that answered, not the frame"
+        ),
+    }
+
+
 def build_request(row: dict[str, str], variant: Variant, run_id: str) -> LLMRequest:
     """One request for one row: the variant owns the prompt *and* the answer schema.
 
@@ -644,6 +693,89 @@ def build_request(row: dict[str, str], variant: Variant, run_id: str) -> LLMRequ
         max_output_tokens=MAX_OUTPUT_TOKENS,
         response_schema=variant.answer_type,
     )
+
+
+def score_rows(
+    rows: Sequence[dict[str, str]],
+    *,
+    variant: Variant,
+    ask: Callable[[dict[str, str]], BaseModel],
+    done: dict[str, dict[str, str]],
+    failures: dict[str, dict[str, object]],
+    failures_path: Path,
+    checkpoint_path: Path,
+    max_calls: int,
+) -> dict[str, object]:
+    """Score every row, survive row-level provider failures, then retry the dead ones once.
+
+    Stop-and-crash was the wrong shape for this job. One row that the transport refuses
+    used to throw away the whole invocation, and after six failures on the same row the
+    checkpoint had not moved at all. Here a failed row is recorded and left **unscored**;
+    the run continues, and one retry pass at the end gives each failure a second chance.
+    Nothing is imputed, nothing is dropped quietly, and the failures file is the record.
+    """
+    index = {row["row_id"]: row for row in rows}
+    calls = 0
+    stopped: str | None = None
+    scored_now: list[str] = []
+
+    def attempt(row: dict[str, str]) -> bool:
+        """One call. Returns False only when the whole run has to stop."""
+        nonlocal calls, stopped
+        if calls >= max_calls:
+            stopped = "max_calls_reached"
+            return False
+        calls += 1
+        try:
+            answer = ask(row)
+        except DailyQuotaError:
+            stopped = "daily_quota_reached"
+            return False
+        except ConfigurationError:
+            raise
+        except LLMError as error:
+            previous = failures.get(row["row_id"], {})
+            failures[row["row_id"]] = {
+                "row_id": row["row_id"],
+                "error_class": type(error).__name__,
+                "attempts": int(previous.get("attempts", 0) or 0) + 1,
+                "last_ts": datetime.now(UTC).isoformat(timespec="seconds"),
+                "message": one_line(str(error)),
+            }
+            write_failures(failures_path, failures)
+            return True
+        score = variant.to_score(answer)
+        append_variant(variant, row["row_id"], answer, score, checkpoint_path)
+        done[row["row_id"]] = {"score": str(score)}
+        scored_now.append(row["row_id"])
+        failures.pop(row["row_id"], None)
+        write_failures(failures_path, failures)
+        return True
+
+    for row in rows:
+        if row["row_id"] in done:
+            continue
+        if not attempt(row):
+            break
+
+    retried: list[str] = []
+    if stopped is None:
+        outstanding = [
+            row["row_id"] for row in rows if row["row_id"] not in done and row["row_id"] in failures
+        ]
+        for row_id in outstanding:
+            if row_id in done or stopped is not None:
+                continue
+            retried.append(row_id)
+            attempt(index[row_id])
+
+    return {
+        "calls_made": calls,
+        "stopped_reason": stopped,
+        "scored_this_run": scored_now,
+        "retry_pass_rows": retried,
+        "failed_rows": [row_id for row_id in failures if row_id not in done],
+    }
 
 
 def run_live(
@@ -690,43 +822,26 @@ def run_live(
 
     done = read_v2(variant.checkpoint)
     run_id = f"p3-05-llm-{variant.name}-{today}"
-    calls = 0
-    stopped: str | None = None
-    for row in rows:
-        if row["row_id"] in done:
-            continue
-        if calls >= max_calls:
-            stopped = "max_calls_reached"
-            break
-        calls += 1
+    failures_file = failures_path_for(variant)
+    failures: dict[str, dict[str, object]] = dict(read_failures(failures_file))
+
+    def ask(row: dict[str, str]) -> BaseModel:
         request = build_request(row, variant, run_id)
-        try:
-            result = client.complete(
-                request, response_model=variant.answer_type, attempt_gate=pacer.reserve
-            )
-        except DailyQuotaError:
-            stopped = "daily_quota_reached"
-            break
-        except (TransientProviderError, PermanentProviderError) as error:
-            # One row failing must not throw away the rows already paid for. The
-            # checkpoint keeps them and the next invocation resumes at this row.
-            return {
-                "estimate": cost,
-                "variant": variant.name,
-                "run_id": run_id,
-                "tokens_today_before": used_today,
-                "daily_cap": rate.daily_cap,
-                "calls_made": calls,
-                "stopped_reason": f"provider_error: {type(error).__name__}",
-                "failed_row": row["row_id"],
-                "run_list_price_usd": str(SQLiteLedger(ledger_path).run_usd(run_id)),
-                "run_real_usd": str(SQLiteLedger(ledger_path).run_real_usd(run_id)),
-                "predicted_rows": len(done),
-            }
-        parsed = variant.answer_type.model_validate_json(result.text)
-        score = variant.to_score(parsed)
-        append_variant(variant, row["row_id"], parsed, score)
-        done[row["row_id"]] = {"score": str(score)}
+        result = client.complete(
+            request, response_model=variant.answer_type, attempt_gate=pacer.reserve
+        )
+        return variant.answer_type.model_validate_json(result.text)
+
+    run = score_rows(
+        rows,
+        variant=variant,
+        ask=ask,
+        done=done,
+        failures=failures,
+        failures_path=failures_file,
+        checkpoint_path=variant.checkpoint,
+        max_calls=max_calls,
+    )
 
     ledger = SQLiteLedger(ledger_path)
     return {
@@ -735,8 +850,12 @@ def run_live(
         "run_id": run_id,
         "tokens_today_before": used_today,
         "daily_cap": rate.daily_cap,
-        "calls_made": calls,
-        "stopped_reason": stopped,
+        "calls_made": run["calls_made"],
+        "stopped_reason": run["stopped_reason"],
+        "scored_this_run": run["scored_this_run"],
+        "retry_pass_rows": run["retry_pass_rows"],
+        "failed_rows": run["failed_rows"],
+        "failures_file": str(failures_file),
         "run_list_price_usd": str(ledger.run_usd(run_id)),
         "run_real_usd": str(ledger.run_real_usd(run_id)),
         "predicted_rows": len(done),
@@ -830,14 +949,24 @@ def variant_metrics(
     rows: Sequence[dict[str, str]],
     scores: dict[str, dict[str, str]],
     v1: dict[str, dict[str, str]],
+    *,
+    allow_incomplete: bool = False,
 ) -> dict[str, object]:
-    """Dev recall and FAR with intervals for one variant, plus the heuristic line."""
+    """Dev recall and FAR with intervals for one variant, plus the heuristic line.
+
+    ``allow_incomplete`` is the only way to get a number out of a partial checkpoint.
+    It exists because the owner asked to be able to look; it never changes the default,
+    it carries both denominators, and the rows it leaves out are named.
+    """
     from scripts.dependency_baselines import binary_metrics, frame_rows, tune_heuristic
 
-    require_complete(rows, scores, "dev rows")
-    heuristic = tune_heuristic(list(rows))["params"]
+    if not allow_incomplete:
+        require_complete(rows, scores, "dev rows")
+    cover = coverage(rows, scores)
+    scored_rows = [row for row in rows if row["row_id"] in scores]
+    heuristic = tune_heuristic(list(scored_rows))["params"]
     assert isinstance(heuristic, dict)
-    text_rows = frame_rows(list(rows), "text_bearing")
+    text_rows = frame_rows(scored_rows, "text_bearing")
     values = {row_id: float(item["score"]) for row_id, item in scores.items()}
 
     def block(predictions: dict[str, int]) -> dict[str, object]:
@@ -845,7 +974,7 @@ def variant_metrics(
 
     heuristic_pred = {
         row["row_id"]: int(heuristic_score(row, heuristic) >= heuristic["threshold"])
-        for row in rows
+        for row in scored_rows
     }
     points = {
         f"@{threshold}": block(
@@ -858,6 +987,7 @@ def variant_metrics(
     }
     return {
         "rows_scored": len(values),
+        "coverage": cover,
         "heuristic": block(heuristic_pred),
         "v1": block(v1_pred),
         "points": points,
@@ -1046,6 +1176,22 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             f"**{llm['run_list_price_usd']} USD**, real spend **{llm['run_real_usd']} USD**.",
             "",
         ]
+    flagged = summary.get("incomplete_metrics")
+    if isinstance(flagged, dict):
+        cover = flagged["coverage"]
+        assert isinstance(cover, dict)
+        lines += [
+            "## FLAGGED: metrics on a partial checkpoint",
+            "",
+            f"**{cover['scored_rows']} of {cover['frame_rows']} dev rows scored.** "
+            f"Unscored: {', '.join(cover['unscored_rows']) or 'none'}.",
+            "",
+            f"{cover['caveat']}. Every number below carries both denominators - "
+            f"**{cover['frame_rows']} frame rows, {cover['scored_rows']} scored** - and the "
+            "provider, not the labelling, decided which rows are missing. These are not the "
+            "variant's dev numbers and must not be quoted as such.",
+            "",
+        ]
     log = summary.get("variants")
     if isinstance(log, dict):
         entries = log.get("variants") or []
@@ -1059,8 +1205,8 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
         if entries:
             lines += [
                 "| Variant | Prompt | Rows | Recall [95% CI] | FAR [95% CI] | Interior rows | "
-                "Distinct scores |",
-                "| :-- | :-- | --: | :-- | :-- | --: | --: |",
+                "Distinct scores | Scored/frame |",
+                "| :-- | :-- | --: | :-- | :-- | --: | --: | :-- |",
             ]
             for entry in entries:
                 metrics = entry["metrics"]
@@ -1068,6 +1214,9 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
                 recall_ci = best["recall_ci"] or [0.0, 0.0]
                 far_ci = best["false_alarm_ci"] or [0.0, 0.0]
                 distribution = metrics["distribution"]
+                scored = entry["metrics"].get("coverage", {}).get("scored_rows")
+                frame = entry["metrics"].get("coverage", {}).get("frame_rows")
+                denominator = f" ({scored}/{frame})" if scored and frame and scored != frame else ""
                 lines.append(
                     f"| {entry['variant']} | `{entry['prompt_version']}` | "
                     f"{entry['rows_scored']} | {fmt(best['recall'])} "
@@ -1075,6 +1224,7 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
                     f"{fmt(best['false_alarm_rate'])} "
                     f"[{far_ci[0]:.1%}, {far_ci[1]:.1%}] | "
                     f"{distribution['interior_rows']} | {distribution['distinct_scores']} |"
+                    f"{denominator} |"
                 )
             lines += [
                 "",
@@ -1281,6 +1431,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-test", action="store_true")
     parser.add_argument("--variant", default="v2", choices=("v2", "v3", "v3b"))
     parser.add_argument("--estimate-variants", action="store_true")
+    parser.add_argument(
+        "--allow-incomplete-metrics",
+        action="store_true",
+        help="print metrics on a partial checkpoint, labelled with both denominators",
+    )
     parser.add_argument("--max-calls", type=int, default=200)
     parser.add_argument("--llm-budget-usd", default=str(DEFAULT_BUDGET_USD))
     args = parser.parse_args(argv)
@@ -1354,6 +1509,19 @@ def main(argv: list[str] | None = None) -> int:
                 "metrics": summary["variant_metrics"],
             },
         )
+    elif args.allow_incomplete_metrics:
+        flagged = variant_metrics(dev, scored_now, v1, allow_incomplete=True)
+        summary["variant_metrics"] = flagged
+        summary["incomplete_metrics"] = {
+            "label": incomplete,
+            "coverage": flagged["coverage"],
+            "variant": variant.name,
+        }
+        cover = flagged["coverage"]
+        print(
+            f"FLAGGED: {cover['scored_rows']} of {cover['frame_rows']} dev rows scored; "
+            f"unscored: {', '.join(cover['unscored_rows']) or 'none'}. {cover['caveat']}."
+        )
     else:
         summary["incomplete"] = incomplete
         activity = ledger_activity(variant_stage(variant), Settings().resolved_ledger_path)
@@ -1366,7 +1534,7 @@ def main(argv: list[str] | None = None) -> int:
         print(incomplete)
     write_report(diagnosis, summary)
     print(f"report: {REPORT}")
-    return 0 if incomplete is None else 2
+    return 0 if incomplete is None or args.allow_incomplete_metrics else 2
 
 
 if __name__ == "__main__":
