@@ -1,0 +1,207 @@
+{
+  "dev": {
+    "candidate_rate": 0.4503,
+    "candidates": 68,
+    "heuristic": {
+      "stub": {
+        "fn": 0,
+        "fp": 8,
+        "negatives": 27,
+        "positives": 2,
+        "predicted_positive": 10,
+        "rows": 29,
+        "tn": 19,
+        "tp": 2,
+        "unweighted": {
+          "false_alarm_ci": [
+            0.1585,
+            0.4848
+          ],
+          "false_alarm_rate": 0.2963,
+          "precision": 0.2,
+          "precision_ci": [
+            0.0567,
+            0.5098
+          ],
+          "recall": 1.0,
+          "recall_ci": [
+            0.3424,
+            1.0
+          ]
+        },
+        "weighted": {
+          "false_alarm_ci": [
+            0.0889,
+            0.5323
+          ],
+          "false_alarm_rate": 0.2836,
+          "precision": 0.0405,
+          "precision_ci": [
+            0.0,
+            0.5615
+          ],
+          "recall": 1.0,
+          "recall_ci": null
+        },
+        "weighted_effective_rows": 11.82
+      },
+      "text_bearing": {
+        "fn": 2,
+        "fp": 46,
+        "negatives": 108,
+        "positives": 14,
+        "predicted_positive": 58,
+        "rows": 122,
+        "tn": 62,
+        "tp": 12,
+        "unweighted": {
+          "false_alarm_ci": [
+            0.3368,
+            0.5201
+          ],
+          "false_alarm_rate": 0.4259,
+          "precision": 0.2069,
+          "precision_ci": [
+            0.1225,
+            0.3277
+          ],
+          "recall": 0.8571,
+          "recall_ci": [
+            0.6006,
+            0.9599
+          ]
+        },
+        "weighted": {
+          "false_alarm_ci": [
+            0.3206,
+            0.6125
+          ],
+          "false_alarm_rate": 0.4527,
+          "precision": 0.2147,
+          "precision_ci": [
+            0.0924,
+            0.4047
+          ],
+          "recall": 0.7348,
+          "recall_ci": [
+            0.3589,
+            0.9178
+          ]
+        },
+        "weighted_effective_rows": 48.2
+      }
+    },
+    "positives_in_candidates": 14,
+    "positives_total": 16
+  },
+  "frozen": false,
+  "frozen_at": null,
+  "scheduler": [
+    {
+      "fraction_inspected": 0.1,
+      "positives_found": 2,
+      "positives_total": 16,
+      "recall": 0.125,
+      "recall_ci": [
+        0.035,
+        0.3602
+      ],
+      "rows": 15
+    },
+    {
+      "fraction_inspected": 0.2,
+      "positives_found": 7,
+      "positives_total": 16,
+      "recall": 0.4375,
+      "recall_ci": [
+        0.231,
+        0.6682
+      ],
+      "rows": 30
+    },
+    {
+      "fraction_inspected": 0.25,
+      "positives_found": 7,
+      "positives_total": 16,
+      "recall": 0.4375,
+      "recall_ci": [
+        0.231,
+        0.6682
+      ],
+      "rows": 38
+    },
+    {
+      "fraction_inspected": 0.5,
+      "positives_found": 11,
+      "positives_total": 16,
+      "recall": 0.6875,
+      "recall_ci": [
+        0.444,
+        0.8584
+      ],
+      "rows": 76
+    },
+    {
+      "fraction_inspected": 1.0,
+      "positives_found": 16,
+      "positives_total": 16,
+      "recall": 1.0,
+      "recall_ci": [
+        0.8064,
+        1.0
+      ],
+      "rows": 151
+    }
+  ],
+  "spec_hash": "b85dc5d5c94eb375",
+  "stage2": "none",
+  "stage2_threshold": 60.0,
+  "stage2_tuning": null,
+  "target_recall": 0.8,
+  "tuning": {
+    "grid": [
+      {
+        "candidate_rate": 0.6821,
+        "candidate_threshold": -0.5,
+        "candidates": 103,
+        "false_candidate_rate": 0.6519,
+        "positive_candidates": 15,
+        "recall_ceiling": 0.9375
+      },
+      {
+        "candidate_rate": 0.4503,
+        "candidate_threshold": 0.0,
+        "candidates": 68,
+        "false_candidate_rate": 0.4,
+        "positive_candidates": 14,
+        "recall_ceiling": 0.875
+      },
+      {
+        "candidate_rate": 0.2649,
+        "candidate_threshold": 0.25,
+        "candidates": 40,
+        "false_candidate_rate": 0.237,
+        "positive_candidates": 8,
+        "recall_ceiling": 0.5
+      },
+      {
+        "candidate_rate": 0.1656,
+        "candidate_threshold": 0.5,
+        "candidates": 25,
+        "false_candidate_rate": 0.1704,
+        "positive_candidates": 2,
+        "recall_ceiling": 0.125
+      }
+    ],
+    "stage1": {
+      "candidate_threshold": 0.0,
+      "heuristic": {
+        "mention_weight": 1.0,
+        "reliance_weight": 1.0,
+        "section_scale": 0.5,
+        "threshold": 0.0
+      }
+    },
+    "target_recall": 0.8
+  }
+}
