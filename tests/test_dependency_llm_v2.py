@@ -572,3 +572,39 @@ def test_the_flag_prints_metrics_with_both_denominators_and_names_the_unscored_r
     assert "**2 of 151 dev rows scored.**" in report
     assert "P3W1-003" in report  # named, not silently dropped
     assert "151 frame rows, 2 scored" in report
+
+
+def test_flagged_metrics_keep_the_heuristic_frozen_on_the_full_frame() -> None:
+    """Tuning the baseline on the scored subset would let it move with missing rows."""
+    from scripts.dependency_baselines import load_rows, scored_rows, spec_rows
+
+    dev = spec_rows(scored_rows(load_rows()), "dev")
+    v1 = lv2.read_v1()
+    partial = {row["row_id"]: {"score": "10"} for row in dev[:120]}
+
+    flagged = lv2.variant_metrics(dev, partial, v1, allow_incomplete=True)
+    full = lv2.variant_metrics(dev, {r["row_id"]: {"score": "10"} for r in dev}, v1)
+
+    assert flagged["heuristic_params"] == full["heuristic_params"]
+    assert full["heuristic_params"]["threshold"] == 0.0
+    assert flagged["coverage"]["scored_rows"] == 120
+    assert flagged["coverage"]["frame_rows"] == 151
+    assert len(flagged["coverage"]["unscored_rows"]) == 31
+
+
+def test_flagged_report_prints_every_number_with_both_denominators(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(lv2, "REPORT", tmp_path / "report.md")
+    monkeypatch.setattr(lv2, "VARIANTS_FILE", tmp_path / "variants.json")
+    monkeypatch.setattr(lv2, "read_v2", lambda path=None: _partial_v3_checkpoint(tmp_path))
+
+    assert lv2.main(["--variant", "v3", "--allow-incomplete-metrics"]) == 0
+
+    report = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "### `v3` on the scored rows" in report
+    assert "| Threshold | Precision | Recall [95% CI] | FAR [95% CI] | Scored / frame |" in report
+    assert "| @70 |" in report
+    assert "2 / 151" in report
+    assert "Score bands on the scored rows" in report
+    assert "Every recall and false-alarm figure above is computed on" in report

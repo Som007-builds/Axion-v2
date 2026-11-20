@@ -870,6 +870,45 @@ no v3 recall and no v3 false-alarm rate to compare with the heuristic's 42.6%, s
 before v3 is measured would report a result that does not exist. Amendment A's rule stands
 unchanged and unspent.
 
+**Amendment C — the dev-negative, v3 measured (2026-11-20).** v3 was scored on dev: **148 of 151
+rows** (`P3W1-041`, `P3W1-042`, `P3W2-054` failed at the provider with SSL `ReadError` and stay
+unscored; the flagged report carries both denominators beside every number).
+
+- **v3 fixed the measurement problem.** Its scores are **graded**, which v2's were not: bands
+  0-20 **37**, 21-40 **103**, 41-60 **7**, 61-80 **1**, 81-100 **0** - interior share **75%**, 8
+  distinct scores. The two-judgement prompt did what it was built to do.
+- **It did not fix the discrimination problem.** The interior is populated at the *bottom*: one row
+  reaches the 61-80 band and none above 80, so recall collapses as soon as the threshold stops
+  admitting almost everything. On the text-bearing frame (14 positives, 148 scored):
+
+| Threshold | Recall [95% CI] | FAR [95% CI] |
+| --: | :-- | :-- |
+| 20 | 100.0% [78.5, 100.0] | **78.5%** [69.8, 85.2] |
+| 30 | 50.0% [26.8, 73.2] | 12.2% [7.2, 19.7] |
+| 40 / 50 | 21.4% [7.6, 47.6] | 4.7% [2.0, 10.5] |
+| 60 / 70 | 7.1% [1.3, 31.5] | 0.0% [0.0, 3.5] |
+
+  **No threshold holds recall >= 0.80 at a false-alarm rate below the heuristic's 42.6%.** At
+  recall >= 0.80 the best available false-alarm rate is **78.5%**; everywhere else recall is at or
+  below 50%. The missing three rows cannot change this: removing every negative among them still
+  leaves the recall-0.80 point at roughly 77% false alarms.
+- **v3 does dominate v2 at matched recall**, for what it is worth: 50% recall at **12.2%** false
+  alarms against v2's 50% at **23.2%**. That is an internal improvement, not a gate pass, and it is
+  not a claim of superiority over the heuristic.
+
+**Decision, applied exactly as Amendment A pre-committed it:**
+
+> **LLM verification stage did not beat the heuristic on dev; cascade reported as a
+> high-precision operating-point alternative.**
+
+- The frozen spec stays **`6612eae9cbf24a60`** (`test_evaluated: false`). **No re-freeze.**
+- **v3b is not run.** Amendment A permits it only if v3 still answers at the extremes; v3 is graded,
+  so the variant cap closes at **2 of 3** and the dev-side search ends here.
+- The promoted description of the cascade is now a **high-precision operating point** (recall ~50%
+  at ~12% false alarms against the heuristic's 86% at 43%), never a replacement for it.
+- P3's gate remains **open**. What is still unspent is one thing only: the single frozen test
+  evaluation, which is the owner's call, not a tuning decision.
+
 **Consequences.** The staged detector may lose to the heuristic at matched recall and still be
 useful (cheaper, or better at a different recall); the report has to say which. Any change to the
 comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that

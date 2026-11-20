@@ -964,7 +964,10 @@ def variant_metrics(
         require_complete(rows, scores, "dev rows")
     cover = coverage(rows, scores)
     scored_rows = [row for row in rows if row["row_id"] in scores]
-    heuristic = tune_heuristic(list(scored_rows))["params"]
+    # The heuristic is tuned on the WHOLE dev frame and then applied to the scored rows.
+    # Tuning it on the subset would let the baseline move with the missing rows, which
+    # would make the comparison depend on the provider's mood instead of on the detector.
+    heuristic = tune_heuristic(list(rows))["params"]
     assert isinstance(heuristic, dict)
     text_rows = frame_rows(scored_rows, "text_bearing")
     values = {row_id: float(item["score"]) for row_id, item in scores.items()}
@@ -988,6 +991,7 @@ def variant_metrics(
     return {
         "rows_scored": len(values),
         "coverage": cover,
+        "heuristic_params": heuristic,
         "heuristic": block(heuristic_pred),
         "v1": block(v1_pred),
         "points": points,
@@ -1180,6 +1184,8 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
     if isinstance(flagged, dict):
         cover = flagged["coverage"]
         assert isinstance(cover, dict)
+        points = summary["variant_metrics"]["points"]
+        assert isinstance(points, dict)
         lines += [
             "## FLAGGED: metrics on a partial checkpoint",
             "",
@@ -1189,7 +1195,35 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             f"{cover['caveat']}. Every number below carries both denominators - "
             f"**{cover['frame_rows']} frame rows, {cover['scored_rows']} scored** - and the "
             "provider, not the labelling, decided which rows are missing. These are not the "
-            "variant's dev numbers and must not be quoted as such.",
+            f"variant's dev numbers and must not be quoted as such.",
+            "",
+            f"### `{flagged['variant']}` on the scored rows",
+            "",
+            "| Threshold | Precision | Recall [95% CI] | FAR [95% CI] | Scored / frame |",
+            "| --: | --: | :-- | :-- | :-- |",
+        ]
+        for threshold, block in points.items():
+            assert isinstance(block, dict)
+            lines.append(
+                f"| {threshold} | {fmt(block['precision'])} | {fmt(block['recall'])} "
+                f"{fmt_ci(block['recall_ci'])} | {fmt(block['false_alarm_rate'])} "
+                f"{fmt_ci(block['false_alarm_ci'])} | "
+                f"{cover['scored_rows']} / {cover['frame_rows']} |"
+            )
+        distribution = summary["variant_metrics"]["distribution"]
+        assert isinstance(distribution, dict)
+        bands = distribution["bands"]
+        assert isinstance(bands, dict)
+        lines += [
+            "",
+            f"Score bands on the scored rows: 0-20 **{bands['0-20']}**, 21-40 "
+            f"**{bands['21-40']}**, 41-60 {bands['41-60']}, 61-80 {bands['61-80']}, "
+            f"81-100 {bands['81-100']}; interior share **{fmt(distribution['interior_share'])}**, "
+            f"{distribution['distinct_scores']} distinct scores, graded "
+            f"**{'yes' if distribution['graded'] else 'no'}**.",
+            "",
+            "Every recall and false-alarm figure above is computed on "
+            f"{cover['scored_rows']} of {cover['frame_rows']} rows.",
             "",
         ]
     log = summary.get("variants")
