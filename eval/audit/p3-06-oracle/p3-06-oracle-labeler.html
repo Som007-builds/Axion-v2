@@ -144,6 +144,7 @@ function render() {
     note.value = st.note || "";
     note.oninput = () => { rowState(row.opaque_id).note = note.value; save(); };
     card.appendChild(note);
+    host.appendChild(card);
   });
   updateProgress();
 }

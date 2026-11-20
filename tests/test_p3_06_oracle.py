@@ -308,3 +308,19 @@ def test_estimate_bounds_cost_from_the_packet() -> None:
     assert longest >= stats["prompt_tokens_if_first_candidate"]
     assert stats["usd_min"] is not None
     assert "free_tier" in stats["billing"]
+
+
+def test_labeler_template_actually_mounts_the_cards() -> None:
+    """The first build made 30 cards and appended none of them: a blank page.
+
+    The page still reported "0 / 30 answered", because the counters ran on the data and
+    not on the DOM, so nothing looked wrong until a human opened it.
+    """
+    from scripts.p3_06_link_oracle_packet import ROOT
+
+    template = (ROOT / "docs" / "eval" / "link_oracle_labeler_template.html").read_text(
+        encoding="utf-8"
+    )
+    assert "host.appendChild(card);" in template
+    assert template.count("card.appendChild(") >= 5
+    assert "render();" in template
