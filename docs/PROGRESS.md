@@ -130,6 +130,15 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-20 — Buffy — P3-06 packet built as an oracle test; linker still gated
+- **Option B held:** test not evaluated, spec `6612eae9cbf24a60`, `test_evaluated: false`, no v3b, no extra rows, no live calls this session.
+- **Built the oracle packet** (`scripts/p3_06_link_oracle_packet.py`, 15 tests): **30 rows** = all **14** text-bearing dev positives + **16** negatives, seed `20261120`, stratified by section; packet hash `511b788c48d6c502`. Blind labeler shows the citing sentence, the paragraph and up to **40 body sentences**; gold labels and the id map sit in a **separate manifest** the labeler never opens.
+- **Two positives cannot be tested:** `P3W2-018` and `P3W2-023` have no source body text (retracted before the body could be parsed). They stay in the packet, marked, and the treatment arm is at most **28**.
+- **Overlap under the Amendment C protocol:** **10 rows** (5 positives, 5 negatives) in `eval/audit/p3-06-oracle-labeler2/` — blind files only, no manifest, no first-labeler output.
+- **Oracle planned, not run** (`scripts/p3_06_oracle.py`): `--mode estimate` bounds the arm at **28 requests**, **16,643** prompt tokens at the median candidate, **$0.013393-$0.014127** list price, stage `dependency_llm_oracle`. Quota at build time **127 of 450** on the Pacific day. `--mode live` refuses without a complete, named label file and refuses ids outside the packet.
+- **ADR-0027 Amendment A (Proposed, no approval):** the packet is an **oracle test**, and linker code is **gated on the oracle outcome** with a pre-committed rule — larger positive count with no rise in negatives fired licenses a linker proposal; no movement kills the linker and leaves ADR-0026 Amendment C as the answer. Reading pre-registered: positives caught before vs after as raw counts out of 14, FAR *direction* on the 16 negatives, per-row vs heuristic, **no interval, no superiority claim, direction only at n=30**.
+- **Labelling time is an estimate, not a measurement:** 38 s/row was the P3-05 pace on one-sentence contexts; this shows up to 40 source sentences, so **75-120 s/row**, i.e. **35-60 minutes** for 30 rows. Flagged as an estimate in the packet README.
+
 ### 2026-11-20 — Buffy — option B: P3-05 closed as a dev-negative, P3-06 diagnosed
 - **Owner decision: option B.** Test is **not** evaluated and is not scheduled; spec `6612eae9cbf24a60` stays frozen with `test_evaluated: false`; v3b is not run (variant budget closed at 2 of 3); the last 3 rows stay unscored.
 - **P3-05 dev-negative recorded (ADR-0026 Amendment C)** — cascade promoted as a **high-precision operating-point alternative**: at matched 50% recall, v3 FAR 12.2% [7.2, 19.7] vs v2 23.2% [16.2, 31.9], while the heuristic keeps R 85.7% [60.1, 96.0] at FAR 43.0% [34.0, 52.5]. Denominator **148/151** with `P3W1-041`, `P3W1-042`, `P3W2-054` named as provider failures.

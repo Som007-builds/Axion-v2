@@ -987,6 +987,70 @@ at **$0.000108 per context** (P3-08) — and it runs only on the residual, never
 - The frozen test set stays untouched: linking is built and tuned on dev, and the single test
   evaluation remains unscheduled until the owner says otherwise.
 
+### Amendment A (2026-11-20) — the 30-row packet is an **oracle test**, and linker code is gated on it
+
+Status note only: this amendment does not approve the linker. ADR-0027 stays **Proposed**, and stage
+(a) remains unbuilt.
+
+**(1) The packet changed shape.** Stage (c) was a link gold set used to *choose a rule*. It is now an
+**oracle test**: the owner labels the 30 rows, and the answer is used to ask whether a *correct* source
+sentence would move the detector at all — before any rule exists to be tuned. If a perfect sentence
+does not help, tuning a linker is the wrong problem, and this buys that answer for about a cent and
+one labelling session. The packet is built and committed; the labels do not exist yet.
+
+Concretely, dev only, text-bearing frame:
+
+- **30 rows** = **all 14** text-bearing dev positives (`RELIES_ON`) + **16** negatives drawn with seed
+  `20261120`, stratified by section bucket (other 4, discussion 5, introduction 3, results 3,
+  methods 1). Negatives are drawn only from sources that have body text, because a row with no
+  candidates cannot test anything — a disclosed selection, so these negatives come from fuller
+  sources than the frame average.
+- **2 of the 14 positives** (`P3W2-018`, `P3W2-023`) have **no source body text** at all; they stay
+  in the packet but are marked untestable and named, so the treatment arm can be at most **28**.
+- Candidates are up to **40 body sentences** per row, Results/Methods first, document order kept,
+  truncated for reading load (19 rows truncated); the manifest records total, shown and truncation.
+- The blind file carries `opaque_id`, source title, citing sentence, surrounding paragraph and the
+  candidates. It carries **no gold label, no split, no proxy sentence, no score and no model output**.
+  Gold labels and the id mapping live in a **separate manifest** the labeler never opens.
+- **10 of the 30** go to the second labeler as a blind-only handoff directory under the P3-03
+  Amendment C protocol (5 positives, 5 negatives; blind files only; that folder holds no manifest and
+  no first-labeler output; an export must be a subset of the blinded ids).
+
+**(2) Pre-registered reading of the oracle.** Fixed now, before the labels exist:
+
+- **Recall on the positives**, as **raw counts out of 14**: how many were caught by v3 at threshold 30
+  before the swap and how many after. Absolute counts, not percentages in prose; the two untestable
+  positives are counted as neither caught nor dropped, but they are named.
+- **False-alarm direction on the negatives**: how many of the 16 fired before and how many after. The
+  **direction** is the claim; a change of one or two rows is not a result.
+- **Per-row before/after against the heuristic**, reported in full, because at this n one row can look
+  like a finding.
+- **No interval and no superiority claim.** 30 rows with 14 positives can show a **direction only**.
+  Nothing in this test re-opens the P3 gate, and it does not touch the frozen test set.
+
+**(3) Gate on linker code.** Stage (a) — and everything after it — is **gated on the oracle outcome**,
+by this rule, pre-committed:
+
+- If the oracle shows a **larger** positive count after the swap with **no increase** in negatives
+  fired, the linking stage is worth building and stage (a) may be proposed for approval.
+- If the oracle shows **no movement**, the detector's ceiling is not set by link quality and the linker
+  is **not built**: the P3-05 dev-negative (ADR-0026 Amendment C) becomes this stage's answer, and
+  effort moves to P3-07's propagation rule.
+- Either way, a linker's acceptance rule must still be chosen and frozen against these 30 rows plus any
+  further rows the owner labels; the oracle decides only whether the work is worth starting.
+
+**(4) Cost and quota, measured not guessed.** `scripts/p3_06_oracle.py --mode estimate` bounds the
+treatment arm from the candidate sentences actually in the packet: **28 requests** at most,
+**16,643 prompt tokens** at the median candidate (16,999 first-candidate, 19,089 longest), i.e.
+**$0.013393 – $0.014127** at list price on the free tier, through `LLMClient` so every attempt lands
+in the ledger under stage `dependency_llm_oracle`. The exact figure is known only once labels exist
+(`--mode dry-run`). Quota while writing this: **127 of 450** requests left on Pacific day 2026-11-19,
+which covers the arm with room for one retry pass.
+
+**(5) What is still not true.** No linking result is claimed. No label was created by an agent. The
+first labeler's file is never shared with the second labeler. Spec `6612eae9cbf24a60` and
+`test_evaluated: false` are untouched, and no test row was read.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title
