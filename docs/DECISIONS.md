@@ -914,6 +914,79 @@ useful (cheaper, or better at a different recall); the report has to say which. 
 comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that
 expensive.
 
+## ADR-0027 — claim linking: deterministic first, gated by a link-level gold set
+
+2026-11-20 · **Proposed** (no code, no LLM calls until the owner approves)
+
+**Context.** P3's detector has been measured against a *proxy*: P3-02 gave each citing context at
+most one source claim — the first usable sentence of the retracted paper's **abstract**. The P3-06
+diagnosis (`docs/reports/P3-06-linking-diagnosis.md`, dev only, no calls) shows that proxy is often
+not the sentence the citation is about:
+
+- Body text exists for **115/151** dev rows (76.2%), and for the **93** rows that carry an abstract
+  proxy, a body sentence matches the citing text clearly better in **64/93 = 68.8%**
+  [58.8, 77.3] of cases.
+- The positives the cascade ceiling drops (`P3W1-014`, `P3W1-034`) both have weak best-match coverage
+  (0.25 and 0.22) against their abstract proxies of 0.12 and 0.00.
+- v3 catches **7/12 = 58.3%** [31.9, 80.7] of positives that have a source-claim pointer and
+  **0/2** of those without one. Two rows is not evidence; it is the direction worth testing.
+
+So a large part of the current miss rate may be a **data** failure — right context, wrong claim —
+that no prompt or threshold can fix. This ADR proposes how to fix it, and refuses to guess the rule.
+
+**Decision — three stages, the third only after a human gate.**
+
+**(a) Deterministic linker first, on the source's own full text.** For each citing context, build the
+candidate set from the source paper's body sentences (Results and Methods first, everything else
+after), and score each candidate on three deterministic anchors:
+
+1. **shared numbers** — a figure, percentage or count that appears in both sentences (weighted
+   highest, because a number is hard to share by accident);
+2. **shared content words**, excluding the stopword list, as a coverage ratio over the citing
+   sentence;
+3. **a method/definition lexicon** — "assay", "protocol", "cohort", "model", "threshold" and the
+   terms the dependency guideline already uses.
+
+Accept a link only when one sentence wins on numbers *and* clears a coverage floor *and* beats the
+runner-up by a margin. Everything else is `ambiguous`. No model is called in this stage, so it costs
+**$0** and is fully reproducible.
+
+**(b) The threshold is not chosen from the grid, because the grid cannot see correctness.** The
+diagnosis swept 12 settings: the accept rate moves from **3.3%** (coverage 0.50, margin 0.15) to
+**24.5%** (0.20, 0.05), and escalation from **96.7%** to **75.5%** the other way — while accepted
+positives move from 1/16 to 4/16. Every one of those cells is *unvalidated*: accepting more links
+also accepts more wrong ones, and nothing in the repo can currently tell a good link from a bad one.
+
+**(c) Gate: a link-level gold set of 30 contexts, owner-labelled, before any linker code.** A blind
+packet of 30 dev contexts, each showing the citing sentence and the source paper's body sentences
+shuffled and unlabelled, with the question "which sentence does this citation depend on, or none?".
+Owner labels, 100% overlap on 10 rows by the second labeler for agreement, dev only, no test rows.
+The linker's acceptance rule is then chosen and frozen against that packet — deliberately before it
+is applied to any detector claim.
+
+**(d) Escalation stays deterministic until it is measured.** Only after (c) fixes the rule does a
+residual `ambiguous` set exist whose size can be measured honestly. If that residual is large, the
+escalation tier is the existing verifier prompt re-aimed at "which sentence", priced from the ledger
+at **$0.000108 per context** (P3-08) — and it runs only on the residual, never on the whole corpus.
+
+**Alternatives considered.**
+- *Swap the proxy for the paper title only.* Cheap, but the diagnosis shows the body text already
+  contains a better sentence for two thirds of rows, so this discards the signal that exists.
+- *Embedding nearest-neighbour link.* Needs the `embeddings` extra, costs local compute, and is not
+  auditable sentence-by-sentence in a review; it can come later as a candidate generator behind the
+  same gold gate.
+- *Ask the LLM to pick the sentence directly, no deterministic stage.* That is the expensive version
+  of the same idea, and it would put the whole corpus through a model to fix a data problem. The
+  deterministic stage exists to keep that cost at zero for the majority.
+
+**Consequences.**
+- Until (c) exists, **no linking result can be claimed**, and the P3 gate cannot be re-opened on a
+  linking claim. The current dev-negative (ADR-0026 Amendment C) stands.
+- A linking stage changes what the detector is asked, so after it lands the P3-05 numbers must be
+  re-measured on dev before anything is called an improvement.
+- The frozen test set stays untouched: linking is built and tuned on dev, and the single test
+  evaluation remains unscheduled until the owner says otherwise.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

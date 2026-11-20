@@ -130,6 +130,13 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-20 — Buffy — option B: P3-05 closed as a dev-negative, P3-06 diagnosed
+- **Owner decision: option B.** Test is **not** evaluated and is not scheduled; spec `6612eae9cbf24a60` stays frozen with `test_evaluated: false`; v3b is not run (variant budget closed at 2 of 3); the last 3 rows stay unscored.
+- **P3-05 dev-negative recorded (ADR-0026 Amendment C)** — cascade promoted as a **high-precision operating-point alternative**: at matched 50% recall, v3 FAR 12.2% [7.2, 19.7] vs v2 23.2% [16.2, 31.9], while the heuristic keeps R 85.7% [60.1, 96.0] at FAR 43.0% [34.0, 52.5]. Denominator **148/151** with `P3W1-041`, `P3W1-042`, `P3W2-054` named as provider failures.
+- **P3-06 started with a diagnosis, not code** (`scripts/p3_06_linking_diagnosis.py`, 7 tests, no calls, dev only): body text exists for **115/151** dev rows; for the **93** rows carrying the abstract proxy, a body sentence matches clearly better **64/93 = 68.8% [58.8, 77.3]** — the proxy is often not the sentence the citation is about. The two positives the cascade ceiling drops (`P3W1-014`, `P3W1-034`) both sit at weak best coverage (0.25 / 0.22). v3 catches **7/12 [31.9, 80.7]** of positives with a pointer, **0/2** without.
+- **A deterministic rule was swept, not picked:** 12 settings move accept from **3.3%** to **24.5%** and escalation from **96.7%** to **75.5%**, with accepted positives 1/16 to 4/16. Every cell is unvalidated, which is exactly why **ADR-0027 (Proposed)** puts a **30-row owner-labelled link gold set** before any linker code and forbids LLM calls until the plan is approved.
+- **P3 gate stays open.** What a test look would tell us and would not: recorded in the summary, not in a claim.
+
 ### 2026-11-20 — Buffy — v3 measured on dev: graded, still not good enough
 - **The resume worked.** 148 of 151 dev rows scored. `P3W1-018` — the row that failed 6 times before — **went through on its second attempt** in the new loop (fail 06:01:06, ok 06:01:19), which confirms it was transport flakiness, not content. Three different rows failed instead (`P3W1-041`, `P3W1-042`, `P3W2-054`), all SSL `ReadError`, and `--max-calls 134` was consumed exactly by the first pass so the retry pass never ran on them. My arithmetic: 134 rows meant 134 calls meant no headroom for retries.
 - **v3 is graded** — the thing v2 failed: bands 0-20 **37**, 21-40 **103**, 41-60 **7**, 61-80 **1**, 81-100 **0**; interior share **75%**, 8 distinct scores.

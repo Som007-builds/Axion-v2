@@ -100,7 +100,8 @@
     - **Fixed:** `IncompleteCheckpoint` makes metrics refuse partial checkpoints and print `incomplete: N of 151 dev rows scored, run again to resume` (exit 2); a provider error now stops the loop cleanly and keeps the paid rows. Resume needs **134 requests**; **273 remain** of the 450/day cap.
     - **v3 measured on dev, 2026-11-20: 148 of 151 rows** (`P3W1-041`, `P3W1-042`, `P3W2-054` failed at the provider, SSL `ReadError`, unscored). **v3 is graded** (bands 37/103/7/1/0, interior 75%, 8 distinct scores) — the two-judgement prompt fixed what it was built for. **It did not fix discrimination:** on the text-bearing frame, threshold 20 gives R 100% at **FAR 78.5%**, threshold 30 gives R 50% at FAR 12.2%, and nothing in between holds R ≥ 0.80 at FAR < 42.6%.
     - **ADR-0026 Amendment C applied:** *"LLM verification stage did not beat the heuristic on dev; cascade reported as a high-precision operating-point alternative."* **Spec stays `6612eae9cbf24a60`, no re-freeze. v3b is NOT run** — the cap permits it only if v3 is ungraded, and v3 is graded, so the variant budget closes at 2 of 3.
-    - **What P3-05 now waits on:** only the single frozen test evaluation, which is the owner's decision. Evidence: `docs/reports/P3-05-llm-v2-calibration.md` (FLAGGED section, both denominators), `eval/audit/p3-05/p3-05-llm-v3-dev-failures.csv`, `docs/DECISIONS.md` Amendment C.
+    - **Outcome: dev-negative, gate NOT passed (owner decision 2026-11-20).** v3 is graded but its interior sits low: threshold 20 gives R 100% at FAR 78.5%; 30 gives R 50.0% [26.8, 73.2] at FAR 12.2% [7.2, 19.7]; 40-50 gives R 21.4% at 4.7%; 60-70 gives R 7.1% at 0.0%. At matched 50% recall v3 (12.2% FAR) beats v2 (23.2% FAR) but neither approaches the heuristic's R 85.7% at FAR 43.0%. Denominator **148/151** (`P3W1-041`, `P3W1-042`, `P3W2-054` failed at the provider, SSL `ReadError`, unscored, named in the report). Cascade is described as a **high-precision operating-point alternative**, never a replacement. No re-freeze, no v3b, **test not evaluated** and not scheduled.
+    - **What P3-05 waits on:** nothing dev-side; only the owner's decision on the single frozen test look, which is not taken. Evidence: `docs/reports/P3-05-llm-v2-calibration.md`, `eval/audit/p3-05/p3-05-llm-v3-dev-failures.csv`, `docs/DECISIONS.md` Amendment C.
   - done: — (partial: calibration, dev cascade and freeze complete; **test evaluation outstanding**) | evidence: `scripts/{dependency_llm_v2,p3_05_staged}.py`, `docs/reports/{P3-05-llm-v2-calibration,P3-05-detector-dev}.md`, `eval/audit/p3-05/{p3-05-llm-v2-dev.csv,p3-05-dev-detector.json,p3-05-spec-frozen.json}`, `tests/test_{dependency_llm_v2,p3_05_staged}.py` (9 + 8).
 
 ### [~] P3-05b — Priority / lazy scheduling
@@ -111,7 +112,15 @@
   - notes: Risk ordering implemented and measured on dev (`risk = claim linkage +1.0, retraction mention +0.5, else heuristic score`): recall 12.5% [3.5, 36.0] at top 10% of contexts, 43.8% [23.1, 66.8] at 20-25%, 68.8% [44.4, 85.8] at 50%. Ordering is deterministic (ties break on row_id). **Not yet done:** hash-keyed idempotent re-runs, hot/cold corpus state, and the "cold items untouched" demonstration — the acceptance criteria are not met, so this stays `[~]`.
   - done: — (partial) | evidence: `scripts/p3_05_staged.py` (`risk_score`, `scheduler_curve`), `docs/reports/P3-05-detector-dev.md`, `tests/test_p3_05_staged.py`.
 
-### [ ] P3-06 — Claim linking
+### [~] P3-06 - Claim linking
+- depends: P3-02
+- what: Match each citing context to the specific source claim it depends on, not to a single abstract-sentence proxy.
+- acceptance: link-level gold set exists; linker chosen against it and frozen; detector re-measured on dev with links; no LLM calls without owner approval.
+  - agent: Buffy | started: 2026-11-20 | branch: p3
+  - notes:
+    - **Diagnosis done first (no code, no calls):** `scripts/p3_06_linking_diagnosis.py` -> `docs/reports/P3-06-linking-diagnosis.md` + `eval/audit/p3-06/p3-06-linking-diagnosis.json`. Body text exists for **115/151** dev rows (76.2%); of the **93** rows carrying an abstract proxy, a body sentence matches clearly better for **64/93 = 68.8% [58.8, 77.3]**. The two positives the cascade ceiling drops (`P3W1-014`, `P3W1-034`) both have weak best coverage (0.25, 0.22). v3 catches **7/12 [31.9, 80.7]** of positives with a pointer and **0/2** without one - direction, not evidence at n=16.
+    - **Deterministic rule swept, not chosen:** 12 settings from accept 3.3% / escalate 96.7% to accept 24.5% / escalate 75.5%, accepted positives 1/16 to 4/16. Unvalidated at every cell, which is the point.
+    - **ADR-0027 (Proposed)** commits to deterministic full-text linking first (numbers, coverage, method lexicon), gated by a **30-row owner-labelled link gold set** before any linker code, and no LLM calls until approval. Nothing built yet; the proposed packet is the next action.
 - depends: P3-05
 - what: Match relying contexts to specific claims in the retracted paper (embedding match, LLM only if ambiguous); evaluate on labeled subset.
 - acceptance: Link accuracy reported with CI.
