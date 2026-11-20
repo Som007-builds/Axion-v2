@@ -130,6 +130,12 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-20 — Buffy — oracle labels in; two pre-spend bugs caught
+- **Owner labelled the 30-row oracle packet** (labeler `soham`): 30/30, **22 chose a sentence**, **8 said none**, every pick inside its own candidate list. The file came back as `chosen_candidate`/`decision_cue` with `0` for none.
+- **My first check said "0 answered" and was wrong** — it read the page's column names, not the file's. The labels were complete. Corrected in the same session rather than trusted.
+- **Two bugs fixed before any quota was spent:** the six `0` rows fell into the treatment arm with an **empty claim block** (six paid requests about nothing, then compared as if they were the oracle); and the before-scores path pointed at a file inside the wrong folder, so a live run would have **crashed after paying**. `interpret()` now reads either schema and treats `0` as none, `oracle_arm()` refuses an empty pick that is not a none answer, and the before-scores path is `eval/audit/p3-05/p3-05-llm-v3-dev.csv`.
+- **Oracle armed, not fired:** 22 requests, 13,726 prompt tokens, **$0.010718** list price, free tier, stage `dependency_llm_oracle`. The live run is the owner's to start; no agent spends the quota.
+
 ### 2026-11-20 — Buffy — P3-06 packet built as an oracle test; linker still gated
 - **Option B held:** test not evaluated, spec `6612eae9cbf24a60`, `test_evaluated: false`, no v3b, no extra rows, no live calls this session.
 - **Built the oracle packet** (`scripts/p3_06_link_oracle_packet.py`, 15 tests): **30 rows** = all **14** text-bearing dev positives + **16** negatives, seed `20261120`, stratified by section; packet hash `511b788c48d6c502`. Blind labeler shows the citing sentence, the paragraph and up to **40 body sentences**; gold labels and the id map sit in a **separate manifest** the labeler never opens.
