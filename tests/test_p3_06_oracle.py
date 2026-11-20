@@ -324,3 +324,14 @@ def test_labeler_template_actually_mounts_the_cards() -> None:
     assert "host.appendChild(card);" in template
     assert template.count("card.appendChild(") >= 5
     assert "render();" in template
+
+
+def test_the_two_labelers_export_different_filenames() -> None:
+    """Both pages exported p3-06-oracle-labelled.csv, so a 10-row overlap export
+    looked like a broken 30-row one and quietly replaced it in Downloads."""
+    from scripts.p3_06_link_oracle_packet import ROOT
+
+    template = (ROOT / "docs" / "eval" / "link_oracle_labeler_template.html").read_text(
+        encoding="utf-8"
+    )
+    assert "__DOWNLOAD__" in template

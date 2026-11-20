@@ -280,7 +280,9 @@ def blind_rows(
     ]
 
 
-def labeler_html(rows: Sequence[dict[str, object]], *, title: str, storage_key: str) -> str:
+def labeler_html(
+    rows: Sequence[dict[str, object]], *, title: str, storage_key: str, download: str
+) -> str:
     payload = json.dumps(list(rows), ensure_ascii=False)
     template = (ROOT / "docs" / "eval" / "link_oracle_labeler_template.html").read_text(
         encoding="utf-8"
@@ -288,6 +290,7 @@ def labeler_html(rows: Sequence[dict[str, object]], *, title: str, storage_key: 
     return (
         template.replace("__TITLE__", title)
         .replace("__STORAGE_KEY__", storage_key)
+        .replace("__DOWNLOAD__", download)
         .replace("__ROWS_JSON__", payload)
     )
 
@@ -321,6 +324,7 @@ def write_packet(summary: dict[str, object]) -> dict[str, str]:
             blind_rows(summary),
             title="P3-06 oracle packet — which source sentence does this citation depend on?",
             storage_key="p3-06-oracle-v1",
+            download="p3-06-oracle-labelled.csv",
         ),
         encoding="utf-8",
         newline="\n",
@@ -336,6 +340,7 @@ def write_packet(summary: dict[str, object]) -> dict[str, str]:
             blind_rows(summary, overlap_opaque),  # type: ignore[arg-type]
             title="P3-06 oracle — second labeler overlap (10 rows)",
             storage_key="p3-06-oracle-overlap-v1",
+            download="p3-06-oracle-overlap-labelled.csv",
         ),
         encoding="utf-8",
         newline="\n",

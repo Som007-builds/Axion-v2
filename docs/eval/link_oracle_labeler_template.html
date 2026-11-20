@@ -240,7 +240,7 @@ document.getElementById("export").onclick = () => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "p3-06-oracle-labelled.csv";
+  link.download = "__DOWNLOAD__";
   link.click();
   URL.revokeObjectURL(url);
 };
