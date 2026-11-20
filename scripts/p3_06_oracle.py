@@ -51,6 +51,7 @@ from scripts.dependency_llm_v2 import (
     build_request,
     failures_path_for,
     get_variant,
+    ledger_activity,
     prompt_tokens,
     read_failures,
     read_v2,
@@ -448,15 +449,53 @@ def compare(
     }
 
 
+def gate_outcome(stats: dict[str, object]) -> dict[str, object]:
+    """Apply the rule pre-committed in ADR-0027 Amendment A, without reinterpreting it."""
+    gained = int(stats["positives_caught_after"]) - int(stats["positives_caught_before"])
+    extra_alarms = int(stats["negatives_fired_after"]) - int(stats["negatives_fired_before"])
+    if gained > 0 and extra_alarms <= 0:
+        return {
+            "build": True,
+            "verdict": "worth building",
+            "reason": (
+                f"the owner's sentence caught {gained} more positive(s) with no extra false "
+                "alarm, which is the condition for proposing the linking stage"
+            ),
+        }
+    return {
+        "build": False,
+        "verdict": "not built",
+        "reason": (
+            f"positives caught moved by {gained:+d} and negatives fired by {extra_alarms:+d}; "
+            "the rule says no movement means link quality is not the ceiling, so the linker "
+            "is not built"
+        ),
+    }
+
+
 def write_report(result: dict[str, object], path: Path = REPORT) -> None:
     arm = result["arm"]  # type: ignore[index]
     stats = result["comparison"]  # type: ignore[index]
+    ledger = ledger_activity(str(result.get("stage", STAGE)), LEDGER)
+    per_row = stats["per_row"]
+    identical = [row for row in per_row if row["delta"] == 0]
+    moved = [row for row in per_row if row["delta"]]
+
+    def side(score: object) -> bool:
+        return score is not None and int(str(score)) >= int(stats["threshold"])
+
+    crossed = [
+        row
+        for row in per_row
+        if row["before"] is not None and side(row["before"]) != side(row["after"])
+    ]
+    none_positive = [row["row_id"] for row in arm["none_rows"] if row["gold_label"] == POSITIVE]
+    gate = gate_outcome(stats)  # type: ignore[arg-type]
     lines = [
         "# P3-06 oracle — does the right source sentence help the detector?",
         "",
-        "**This report is written by `scripts/p3_06_oracle.py` from the owner's labels and the",
-        "ledger. It is the dev-only oracle test pre-registered in ADR-0027 and is not a gate",
-        "result.**",
+        "**Written by `scripts/p3_06_oracle.py` from the owner's labels and the ledger. The",
+        "dev-only oracle test pre-registered in ADR-0027, not a gate result.**",
         "",
         "## What was swapped",
         "",
@@ -480,15 +519,67 @@ def write_report(result: dict[str, object], path: Path = REPORT) -> None:
         f"{stats['positives_total']} | {stats['negatives_fired_after']} of "
         f"{stats['negatives_total']} |",
         "",
-        "Thirty rows can show a direction and not an effect size; no interval is quoted",
+        f"**{len(crossed)} rows crossed the threshold** in either direction; "
+        f"{len(identical)} of {len(per_row)} rows scored exactly the same. The counts above "
+        "are net, so a gain and a loss cancel: the crossings are named under *What moved* "
+        "instead of being netted away.",
+        "",
+        "Thirty rows can show a direction and not an effect size; no interval is quoted,",
         "because none would be informative at this n.",
         "",
+        f"## What moved: {len(moved)} of {len(per_row)} rows",
+        "",
+    ]
+    if moved:
+        crosses = {row["row_id"] for row in crossed}
+        lines += ["| row | gold | before | after | delta | crossed |", "|---|---|---|---|---|---|"]
+        for row in sorted(moved, key=lambda item: -abs(int(item["delta"]))):
+            lines.append(
+                f"| {row['row_id']} | {row['gold_label']} | {row['before']} | "
+                f"{row['after']} | {int(row['delta']):+d} | "
+                f"{'yes' if row['row_id'] in crosses else 'no'} |"
+            )
+        lines.append("")
+    else:
+        lines += ["No row moved at all.", ""]
+    if none_positive:
+        lines += [
+            "## A gold positive with no supporting sentence",
+            "",
+            f"`{'`, `'.join(none_positive)}` was answered `none`: reading the whole body, the",
+            "owner found no sentence that citing text depends on. That is a statement about the",
+            "gold label, not about the model, and it is left standing rather than re-scored.",
+            "",
+        ]
+    lines += [
+        "## The pre-committed gate",
+        "",
+        f"**{gate['verdict'].capitalize()}.** {gate['reason'][0].upper()}{gate['reason'][1:]}.",
+        "",
+        "The P3-05 dev-negative (ADR-0026 Amendment C) therefore stands unchanged, and the",
+        "frozen test set is untouched.",
+        "",
+        "## Cost, from the ledger",
+        "",
+    ]
+    if ledger:
+        lines += [
+            f"- {ledger['attempts']} attempts, {ledger['succeeded']} succeeded, "
+            f"{ledger['errors']} errors, {ledger['cache_hits']} cache hits.",
+            f"- {ledger['prompt_tokens']} prompt + {ledger['completion_tokens']} completion "
+            "tokens.",
+            f"- **${ledger['list_price_usd']}** at list price, free tier, no charge.",
+            f"- Estimate before the run: ${result['plan']['list_price_usd']} "
+            f"for {result['plan']['requests']} requests.",
+            "",
+        ]
+    lines += [
         "## Per row",
         "",
         "| row | gold | before | after | delta | heuristic |",
         "|---|---|---|---|---|---|",
     ]
-    for row in stats["per_row"]:
+    for row in per_row:
         lines.append(
             f"| {row['row_id']} | {row['gold_label']} | {row['before']} | {row['after']} | "
             f"{row['delta']} | {row['heuristic']} |"

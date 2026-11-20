@@ -112,7 +112,7 @@
   - notes: Risk ordering implemented and measured on dev (`risk = claim linkage +1.0, retraction mention +0.5, else heuristic score`): recall 12.5% [3.5, 36.0] at top 10% of contexts, 43.8% [23.1, 66.8] at 20-25%, 68.8% [44.4, 85.8] at 50%. Ordering is deterministic (ties break on row_id). **Not yet done:** hash-keyed idempotent re-runs, hot/cold corpus state, and the "cold items untouched" demonstration — the acceptance criteria are not met, so this stays `[~]`.
   - done: — (partial) | evidence: `scripts/p3_05_staged.py` (`risk_score`, `scheduler_curve`), `docs/reports/P3-05-detector-dev.md`, `tests/test_p3_05_staged.py`.
 
-### [~] P3-06 - Claim linking
+### [x] P3-06 - Claim linking — CLOSED AS A NEGATIVE (linker not built, by pre-committed rule)
 - depends: P3-02
 - what: Match each citing context to the specific source claim it depends on, not to a single abstract-sentence proxy.
 - acceptance: link-level gold set exists; linker chosen against it and frozen; detector re-measured on dev with links; no LLM calls without owner approval.
@@ -125,7 +125,9 @@
     - **Oracle planned, not run:** `scripts/p3_06_oracle.py --mode estimate` bounds the arm at **28 requests**, **16,643** prompt tokens at the median candidate, list price **$0.013393-$0.014127**, stage `dependency_llm_oracle`. Quota at build time: **127 of 450** left on the Pacific day. Pre-registered reading in AMENDMENT A: positives caught before vs after as raw counts out of 14, FAR direction on the 16 negatives, direction only at n=30.
     - **LABELS EXIST (2026-11-20, owner):** `eval/audit/p3-06-oracle/p3-06-oracle-labelled.csv`, labeler `soham`, **30 of 30** answered -> **22 chose a sentence**, **8 said none** (`P3W1-031`, `P3W1-063`, `P3W1-064`, `P3W1-002`, `P3W2-029`, `P3W1-071`, plus the two body-less rows `P3W2-018`, `P3W2-023`). The file uses `chosen_candidate`/`decision_cue` columns with `0` as none; the oracle now reads both schemas and refuses a blank that is not an explicit none.
     - **Oracle armed, not fired:** treatment arm **22 rows**, **13,726** prompt tokens (mean 624, max 836), list price **$0.010718**, free tier, stage `dependency_llm_oracle`. Quota 450 of 450 on Pacific day 2026-11-20 at the time of writing. Two bugs fixed before any spend: six `0` rows would have been sent with an empty claim block, and the before-scores path pointed at a file that does not exist (the run would have crashed after paying).
-    - **Linker code stays gated on the oracle outcome.** Next action is the owner running `--mode live --max-calls 22`; no agent may spend the quota.
+    - **ORACLE RAN (2026-11-20), 22 attempts, 0 errors, $0.009129 list price:** at threshold 30, positives caught **6 of 11 → 6 of 11**, negatives fired **2 of 11 → 2 of 11**; **18 of 22 scores identical**; two rows crossed and cancelled (`P3W1-058` up 25→33, `P3W2-052` down 33→25); `P3W1-007` 50→92 and `P3W2-068` 33→58 moved without crossing. One gold positive (`P3W1-063`) was answered `none` — evidence about the label, left standing.
+    - **Outcome, per ADR-0027 Amendment A applied literally:** positives +0, negatives +0 → **the linker is not built**. Recorded in **ADR-0027 Amendment B**. ADR-0026 Amendment C stands. Effort moves to P3-07. The second-labeler overlap stays built and unlabelled; it is not needed for a decision already made.
+  - done: CLOSED AS A NEGATIVE 2026-11-20 | evidence: `docs/reports/P3-06-linking-diagnosis.md`, `docs/reports/P3-06-oracle-result.md`, `eval/audit/p3-06-oracle/` (packet, labels, result), `docs/DECISIONS.md` ADR-0027 Amendments A+B, `tests/test_p3_06_oracle.py` (21)
 - depends: P3-05
 - what: Match relying contexts to specific claims in the retracted paper (embedding match, LLM only if ambiguous); evaluate on labeled subset.
 - acceptance: Link accuracy reported with CI.

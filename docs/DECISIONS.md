@@ -1051,6 +1051,48 @@ which covers the arm with room for one retry pass.
 first labeler's file is never shared with the second labeler. Spec `6612eae9cbf24a60` and
 `test_evaluated: false` are untouched, and no test row was read.
 
+### Amendment B (2026-11-20) — the oracle ran: no movement, so the linker is **not built**
+
+Status note applying Amendment A's pre-committed rule. ADR-0027 remains **Proposed** and stage (a)
+remains unbuilt — now by decision rather than by waiting.
+
+**What ran.** `scripts/p3_06_oracle.py --mode live --max-calls 22`, dev only, through `LLMClient`,
+stage `dependency_llm_oracle`, 22 attempts, 22 succeeded, 0 errors, 0 cache hits, **15,368 prompt +
+1,808 completion tokens, $0.009129** at list price on the free tier (estimate before the run:
+$0.010718). Labels: 30 of 30 answered by `soham`, 22 chose a sentence, 6 answered `none` (plus the 2
+body-less rows), 2 untestable, so the arm is 22 rows: **11 positives, 11 negatives**.
+
+**What it showed, at threshold 30, positives caught before vs after as raw counts:**
+
+- positives **6 of 11 → 6 of 11**; negatives fired **2 of 11 → 2 of 11**.
+- **18 of 22 scores were identical.** Four moved: `P3W1-007` 50→92, `P3W2-068` 33→58 (a negative),
+  `P3W1-058` 25→33, `P3W2-052` 33→25.
+- Two rows crossed the threshold and **cancelled**: `P3W1-058` up, `P3W2-052` down. The net counts
+  hide that swap, so it is named here rather than netted away.
+- One gold positive, `P3W1-063`, was answered `none`: reading the whole body, the owner found no
+  sentence the citing text depends on. That is evidence about the gold label, left standing.
+
+**Decision (the rule, applied literally).** Positives caught moved by **+0** and negatives fired by
+**+0**, so the condition for building the linking stage is not met: **the linker is not built**, and
+no deterministic linker code is written. ADR-0026 Amendment C remains this stage's answer.
+
+**What this does and does not establish.** It establishes that substituting the sentence the owner
+says the citation depends on does not move v3 at this operating point — the detector is not limited
+by which source sentence it is given, so a linker addresses the wrong constraint. It does **not**
+establish that links are irrelevant in general, and it carries the ordinary limits of n=11 positives:
+one row crossing either way is the whole difference between +1 and -1. The 12 rows pinned at the
+bottom of v3's scale (25) are the same compression that ADR-0026 Amendment C already recorded;
+the oracle is the second independent sign of it, not a new finding about linking.
+
+**Consequences.**
+- P3-06 closes as a **negative with a measured reason**, not as unfinished work. The diagnosis, the
+  packet, the labels and the oracle all stay in the repo as the evidence.
+- The second-labeler overlap packet is **not needed** for a decision already made; it stays built and
+  unlabelled rather than being deleted, so the agreement check can run if linking is ever revisited.
+- Effort moves to **P3-07** (propagation rule v2), which is the remaining place a recall gain could
+  come from.
+- The frozen spec `6612eae9cbf24a60`, `test_evaluated: false` and the unread test set are untouched.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

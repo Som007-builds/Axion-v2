@@ -1,0 +1,599 @@
+{
+  "packet_rows": 30,
+  "arm": {
+    "treatment": [
+      {
+        "opaque_id": "O-01",
+        "row_id": "P3W2-068",
+        "gold_label": "MENTIONS",
+        "sentence": "The difference in the reduction of inflammatory markers between the two groups (NVD vs VD) was highly significant (p < 0.01) with the reduction in VD group being markedly higher than the NVD group (Table 3).Table 3The values of difference in the inflammatory markers and vitamin D between the two groups (NVD vs VD).VariableNVD (n = 43)VD (n = 44)NVD vs VDDifference (pre\u2013post)Median (IQR)95% CI of medianMedian (IQR)95% CI of medianz statisticp valueVit.D (ng/ml)\u2212 0.1 (\u2212 3 to 5)\u2212 1 to 3\u2212 64 (\u2212 92 to 52)\u2212 81 to 588 < 0.0001CRP (mg/l)5 (\u2212 3 to 39)\u2212 0.003 to 2151 (10 to 113)30 to 85\u2212 40.0001LDH (U/l)15 (\u2212 22 to 60)\u2212 13 to 4072 (13 to 168)48 to 13330.002IL6 (pg/ml)0.5 (\u2212 7 to 4)\u2212 4 to 113 (2 to 46)8 to 25\u2212 40.0002Ferritin (ng/ml)11 (11 to 55)\u2212 6 to 3884 (8 to 268)55 to 17130.008N/L ratio0.05 (\u2212 1 to 2)\u2212 0.7 to 10.9 (0 to 5)0.3 to 2\u2212 30.009Vit.D Vitamin D, CRP C-reactive protein, LDH Lactate dehydrogenase, Il-6 Interleukin-6, N/L ratio Neutrophil/Lymphocyte ratio, IQR Interquartile range, #mean \u00b1 SD, *95% CI of mean.",
+        "chosen": [
+          23
+        ]
+      },
+      {
+        "opaque_id": "O-02",
+        "row_id": "P3W1-009",
+        "gold_label": "MENTIONS",
+        "sentence": "In addition, previous studies have shown that type III interferon has almost the same biological activity of other interferons, such as anti-viral, antitumor, and immune regulation but when compared with type I interferon, its side effects are obviously little.",
+        "chosen": [
+          10
+        ]
+      },
+      {
+        "opaque_id": "O-03",
+        "row_id": "P3W2-042",
+        "gold_label": "MENTIONS",
+        "sentence": "We showed that diagnostic viral load is higher in nonhospitalized patients and has a significant inverse correlation with duration of symptoms.",
+        "chosen": [
+          2
+        ]
+      },
+      {
+        "opaque_id": "O-04",
+        "row_id": "P3W2-031",
+        "gold_label": "MENTIONS",
+        "sentence": "In this open-label comparative controlled study of patients with COVID-19, those treated with FPV appeared to have faster viral clearance and better chest CT changes than patients treated with LPV/RTV.",
+        "chosen": [
+          20
+        ]
+      },
+      {
+        "opaque_id": "O-05",
+        "row_id": "P3W2-066",
+        "gold_label": "MENTIONS",
+        "sentence": "Given that more than three billion individuals use social media regularly, and for prolonged periods, it becomes the primary source of information and communication, especially during a crisis, irrespective of the authenticity of the sources (7).",
+        "chosen": [
+          13
+        ]
+      },
+      {
+        "opaque_id": "O-06",
+        "row_id": "P3W1-034",
+        "gold_label": "RELIES_ON",
+        "sentence": "The current study also found that early viral clearance contributed to the improvement of chest CT on Day 14.",
+        "chosen": [
+          32
+        ]
+      },
+      {
+        "opaque_id": "O-07",
+        "row_id": "P3W1-069",
+        "gold_label": "RELIES_ON",
+        "sentence": "The 30-day hospitalization risk ratio was 0.09 [95% confidence interval (CI), 0.03\u20130.27], i.e., the hospitalization rate in proxalutamide treated men was reduced by 91% compared to placebo.",
+        "chosen": [
+          26
+        ]
+      },
+      {
+        "opaque_id": "O-08",
+        "row_id": "P3W1-058",
+        "gold_label": "RELIES_ON",
+        "sentence": "Mechanical ventilation was needed in four patients (4.1%) in the HCQ group and 5 (5.2%) in the control group, with no significant difference between the two groups (P = 0.75).",
+        "chosen": [
+          27
+        ]
+      },
+      {
+        "opaque_id": "O-10",
+        "row_id": "P3W1-025",
+        "gold_label": "RELIES_ON",
+        "sentence": "In this open-label comparative controlled study of patients with COVID-19, those treated with FPV appeared to have faster viral clearance and better chest CT changes than patients treated with LPV/RTV.",
+        "chosen": [
+          20
+        ]
+      },
+      {
+        "opaque_id": "O-11",
+        "row_id": "P3W2-003",
+        "gold_label": "MENTIONS",
+        "sentence": "A relation of AA and its pro-inflammatory metabolites to neuronal apoptosis and synapse loss has been demonstrated in vivo and in vitro [22-26].",
+        "chosen": [
+          16
+        ]
+      },
+      {
+        "opaque_id": "O-13",
+        "row_id": "P3W1-014",
+        "gold_label": "RELIES_ON",
+        "sentence": "Some evidence has indicated that vitamin C could decrease the incidence of common cold and the duration of symptoms if taken regularly.",
+        "chosen": [
+          21
+        ]
+      },
+      {
+        "opaque_id": "O-14",
+        "row_id": "P3W2-052",
+        "gold_label": "RELIES_ON",
+        "sentence": "Among them, 235 patients were analyzed in this cross-sectional study who had laboratory documentation of a 25(OH)D level at the time of hospitalization.",
+        "chosen": [
+          23
+        ]
+      },
+      {
+        "opaque_id": "O-16",
+        "row_id": "P3W1-070",
+        "gold_label": "RELIES_ON",
+        "sentence": "The 30-day hospitalization risk ratio was 0.09 [95% confidence interval (CI), 0.03\u20130.27], i.e., the hospitalization rate in proxalutamide treated men was reduced by 91% compared to placebo.",
+        "chosen": [
+          26
+        ]
+      },
+      {
+        "opaque_id": "O-17",
+        "row_id": "P3W1-066",
+        "gold_label": "MENTIONS",
+        "sentence": "Analysis of inflammatory markers and vit.D in the VD group before versus after treatment has shown highly significant reduction (p < 0.01) in all the measured inflammatory markers and a significant increase (p < 0.01) in vit.D (Table 1).Table 1Values of various parameters studied in the VD group before and after treatment.VariablePre (n = 44)Post (n = 44)Pre vs PostMean \u00b1 SD or median (IQR)95% CI of mean/medianMean \u00b1 SD or median (IQR)95% CI of mean/mediant or z statisticp valueVit.D (ng/ml)16 \u00b1 6#14\u201317*89 \u00b1 32#79\u201399*16 < 0.0001CRP (mg/l)81 \u00b1 66#61\u2013101*16 \u00b1 42#4\u201329*\u2212 6 < 0.0001LDH (U/l)369 \u00b1 159#321\u2013418*274 \u00b1 115#240\u2013309*\u2212 5 < 0.0001IL6 (pg/ml)15 (5\u201357)9\u2013293 (0.9\u20136)2\u201354 < 0.0001Ferritin (ng/ml)431 (190\u2013836)262\u2013708334 (154\u2013508)203\u201343340.0004N/L ratio5 (3\u201311)4\u201383 (2\u20135)3\u2013540.0003Vit.D Vitamin D, CRP C-reactive protein, LDH Lactate dehydrogenase, Il-6 Interleukin-6, N/L ratio Neutrophil/Lymphocyte ratio, IQR Interquartile range, #mean \u00b1 SD, *95% CI of mean.",
+        "chosen": [
+          20
+        ]
+      },
+      {
+        "opaque_id": "O-18",
+        "row_id": "P3W1-026",
+        "gold_label": "RELIES_ON",
+        "sentence": "We aimed to compare the clinical outcomes between patients who treated with FPV and patients treated with LPV/RTV.",
+        "chosen": [
+          18
+        ]
+      },
+      {
+        "opaque_id": "O-20",
+        "row_id": "P3W2-045",
+        "gold_label": "MENTIONS",
+        "sentence": "Studies thus far have shown conflicting evidence in regard to the viral shedding kinetics between mild and severe COVID-19, while there has been no link to clinical outcomes.7,9 The goal of this study was to examine whether the diagnostic viral load has any effect or association with known clinical parameters and outcomes.",
+        "chosen": [
+          1
+        ]
+      },
+      {
+        "opaque_id": "O-21",
+        "row_id": "P3W2-047",
+        "gold_label": "MENTIONS",
+        "sentence": "We showed that diagnostic viral load is higher in nonhospitalized patients and has a significant inverse correlation with duration of symptoms.",
+        "chosen": [
+          2
+        ]
+      },
+      {
+        "opaque_id": "O-23",
+        "row_id": "P3W1-007",
+        "gold_label": "RELIES_ON",
+        "sentence": "The results showed that BALB/c mice are susceptible to infection with all of the APMV serotypes except serotype 5.",
+        "chosen": [
+          31
+        ]
+      },
+      {
+        "opaque_id": "O-24",
+        "row_id": "P3W2-008",
+        "gold_label": "MENTIONS",
+        "sentence": "Based on a sample of 50 children, our result indicated that, 45 children had viral load less than 50 copies/ml 6 weeks after birth indicating 90% effectiveness of Option B highly active antiretroviral therapy PMTC in children in the current study.",
+        "chosen": [
+          10
+        ]
+      },
+      {
+        "opaque_id": "O-26",
+        "row_id": "P3W1-065",
+        "gold_label": "RELIES_ON",
+        "sentence": "The difference in the reduction of inflammatory markers between the two groups (NVD vs VD) was highly significant (p < 0.01) with the reduction in VD group being markedly higher than the NVD group (Table 3).Table 3The values of difference in the inflammatory markers and vitamin D between the two groups (NVD vs VD).VariableNVD (n = 43)VD (n = 44)NVD vs VDDifference (pre\u2013post)Median (IQR)95% CI of medianMedian (IQR)95% CI of medianz statisticp valueVit.D (ng/ml)\u2212 0.1 (\u2212 3 to 5)\u2212 1 to 3\u2212 64 (\u2212 92 to 52)\u2212 81 to 588 < 0.0001CRP (mg/l)5 (\u2212 3 to 39)\u2212 0.003 to 2151 (10 to 113)30 to 85\u2212 40.0001LDH (U/l)15 (\u2212 22 to 60)\u2212 13 to 4072 (13 to 168)48 to 13330.002IL6 (pg/ml)0.5 (\u2212 7 to 4)\u2212 4 to 113 (2 to 46)8 to 25\u2212 40.0002Ferritin (ng/ml)11 (11 to 55)\u2212 6 to 3884 (8 to 268)55 to 17130.008N/L ratio0.05 (\u2212 1 to 2)\u2212 0.7 to 10.9 (0 to 5)0.3 to 2\u2212 30.009Vit.D Vitamin D, CRP C-reactive protein, LDH Lactate dehydrogenase, Il-6 Interleukin-6, N/L ratio Neutrophil/Lymphocyte ratio, IQR Interquartile range, #mean \u00b1 SD, *95% CI of mean.",
+        "chosen": [
+          23
+        ]
+      },
+      {
+        "opaque_id": "O-28",
+        "row_id": "P3W1-033",
+        "gold_label": "RELIES_ON",
+        "sentence": "This study highlighted FPV as a potential clinical intervention for COVID-19.",
+        "chosen": [
+          26
+        ]
+      },
+      {
+        "opaque_id": "O-30",
+        "row_id": "P3W2-006",
+        "gold_label": "MENTIONS",
+        "sentence": "Miliary TB is a pathological name describing millet seed-sized (1\u20132 mm) granulomas in various organs affected by tubercle bacilli.3 It results from massive lymphohematogenous dissemination from a Mycobacterium tuberculosis-laden focus.",
+        "chosen": [
+          2
+        ]
+      }
+    ],
+    "none_rows": [
+      {
+        "opaque_id": "O-09",
+        "row_id": "P3W1-031",
+        "gold_label": "MENTIONS",
+        "section": "Antivirals > Favipiravir (FPR)",
+        "section_bucket": "other",
+        "wave": "wave1",
+        "source_pmcid": "PMC7185795",
+        "body_sentences_total": "62",
+        "candidates_shown": "40",
+        "truncated": "true",
+        "no_source_body": "false",
+        "overlap": "true"
+      },
+      {
+        "opaque_id": "O-12",
+        "row_id": "P3W1-063",
+        "gold_label": "RELIES_ON",
+        "section": "Results",
+        "section_bucket": "results",
+        "wave": "wave1",
+        "source_pmcid": "PMC8138022",
+        "body_sentences_total": "152",
+        "candidates_shown": "40",
+        "truncated": "true",
+        "no_source_body": "false",
+        "overlap": "false"
+      },
+      {
+        "opaque_id": "O-15",
+        "row_id": "P3W1-064",
+        "gold_label": "MENTIONS",
+        "section": "Introduction",
+        "section_bucket": "introduction",
+        "wave": "wave1",
+        "source_pmcid": "PMC8138022",
+        "body_sentences_total": "152",
+        "candidates_shown": "40",
+        "truncated": "true",
+        "no_source_body": "false",
+        "overlap": "false"
+      },
+      {
+        "opaque_id": "O-19",
+        "row_id": "P3W1-002",
+        "gold_label": "MENTIONS",
+        "section": "Materials and Methods > TB patients, TM staining and cytokine detection",
+        "section_bucket": "methods",
+        "wave": "wave1",
+        "source_pmcid": "PMC2678250",
+        "body_sentences_total": "49",
+        "candidates_shown": "40",
+        "truncated": "true",
+        "no_source_body": "false",
+        "overlap": "true"
+      },
+      {
+        "opaque_id": "O-22",
+        "row_id": "P3W2-029",
+        "gold_label": "MENTIONS",
+        "section": "Results > Study characteristics",
+        "section_bucket": "results",
+        "wave": "wave2",
+        "source_pmcid": "PMC7185795",
+        "body_sentences_total": "62",
+        "candidates_shown": "40",
+        "truncated": "true",
+        "no_source_body": "false",
+        "overlap": "false"
+      },
+      {
+        "opaque_id": "O-29",
+        "row_id": "P3W1-071",
+        "gold_label": "MENTIONS",
+        "section": "3. Results",
+        "section_bucket": "results",
+        "wave": "wave1",
+        "source_pmcid": "PMC8326462",
+        "body_sentences_total": "99",
+        "candidates_shown": "40",
+        "truncated": "true",
+        "no_source_body": "false",
+        "overlap": "false"
+      }
+    ],
+    "untestable": [
+      {
+        "opaque_id": "O-25",
+        "row_id": "P3W2-023",
+        "gold_label": "RELIES_ON",
+        "section": "Results > Obstetrics outcomes",
+        "section_bucket": "results",
+        "wave": "wave2",
+        "source_pmcid": "PMC7133645",
+        "body_sentences_total": "0",
+        "candidates_shown": "0",
+        "truncated": "false",
+        "no_source_body": "true",
+        "overlap": "false"
+      },
+      {
+        "opaque_id": "O-27",
+        "row_id": "P3W2-018",
+        "gold_label": "RELIES_ON",
+        "section": "3. Maternal Outcomes: Are Pregnant Women, once Infected with COVID-19, at Risk for Developing More Severe Disease?",
+        "section_bucket": "other",
+        "wave": "wave2",
+        "source_pmcid": "PMC7133645",
+        "body_sentences_total": "0",
+        "candidates_shown": "0",
+        "truncated": "false",
+        "no_source_body": "true",
+        "overlap": "false"
+      }
+    ],
+    "labeler": [
+      "soham"
+    ]
+  },
+  "plan": {
+    "requests": 22,
+    "prompt_tokens": 13726,
+    "prompt_tokens_max": 836,
+    "completion_tokens_estimate": 2640,
+    "list_price_usd": "0.010718",
+    "billing": "free_tier (list price recorded, no charge)",
+    "token_count_is": "heuristic ceil(chars/4)",
+    "quota": {
+      "pacific_day": "2026-11-20",
+      "used_today": 0,
+      "daily_cap": 450,
+      "remaining_today": 450,
+      "recent_failures": [
+        {
+          "ts": "2026-11-20T06:13:31.282332+00:00",
+          "error_class": null,
+          "http_status": null
+        },
+        {
+          "ts": "2026-11-20T06:13:26.458552+00:00",
+          "error_class": null,
+          "http_status": null
+        },
+        {
+          "ts": "2026-11-20T06:13:21.052148+00:00",
+          "error_class": null,
+          "http_status": null
+        },
+        {
+          "ts": "2026-11-20T06:13:16.122274+00:00",
+          "error_class": null,
+          "http_status": null
+        },
+        {
+          "ts": "2026-11-20T06:13:11.139600+00:00",
+          "error_class": null,
+          "http_status": null
+        },
+        {
+          "ts": "2026-11-20T06:13:06.412078+00:00",
+          "error_class": null,
+          "http_status": null
+        }
+      ]
+    }
+  },
+  "run": {
+    "run_id": "dependency_llm_oracle-2026-11-20",
+    "calls_made": 22,
+    "stopped_reason": null,
+    "scored_this_run": [
+      "P3W2-068",
+      "P3W1-009",
+      "P3W2-042",
+      "P3W2-031",
+      "P3W2-066",
+      "P3W1-034",
+      "P3W1-069",
+      "P3W1-058",
+      "P3W1-025",
+      "P3W2-003",
+      "P3W1-014",
+      "P3W2-052",
+      "P3W1-070",
+      "P3W1-066",
+      "P3W1-026",
+      "P3W2-045",
+      "P3W2-047",
+      "P3W1-007",
+      "P3W2-008",
+      "P3W1-065",
+      "P3W1-033",
+      "P3W2-006"
+    ],
+    "retry_pass_rows": [],
+    "failed_rows": []
+  },
+  "comparison": {
+    "threshold": 30,
+    "positives_total": 11,
+    "positives_caught_before": 6,
+    "positives_caught_after": 6,
+    "negatives_total": 11,
+    "negatives_fired_before": 2,
+    "negatives_fired_after": 2,
+    "scored_before": 22,
+    "scored_after": 22,
+    "per_row": [
+      {
+        "row_id": "P3W2-068",
+        "gold_label": "MENTIONS",
+        "before": 33,
+        "after": 58,
+        "delta": 25,
+        "heuristic": 1.0
+      },
+      {
+        "row_id": "P3W1-009",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": 0.0
+      },
+      {
+        "row_id": "P3W2-042",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": 0.8
+      },
+      {
+        "row_id": "P3W2-031",
+        "gold_label": "MENTIONS",
+        "before": 50,
+        "after": 50,
+        "delta": 0,
+        "heuristic": -1.0
+      },
+      {
+        "row_id": "P3W2-066",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -1.2
+      },
+      {
+        "row_id": "P3W1-034",
+        "gold_label": "RELIES_ON",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -1.2
+      },
+      {
+        "row_id": "P3W1-069",
+        "gold_label": "RELIES_ON",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": 0.2
+      },
+      {
+        "row_id": "P3W1-058",
+        "gold_label": "RELIES_ON",
+        "before": 25,
+        "after": 33,
+        "delta": 8,
+        "heuristic": 0.2
+      },
+      {
+        "row_id": "P3W1-025",
+        "gold_label": "RELIES_ON",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": 0.2
+      },
+      {
+        "row_id": "P3W2-003",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -0.2
+      },
+      {
+        "row_id": "P3W1-014",
+        "gold_label": "RELIES_ON",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -0.2
+      },
+      {
+        "row_id": "P3W2-052",
+        "gold_label": "RELIES_ON",
+        "before": 33,
+        "after": 25,
+        "delta": -8,
+        "heuristic": 0.0
+      },
+      {
+        "row_id": "P3W1-070",
+        "gold_label": "RELIES_ON",
+        "before": 75,
+        "after": 75,
+        "delta": 0,
+        "heuristic": 0.0
+      },
+      {
+        "row_id": "P3W1-066",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": 0.0
+      },
+      {
+        "row_id": "P3W1-026",
+        "gold_label": "RELIES_ON",
+        "before": 33,
+        "after": 33,
+        "delta": 0,
+        "heuristic": 0.2
+      },
+      {
+        "row_id": "P3W2-045",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -0.2
+      },
+      {
+        "row_id": "P3W2-047",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -0.2
+      },
+      {
+        "row_id": "P3W1-007",
+        "gold_label": "RELIES_ON",
+        "before": 50,
+        "after": 92,
+        "delta": 42,
+        "heuristic": 1.0
+      },
+      {
+        "row_id": "P3W2-008",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": -0.2
+      },
+      {
+        "row_id": "P3W1-065",
+        "gold_label": "RELIES_ON",
+        "before": 50,
+        "after": 50,
+        "delta": 0,
+        "heuristic": 0.0
+      },
+      {
+        "row_id": "P3W1-033",
+        "gold_label": "RELIES_ON",
+        "before": 33,
+        "after": 33,
+        "delta": 0,
+        "heuristic": 0.8
+      },
+      {
+        "row_id": "P3W2-006",
+        "gold_label": "MENTIONS",
+        "before": 25,
+        "after": 25,
+        "delta": 0,
+        "heuristic": 0.8
+      }
+    ],
+    "heuristic_params": {
+      "section_scale": 0.5,
+      "reliance_weight": 1.0,
+      "mention_weight": 1.0,
+      "threshold": 0.0
+    },
+    "reading": "raw counts out of the positives present; 30 rows can show a direction and not an effect size"
+  },
+  "stage": "dependency_llm_oracle"
+}

@@ -130,6 +130,12 @@ DOC-01 verification: every PRD step maps to a TODO task ID (and vice versa); sup
 - P3-03: owner labeling (later phase).
 
 ## Session log (newest first)
+### 2026-11-20 — Buffy — oracle answered: the right source sentence does not help v3
+- **Ran the oracle** (owner's command, 22 requests, 6.4 s/request, 0 errors): positives caught at 30 went **6 of 11 → 6 of 11**, negatives fired **2 of 11 → 2 of 11**. **18 of 22 scores were identical.** Four moved (P3W1-007 50→92, P3W2-068 33→58, P3W1-058 25→33, P3W2-052 33→25) and the two threshold crossings **cancelled each other**, so the net counts are flat while a gain and a loss hide inside them — named in the report rather than netted away.
+- **Cost from the ledger:** 22 attempts, 0 errors, 0 cache hits, 15,368 prompt + 1,808 completion, **$0.009129** list price on the free tier (estimate $0.010718, so the projection held within 15%).
+- **P3-06 closes as a negative.** ADR-0027 Amendment A's rule applied literally: no movement means link quality is not the ceiling, so **the linker is not built** (Amendment B). ADR-0026 Amendment C stands; effort moves to P3-07.
+- **What it does not say:** nothing about links in general, and at n=11 positives a single crossing either way is the whole difference. One gold positive (`P3W1-063`) was answered `none` — the owner found no supporting sentence in the full body, which is evidence about the label.
+
 ### 2026-11-20 — Buffy — oracle labels in; two pre-spend bugs caught
 - **Owner labelled the 30-row oracle packet** (labeler `soham`): 30/30, **22 chose a sentence**, **8 said none**, every pick inside its own candidate list. The file came back as `chosen_candidate`/`decision_cue` with `0` for none.
 - **My first check said "0 answered" and was wrong** — it read the page's column names, not the file's. The labels were complete. Corrected in the same session rather than trusted.
