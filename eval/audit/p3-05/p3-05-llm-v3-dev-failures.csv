@@ -1,0 +1,4 @@
+row_id,error_class,attempts,last_ts,message
+P3W1-041,AllProvidersFailedError,1,2026-11-20T06:03:32+00:00,all LLM providers failed; chain=['gemini']; last_error=ReadError: ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2580)
+P3W1-042,AllProvidersFailedError,1,2026-11-20T06:03:53+00:00,all LLM providers failed; chain=['gemini']; last_error=ReadError: ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2580)
+P3W2-054,AllProvidersFailedError,1,2026-11-20T06:11:30+00:00,all LLM providers failed; chain=['gemini']; last_error=ReadError: ReadError: [SSL: SSLV3_ALERT_BAD_RECORD_MAC] sslv3 alert bad record mac (_ssl.c:2580)
