@@ -335,3 +335,70 @@ def test_the_two_labelers_export_different_filenames() -> None:
         encoding="utf-8"
     )
     assert "__DOWNLOAD__" in template
+
+
+def test_interpret_reads_the_owners_column_names() -> None:
+    """The packet came back as chosen_candidate/decision_cue, so 0 means none.
+
+    Zero was confirmed against the eight rows that carry it: two of them have no
+    candidates at all, so "sentence zero" cannot be what it means.
+    """
+    assert oracle.interpret({"opaque_id": "O-01", "chosen_candidate": "24"}) == (["24"], False)
+    assert oracle.interpret({"opaque_id": "O-09", "chosen_candidate": "0"}) == ([], True)
+    assert oracle.interpret({"opaque_id": "O-05", "chosen_candidate": "3,7"}) == (["3", "7"], False)
+    assert oracle.interpret({"opaque_id": "O-02", "selected": "3;7"}) == (["3", "7"], False)
+    assert oracle.interpret({"opaque_id": "O-03", "selected": "", "none": "true"}) == ([], True)
+
+
+def test_interpret_refuses_a_blank_that_is_not_a_none_answer() -> None:
+    with pytest.raises(oracle.OracleError, match="neither names a sentence nor says none"):
+        oracle.interpret(
+            {"opaque_id": "O-04", "chosen_candidate": "", "decision_cue": "the first result"}
+        )
+    with pytest.raises(oracle.OracleError, match="no selection column"):
+        oracle.interpret({"opaque_id": "O-05", "answer": "3"})
+
+
+def test_read_labels_accepts_the_owners_file_and_counts_both_answers(tmp_path: Path) -> None:
+    fields = [
+        "opaque_id",
+        "candidates_json",
+        "chosen_candidate",
+        "labeler",
+        "decision_cue",
+    ]
+    path = write_csv(
+        tmp_path / "labels.csv",
+        fields,
+        [
+            {"opaque_id": "O-01", "chosen_candidate": "24", "labeler": "s", "decision_cue": "a"},
+            {"opaque_id": "O-09", "chosen_candidate": "0", "labeler": "s", "decision_cue": "none"},
+            {"opaque_id": "O-25", "chosen_candidate": "0", "labeler": "s", "decision_cue": "none"},
+        ],
+    )
+    labels = oracle.read_labels(path)
+    assert len(labels) == 3
+    answered = [oracle.interpret(row) for row in labels]
+    assert answered[0] == (["24"], False)
+    assert answered[1] == ([], True)
+    assert oracle.label_columns(path) == fields
+
+
+def test_oracle_arm_skips_a_none_answer_instead_of_sending_an_empty_claim() -> None:
+    """Six rows answered 0. Counting only `none=true` put them in the treatment arm with
+    an empty claim block: 6 paid requests asking about nothing, and the answers would have
+    been compared as if they were the oracle."""
+    manifest = {
+        "O-01": {"opaque_id": "O-01", "row_id": "R1", "gold_label": "RELIES_ON", "body": "f"},
+        "O-02": {"opaque_id": "O-02", "row_id": "R2", "gold_label": "MENTIONS", "body": "f"},
+    }
+    blind = {key: {"candidates_json": json.dumps(["first", "second"])} for key in manifest}
+    labels = [
+        {"opaque_id": "O-01", "chosen_candidate": "2", "labeler": "s", "decision_cue": "a"},
+        {"opaque_id": "O-02", "chosen_candidate": "0", "labeler": "s", "decision_cue": "none: x"},
+    ]
+    for row in manifest.values():
+        row["no_source_body"] = "false"
+    arm = oracle.oracle_arm(manifest, blind, labels)
+    assert [item["row_id"] for item in arm["treatment"]] == ["R1"]
+    assert [row["row_id"] for row in arm["none_rows"]] == ["R2"]

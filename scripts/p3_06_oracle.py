@@ -64,6 +64,7 @@ ORACLE_DIR = ROOT / "eval" / "audit" / "p3-06-oracle"
 MANIFEST = ORACLE_DIR / "p3-06-oracle-manifest.csv"
 BLIND = ORACLE_DIR / "p3-06-oracle-blind.csv"
 LABELS = ORACLE_DIR / "p3-06-oracle-labelled.csv"
+V3_SCORES = ROOT / "eval" / "audit" / "p3-05" / "p3-05-llm-v3-dev.csv"
 CHECKPOINT = ORACLE_DIR / "p3-06-oracle-v3.csv"
 SUMMARY = ORACLE_DIR / "p3-06-oracle-result.json"
 REPORT = ROOT / "docs" / "reports" / "P3-06-oracle-result.md"
@@ -98,6 +99,42 @@ def load_packet() -> tuple[dict[str, dict[str, str]], dict[str, dict[str, str]]]
     return manifest, blind
 
 
+# The packet came back labelled in a form that writes `chosen_candidate` and
+# `decision_cue` rather than the page's `selected` and `note`. Both are the owner's
+# answers, so both are read; which columns a file uses is recorded, never guessed.
+SELECTION_COLUMNS = ("selected", "chosen_candidate")
+NONE_MARKERS = ("", "0", "none", "-")
+
+
+def interpret(row: dict[str, str]) -> tuple[list[str], bool]:
+    """Read one label row, whoever wrote it: (sentence numbers as text, said none).
+
+    ``0`` is the "none" answer, confirmed against the eight rows that carry it: two of
+    them have no candidates at all, so nothing else it could mean exists.
+    """
+    column = next((name for name in SELECTION_COLUMNS if name in row), None)
+    if column is None:
+        raise OracleError(
+            f"{row.get('opaque_id', '?')} has no selection column; expected one of "
+            f"{SELECTION_COLUMNS}"
+        )
+    raw = (row.get(column) or "").strip()
+    explicit_none = (row.get("none") or "").strip().lower() == "true"
+    if explicit_none and raw.lower() not in NONE_MARKERS:
+        raise OracleError(f"{row['opaque_id']} says none and also names sentences")
+    if raw.lower() in NONE_MARKERS:
+        if raw and raw.lower() != "none":
+            # "0" and "-" are unambiguous: the packet's numbering starts at 1.
+            return [], True
+        cue = (row.get("note") or row.get("decision_cue") or "").strip().lower()
+        if explicit_none or cue.startswith("none"):
+            return [], True
+        # An empty cell is not an answer. Only an explicit none, an explicit 0 or a cue
+        # that says none counts, so a half-finished export cannot pass as 30 decisions.
+        raise OracleError(f"{row['opaque_id']} neither names a sentence nor says none")
+    return [part for part in raw.replace(",", ";").split(";") if part.strip()], False
+
+
 def read_labels(path: Path = LABELS) -> list[dict[str, str]]:
     """The owner's export, validated strictly: nothing is imputed and nothing is dropped."""
     if not path.exists():
@@ -118,18 +155,23 @@ def read_labels(path: Path = LABELS) -> list[dict[str, str]]:
         seen.add(opaque)
         if not (row.get("labeler") or "").strip():
             raise OracleError(f"{opaque} has no labeler id; the export is anonymous")
-        none = (row.get("none") or "").strip().lower() == "true"
-        chosen = [part for part in (row.get("selected") or "").split(";") if part.strip()]
-        if not none and not chosen:
-            raise OracleError(f"{opaque} neither names a sentence nor says none")
-        if none and chosen:
+        numbers, said_none = interpret(row)
+        if said_none and numbers:
             raise OracleError(f"{opaque} says none and also names sentences")
+        if not numbers and not said_none:
+            raise OracleError(f"{opaque} neither names a sentence nor says none")
     return labels
+
+
+def label_columns(path: Path = LABELS) -> list[str]:
+    """The columns the label file actually uses, so a report can say where it came from."""
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        return next(csv.reader(handle), [])
 
 
 def parse_choice(row: dict[str, str], candidates: Sequence[str]) -> list[int]:
     """Turn '3;7' into zero-based indexes, refusing anything out of range."""
-    chosen = [part for part in (row.get("selected") or "").split(";") if part.strip()]
+    chosen, _ = interpret(row)
     indexes: list[int] = []
     for part in chosen:
         if not part.strip().isdigit():
@@ -169,10 +211,15 @@ def oracle_arm(
             untestable.append(meta)
             continue
         candidates = json.loads(blind[opaque]["candidates_json"])
-        if (label.get("none") or "").strip().lower() == "true":
+        _, said_none = interpret(label)
+        if said_none:
             none_rows.append(meta)
             continue
         indexes = parse_choice(label, candidates)
+        if not indexes:
+            raise OracleError(
+                f"{opaque} chose no sentence and did not say none; refusing to send an empty claim"
+            )
         treatment.append(
             {
                 "opaque_id": opaque,
@@ -503,10 +550,7 @@ def main(argv: list[str] | None = None) -> int:
         raise OracleError(
             f"only {remaining} requests left on the Pacific day; the oracle needs {len(swapped)}"
         )
-    before = {
-        row_id: int(record["score"])
-        for row_id, record in read_v2(ORACLE_DIR / "p3-05-llm-v3-dev.csv").items()
-    }
+    before = {row_id: int(record["score"]) for row_id, record in read_v2(V3_SCORES).items()}
     variant = replace(
         get_variant("v3"),
         name="oracle",
