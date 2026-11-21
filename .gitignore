@@ -44,3 +44,11 @@ node_modules/
 .DS_Store
 .idea/
 .vscode/
+Thumbs.db
+desktop.ini
+
+# scratch files from run logs and draft exports
+*.tmp
+*.bak
+*.orig
+tmp/

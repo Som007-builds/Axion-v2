@@ -1,5 +1,11 @@
 # Provenance — code and data carried over from Axion V1
 
+> **Name note.** This repository was developed under the working name Axion V2 and renamed
+> RetractionScope on 2026-11-21 (see `FORMERLY.md`). The V1 references below are about the
+> predecessor product, not this study. The importable package is still `src/axion` and the
+> environment variables are still `AXION_*`, kept deliberately so the frozen code and runtime
+> configuration are unchanged.
+
 V1 repository: https://github.com/Som007-builds/Axion (MIT) · V1 snapshot tag: `v1-final` (created and pushed 2026-11-09) · V1 commit: `b4b6a25338057bd05bc6b74bc75b26198fe546e8` (reference read 2026-11-09 from local `D:\AI-Projects\schimesh`)
 
 | V1 path | V1 commit | V2 path | What changed | Notes |
