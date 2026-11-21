@@ -34,7 +34,7 @@ from axion.config.settings import Settings
 logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
-_USER_AGENT = "AxionV2/0.1 (https://github.com/Som007-builds/Axion-v2)"
+_USER_AGENT = "RetractionScope/0.1 (https://github.com/Som007-builds/retractionscope)"
 
 _PMCID_PATTERN = re.compile(r"^PMC\d+$")
 _RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
