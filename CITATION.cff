@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this study's labels, corpus counts or results, cite the repository and tag retractionscope-v1-frozen."
+title: "RetractionScope — Claim-Level Dependency on Retracted Papers: a measured study"
+abstract: >-
+  A frozen, measured study of claim-level dependency on retracted papers: which citing
+  sentences actually rely on a retracted source, rather than merely citing it. Reports a
+  4,928-paper corpus around 792 retracted sources with 6,117 citation contexts, a
+  300-context human-labelled gold set (37 RELIES_ON), claim extraction audited at 96.5%
+  precision, a cost cascade at -55.6% cost with 56.7% retention, and a staged detector
+  that does not meet its pre-registered recall gate. The P3 gate is recorded as not passed.
+authors:
+  - family-names: Singh
+    given-names: Soham
+year: 2026
+version: "retractionscope-v1-frozen"
+license: MIT
+repository-code: "https://github.com/Som007-builds/RetractionScope"
+keywords:
+  - research integrity
+  - retractions
+  - claim extraction
+  - dependency detection
+  - llm evaluation
+  - europe pmc
+type: software

@@ -264,7 +264,7 @@ def test_user_agent_identifies_client_and_contact(tmp_path: Path) -> None:
     client.fetch_full_text("PMC1")
 
     agent = transport.headers[0]["User-Agent"]
-    assert agent.startswith("AxionV2/")
+    assert agent.startswith("RetractionScope/")
     assert "mailto:person@example.org" in agent
 
 

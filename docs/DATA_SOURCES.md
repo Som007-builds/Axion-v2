@@ -38,4 +38,4 @@ Crossref REST API is used for per-DOI lookups; the GitLab CSV snapshot is used f
 ## Open questions for the owner
 
 - Does Europe PMC require a specific rate-limit or bulk-access arrangement beyond polite throttling? The accessible REST page does not publish a number, and the terms page was blocked during verification.
-- May Axion release derived labels and citation contexts that quote short spans from OA articles, subject to each article's licence? This affects P5-02.
+- May RetractionScope release derived labels and citation contexts that quote short spans from OA articles, subject to each article's licence? This affects P5-02.

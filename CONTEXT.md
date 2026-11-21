@@ -1,4 +1,4 @@
-# CONTEXT.md — Axion V2 Project Bible
+# CONTEXT.md — RetractionScope Project Bible
 
 > **Audience:** any AI agent or human contributor, at any time.
 > **Authority:** this file outranks every other document except an explicit, dated owner instruction recorded in `docs/DECISIONS.md`.
@@ -9,7 +9,7 @@
 
 ## 1. One-line purpose
 
-Axion V2 is a **claim-level trust-propagation system for the scientific literature**: when a paper is retracted or flagged, it determines which claims in *other* papers genuinely depended on it, and it does so at a **measured, minimized cost**.
+RetractionScope is a **claim-level trust-propagation system for the scientific literature**: when a paper is retracted or flagged, it determines which claims in *other* papers genuinely depended on it, and it does so at a **measured, minimized cost**.
 
 ## 2. Why this project exists
 
@@ -157,7 +157,7 @@ Pipeline (layered, demand-driven):
 
 ### 7.2 Planned repository layout
 ```
-axion-v2/
+retractionscope/
 ├── AGENTS.md  CONTEXT.md  README.md
 ├── docs/                 # tracked documentation (this tree)
 ├── _private/             # UNTRACKED dev-assist files (gitignored)

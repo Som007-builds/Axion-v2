@@ -1,4 +1,4 @@
-# Axion V2 — Product Requirements Document (phase-wise)
+# RetractionScope — Product Requirements Document (phase-wise)
 
 **Status:** Draft v1 · **Owner:** project owner · **Last updated:** 2026-11-14
 Authority: subordinate to `CONTEXT.md`. Task-level tracking lives in each phase's `TODO.md`; this PRD defines *what and why*, the TODOs track *done or not*.

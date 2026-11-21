@@ -155,7 +155,7 @@ def test_crossref_url_encodes_mailto() -> None:
 def test_user_agent_identifies_the_tool_and_contact() -> None:
     agent = build_user_agent("person@example.org")
 
-    assert agent.startswith("AxionV2-Day0Check/")
+    assert agent.startswith("RetractionScope-Day0Check/")
     assert "mailto:person@example.org" in agent
 
 

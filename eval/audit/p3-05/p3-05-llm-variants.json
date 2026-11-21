@@ -1,0 +1,186 @@
+{
+  "variants_tried": 1,
+  "cap": 3,
+  "cap_note": "v2, then v3, then v3b only if v3 still answers at the extremes",
+  "variants": [
+    {
+      "variant": "v2",
+      "prompt_version": "p3-05-llm-v2",
+      "rows_scored": 151,
+      "metrics": {
+        "rows_scored": 151,
+        "heuristic": {
+          "precision": 0.2069,
+          "precision_ci": [
+            0.1225,
+            0.3277
+          ],
+          "recall": 0.8571,
+          "recall_ci": [
+            0.6006,
+            0.9599
+          ],
+          "false_alarm_rate": 0.4259,
+          "false_alarm_ci": [
+            0.3368,
+            0.5201
+          ]
+        },
+        "v1": {
+          "precision": 0.2,
+          "precision_ci": [
+            0.0567,
+            0.5098
+          ],
+          "recall": 0.1429,
+          "recall_ci": [
+            0.0401,
+            0.3994
+          ],
+          "false_alarm_rate": 0.0741,
+          "false_alarm_ci": [
+            0.038,
+            0.1394
+          ]
+        },
+        "points": {
+          "@20": {
+            "precision": 0.2121,
+            "precision_ci": [
+              0.1068,
+              0.3775
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2407,
+            "false_alarm_ci": [
+              0.1699,
+              0.3294
+            ]
+          },
+          "@30": {
+            "precision": 0.2188,
+            "precision_ci": [
+              0.1102,
+              0.3875
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2315,
+            "false_alarm_ci": [
+              0.162,
+              0.3194
+            ]
+          },
+          "@40": {
+            "precision": 0.2188,
+            "precision_ci": [
+              0.1102,
+              0.3875
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2315,
+            "false_alarm_ci": [
+              0.162,
+              0.3194
+            ]
+          },
+          "@50": {
+            "precision": 0.2188,
+            "precision_ci": [
+              0.1102,
+              0.3875
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2315,
+            "false_alarm_ci": [
+              0.162,
+              0.3194
+            ]
+          },
+          "@60": {
+            "precision": 0.2188,
+            "precision_ci": [
+              0.1102,
+              0.3875
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2315,
+            "false_alarm_ci": [
+              0.162,
+              0.3194
+            ]
+          },
+          "@70": {
+            "precision": 0.2188,
+            "precision_ci": [
+              0.1102,
+              0.3875
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2315,
+            "false_alarm_ci": [
+              0.162,
+              0.3194
+            ]
+          },
+          "@80": {
+            "precision": 0.2188,
+            "precision_ci": [
+              0.1102,
+              0.3875
+            ],
+            "recall": 0.5,
+            "recall_ci": [
+              0.268,
+              0.732
+            ],
+            "false_alarm_rate": 0.2315,
+            "false_alarm_ci": [
+              0.162,
+              0.3194
+            ]
+          }
+        },
+        "distribution": {
+          "bands": {
+            "0-20": 110,
+            "21-40": 1,
+            "41-60": 0,
+            "61-80": 0,
+            "81-100": 40
+          },
+          "interior_rows": 1,
+          "interior_share": 0.0066,
+          "distinct_scores": 10,
+          "interior_band_populated": true,
+          "graded": false,
+          "extreme_only": false
+        }
+      }
+    }
+  ],
+  "selection_effect": "1 prompt variants were measured on the same dev rows; any headline dev number is the best of 1, which is why the count is recorded next to it"
+}

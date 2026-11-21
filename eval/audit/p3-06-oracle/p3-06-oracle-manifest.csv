@@ -1,0 +1,31 @@
+opaque_id,row_id,gold_label,section,section_bucket,wave,source_pmcid,body_sentences_total,candidates_shown,truncated,no_source_body,overlap
+O-01,P3W2-068,MENTIONS,5. Vitamin D and COVID-19: Summary of the Evidence > 5.3. Clinical Trials,other,wave2,PMC8138022,152,40,true,false,false
+O-02,P3W1-009,MENTIONS,,unsectioned,wave1,PMC3884778,38,38,false,false,true
+O-03,P3W2-042,MENTIONS,4. Discussion,discussion,wave2,PMC7332909,32,32,false,false,false
+O-04,P3W2-031,MENTIONS,FDA-approved drugs as SARS-CoV-2 inhibitors,other,wave2,PMC7185795,62,40,true,false,true
+O-05,P3W2-066,MENTIONS,Introduction,introduction,wave2,PMC8012664,147,40,true,false,false
+O-06,P3W1-034,RELIES_ON,Discussion,discussion,wave1,PMC7185795,62,40,true,false,true
+O-07,P3W1-069,RELIES_ON,3. Results > 3.4. Randomized Clinical Trials,results,wave1,PMC8326462,99,40,true,false,false
+O-08,P3W1-058,RELIES_ON,Results > Need for ventilation > Antimalarial and mucolytic drugs,results,wave1,PMC7543820,64,40,true,false,false
+O-09,P3W1-031,MENTIONS,Antivirals > Favipiravir (FPR),other,wave1,PMC7185795,62,40,true,false,true
+O-10,P3W1-025,RELIES_ON,3. Results > 3.1. Targeted Enzyme Inhibitors > 3.1.1. RNA-Dependent RNA Polymerase Inhibitors > Favipiravir,results,wave1,PMC7185795,62,40,true,false,true
+O-11,P3W2-003,MENTIONS,1. Introduction,introduction,wave2,PMC3175175,47,40,true,false,false
+O-12,P3W1-063,RELIES_ON,Results,results,wave1,PMC8138022,152,40,true,false,false
+O-13,P3W1-014,RELIES_ON,3. Recommendations and Conclusions,discussion,wave1,PMC6057395,28,28,false,false,true
+O-14,P3W2-052,RELIES_ON,Vitamin D and COVID-19,other,wave2,PMC7518605,94,40,true,false,false
+O-15,P3W1-064,MENTIONS,Introduction,introduction,wave1,PMC8138022,152,40,true,false,false
+O-16,P3W1-070,RELIES_ON,Host-targeted inhibitors > Host protease inhibitors,other,wave1,PMC8326462,99,40,true,false,false
+O-17,P3W1-066,MENTIONS,LINKS BETWEEN CIRCADIAN CLOCK AND COVID‐19 > Circadian clock – an emerging therapeutic target to improve COVID‐19 outcomes > Manipulating the clock with lifestyle changes > Diet and COVID‐19,other,wave1,PMC8138022,152,40,true,false,false
+O-18,P3W1-026,RELIES_ON,Results > Treatments > Question 12: Should favipiravir be used to treat patients with COVID-19 to improve clinical outcomes? > Evidence summary,results,wave1,PMC7185795,62,40,true,false,false
+O-19,P3W1-002,MENTIONS,"Materials and Methods > TB patients, TM staining and cytokine detection",methods,wave1,PMC2678250,49,40,true,false,true
+O-20,P3W2-045,MENTIONS,Discussion,discussion,wave2,PMC7332909,32,32,false,false,true
+O-21,P3W2-047,MENTIONS,DISCUSSION,discussion,wave2,PMC7332909,32,32,false,false,false
+O-22,P3W2-029,MENTIONS,Results > Study characteristics,results,wave2,PMC7185795,62,40,true,false,false
+O-23,P3W1-007,RELIES_ON,,unsectioned,wave1,PMC3037383,99,40,true,false,false
+O-24,P3W2-008,MENTIONS,Discussion,discussion,wave2,PMC3898637,104,40,true,false,false
+O-25,P3W2-023,RELIES_ON,Results > Obstetrics outcomes,results,wave2,PMC7133645,0,0,false,true,false
+O-26,P3W1-065,RELIES_ON,3. The Impact of Dietary Supplements on Inflammatory Markers and in Response to SARS-CoV-2 > 3.1. Vitamins and Minerals,other,wave1,PMC8138022,152,40,true,false,true
+O-27,P3W2-018,RELIES_ON,"3. Maternal Outcomes: Are Pregnant Women, once Infected with COVID-19, at Risk for Developing More Severe Disease?",other,wave2,PMC7133645,0,0,false,true,false
+O-28,P3W1-033,RELIES_ON,Discussion,discussion,wave1,PMC7185795,62,40,true,false,true
+O-29,P3W1-071,MENTIONS,3. Results,results,wave1,PMC8326462,99,40,true,false,false
+O-30,P3W2-006,MENTIONS,INTRODUCTION,introduction,wave2,PMC3544391,85,40,true,false,false

@@ -1,6 +1,6 @@
 # AGENTS.md — read this first
 
-You are an AI coding agent working on **Axion V2**. Work is handed between agents, and any agent can be cut off at any moment by a usage limit. The repository itself is the memory.
+You are an AI coding agent working on **RetractionScope**. Work is handed between agents, and any agent can be cut off at any moment by a usage limit. The repository itself is the memory.
 
 ## Mandatory read order (every session)
 

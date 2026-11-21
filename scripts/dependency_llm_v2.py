@@ -24,7 +24,8 @@ import json
 import math
 import sqlite3
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -37,7 +38,11 @@ from axion.config.pricing import estimate_cost_details, load_pricing
 from axion.config.settings import DEFAULT_RATE_LIMITS_PATH, Settings
 from axion.eval.audit import wilson_interval
 from axion.llm.client import LLMClient, RetryPolicy
-from axion.llm.errors import DailyQuotaError
+from axion.llm.errors import (
+    ConfigurationError,
+    DailyQuotaError,
+    LLMError,
+)
 from axion.llm.gemini import GeminiAdapter
 from axion.llm.ledger import SQLiteLedger
 from axion.llm.models import LLMRequest
@@ -66,6 +71,7 @@ REPORT = ROOT / "docs" / "reports" / "P3-05-llm-v2-calibration.md"
 MODEL = "gemini-3.5-flash-lite"
 STAGE = "dependency_llm_v2"
 PROMPT_VERSION = "p3-05-llm-v2"
+VARIANTS_FILE = OUT / "p3-05-llm-variants.json"
 MAX_OUTPUT_TOKENS = 256
 COMPLETION_TOKENS_ESTIMATE = 80
 DEFAULT_BUDGET_USD = Decimal("0.50")
@@ -79,12 +85,120 @@ class LLMv2Error(Exception):
     """The v2 run cannot proceed."""
 
 
+class IncompleteCheckpoint(LLMv2Error):
+    """Metrics were asked for on a checkpoint that does not cover the dev frame.
+
+    Partial scores are not a smaller version of a full run: the missing rows are
+    rows where the provider failed, and they are not missing at random. Imputing
+    them or silently scoring the remainder would turn a transport failure into a
+    recall number, so this raises instead and the caller prints how to resume.
+    """
+
+
+def require_complete(
+    rows: Sequence[dict[str, str]],
+    scores: dict[str, dict[str, str]],
+    label: str = "rows",
+) -> None:
+    """Refuse to compute metrics unless every dev row has a score."""
+    missing = [row["row_id"] for row in rows if row["row_id"] not in scores]
+    if not missing:
+        return
+    raise IncompleteCheckpoint(
+        f"incomplete: {len(rows) - len(missing)} of {len(rows)} {label} scored, "
+        "run again to resume"
+    )
+
+
 class DependencyScore(BaseModel):
     """One row's answer: the counterfactual probability plus its evidence."""
 
     score: int = Field(ge=0, le=100)
     would_change: str = ""
     cue: str = ""
+
+
+class DependencyJudgement(BaseModel):
+    """v3: two separate ordinal judgements, each with its own evidence quote."""
+
+    result_level: int = Field(ge=0, le=3)
+    result_evidence: str = ""
+    method_level: int = Field(ge=0, le=3)
+    method_evidence: str = ""
+    cue: str = ""
+
+
+class DependencyChecklist(BaseModel):
+    """v3b: overlapping facts instead of a gradation, for when v3 stays binary."""
+
+    uses_result_number: bool = False
+    uses_method: bool = False
+    uses_definition_or_parameter: bool = False
+    rests_on_conclusion: bool = False
+    background_or_corroboration: bool = False
+    evidence_result: str = ""
+    evidence_method: str = ""
+    cue: str = ""
+
+
+RESULT_WEIGHT = 0.75
+METHOD_WEIGHT = 0.25
+LEVEL_MAX = 3
+CHECKLIST_WEIGHTS = {
+    "uses_result_number": 0.35,
+    "uses_method": 0.25,
+    "uses_definition_or_parameter": 0.2,
+    "rests_on_conclusion": 0.2,
+}
+CORROBORATION_CAP = 40
+GRADED_MIN_INTERIOR_SHARE = 0.05
+
+
+def combine_judgements(result_level: int, method_level: int) -> int:
+    """Map two 0-3 judgements onto 0-100, so thresholds have a range to sit in.
+
+    Sixteen level pairs collapse to thirteen distinct scores; the result judgement
+    dominates because the guideline makes B's use of A's *result* the dependency and
+    treats method-only use as narrower.
+    """
+    weighted = RESULT_WEIGHT * result_level + METHOD_WEIGHT * method_level
+    return int(round(100 * weighted / LEVEL_MAX))
+
+
+def combine_checklist(answer: DependencyChecklist) -> int:
+    """Score overlapping facts; corroboration caps the score instead of adding to it."""
+    score = sum(weight for field, weight in CHECKLIST_WEIGHTS.items() if getattr(answer, field))
+    points = int(round(100 * score))
+    if answer.background_or_corroboration:
+        points = min(points, CORROBORATION_CAP)
+    return points
+
+
+@dataclass(frozen=True)
+class Variant:
+    """One prompt variant, its answer schema, and how its answer becomes a score."""
+
+    name: str
+    prompt_version: str
+    answer_type: type[BaseModel]
+    prompt: Callable[[dict[str, str]], str]
+    to_score: Callable[[BaseModel], int]
+    checkpoint: Path
+
+
+def _v2_score(answer: BaseModel) -> int:
+    assert isinstance(answer, DependencyScore)
+    return answer.score
+
+
+def _v3_score(answer: BaseModel) -> int:
+    assert isinstance(answer, DependencyJudgement)
+    return combine_judgements(answer.result_level, answer.method_level)
+
+
+def _v3b_score(answer: BaseModel) -> int:
+    assert isinstance(answer, DependencyChecklist)
+    return combine_checklist(answer)
 
 
 def label_from_score(score: int, threshold: int) -> Literal["RELIES_ON", "MENTIONS"]:
@@ -215,13 +329,162 @@ def build_prompt_v2(row: dict[str, str]) -> str:
     )
 
 
+def build_prompt_v3(row: dict[str, str]) -> str:
+    """Split the counterfactual in two: did B use A's RESULT, did B use A's METHOD?
+
+    v2's answer was effectively binary - 111 rows <= 30, none between 31 and 69, 40
+    >= 70 - so a threshold had nothing to tune. Two narrow ordinal questions, each
+    with its own evidence quote, give the score interior values to land on.
+    """
+    body = [
+        "You are judging one citation and you must answer TWO separate questions.",
+        "Do not merge them into one impression.",
+        "",
+        f"SOURCE A (retracted or flagged): {row['source_title'][:200]}",
+        f"A's central claim: {claim_block(row)}",
+        "",
+        f'B CITES A IN THIS SENTENCE, section "{section_of(row)}":',
+        f'"{context_of(row)}"',
+        "",
+        "QUESTION 1 - RESULT. Does B's sentence use A's RESULT? A's result means A's",
+        "measured effect, number, parameter value, definition, or stated conclusion.",
+        "  0 = no: A's result plays no part in B's sentence.",
+        "  1 = A's result is mentioned but B's sentence stands without it (background,",
+        "      comparison, corroboration, a list of prior findings).",
+        "  2 = A's result is used: B takes a number, parameter, definition or finding from",
+        "      A and puts it to work, but B's main claim would survive a substitution.",
+        "  3 = B's sentence rests on A's result: remove it and B's number, model input,",
+        "      comparison base or conclusion changes.",
+        "",
+        "QUESTION 2 - METHOD. Does B's sentence use A's METHOD? A's method means the",
+        "protocol, assay, instrument, software, dataset or study design A describes.",
+        "  0 = no: B's sentence says nothing about A's method.",
+        "  1 = B names A's method only as a citation of what exists (a standard tool, a",
+        "      well-known protocol A happened to use).",
+        "  2 = B adopts A's method, or a variant of it, for B's own work.",
+        "  3 = B's sentence depends on A's method specifically - B ran it, reproduced it,",
+        "      or B's design is A's design.",
+        "",
+        "Answer each question independently: a sentence can score 0 on one and 3 on the",
+        "other. Corroboration ('our results agree with A') is 1 on question 1, not 3.",
+        "Citing A as retracted is 0 on both. Section never decides either answer.",
+        "For each question quote the words in B's sentence that carry the judgement, or",
+        "write 'none'.",
+        'Return JSON: {"result_level": <0-3>, "result_evidence": "<quote or none>", '
+        '"method_level": <0-3>, "method_evidence": "<quote or none>", '
+        '"cue": "<3-12 words naming the relation>"}',
+    ]
+    return chr(10).join(body)
+
+
+def build_prompt_v3b(row: dict[str, str]) -> str:
+    """v3b, only if v3 still answers at the extremes: ask for facts, not gradation.
+
+    Rather than asking the model to place a sentence on a scale, ask which of several
+    overlapping facts hold. The score is a weighted count, so it is graded even if the
+    model is only confident about yes and no.
+    """
+    body = [
+        "You are judging one citation. Answer each fact below separately with true or",
+        "false. More than one can be true. Answer false when the sentence does not show it.",
+        "",
+        f"SOURCE A (retracted or flagged): {row['source_title'][:200]}",
+        f"A's central claim: {claim_block(row)}",
+        "",
+        f'B CITES A IN THIS SENTENCE, section "{section_of(row)}":',
+        f'"{context_of(row)}"',
+        "",
+        "FACTS, each about B's sentence only:",
+        "- uses_result_number: B takes a number, effect size, parameter value or rate from A.",
+        "- uses_method: B adopts A's protocol, assay, instrument, software, dataset or design",
+        "  for B's own work.",
+        "- uses_definition_or_parameter: B uses a definition, threshold, parameter setting or",
+        "  model input taken from A.",
+        "- rests_on_conclusion: B's own claim depends on A's stated conclusion being true.",
+        "- background_or_corroboration: A appears only as background, credit, a topic pointer,",
+        "  a list item, a comparison, corroboration of B's own data, or as the retraction",
+        "  itself.",
+        "",
+        "Naming a standard tool or publicly known protocol that A also used is NOT",
+        "uses_method. Section never decides any fact.",
+        'Return JSON: {"uses_result_number": <bool>, "uses_method": <bool>, '
+        '"uses_definition_or_parameter": <bool>, "rests_on_conclusion": <bool>, '
+        '"background_or_corroboration": <bool>, "evidence_result": "<quote or none>", '
+        '"evidence_method": "<quote or none>", "cue": "<3-12 words>"}',
+    ]
+    return chr(10).join(body)
+
+
+def claim_block(row: dict[str, str]) -> str:
+    claim = (row["source_claim_text"] or row["source_abstract"] or "").strip()
+    return claim[:900] if claim else "not available for this source"
+
+
+def context_of(row: dict[str, str]) -> str:
+    return (row["context_text"] or "").strip()[:700]
+
+
+def section_of(row: dict[str, str]) -> str:
+    return (row["section"] or "unsectioned").strip()
+
+
 def prompt_tokens(prompt: str) -> int:
     return math.ceil(len(prompt) / 4)
 
 
-def estimate(rows: list[dict[str, str]], pricing_path: Path) -> dict[str, object]:
+def variant_registry() -> dict[str, Variant]:
+    """The variants this project is allowed to try, in the order they were tried.
+
+    The cap is deliberate: v2, then v3, then v3b only if v3 still answers at the
+    extremes. Three variants is the ceiling, and the report counts them so a reader
+    can see how many draws the dev number is the best of.
+    """
+    return {
+        "v2": Variant(
+            name="v2",
+            prompt_version="p3-05-llm-v2",
+            answer_type=DependencyScore,
+            prompt=build_prompt_v2,
+            to_score=_v2_score,
+            checkpoint=V2_DEV_PREDICTIONS,
+        ),
+        "v3": Variant(
+            name="v3",
+            prompt_version="p3-05-llm-v3",
+            answer_type=DependencyJudgement,
+            prompt=build_prompt_v3,
+            to_score=_v3_score,
+            checkpoint=OUT / "p3-05-llm-v3-dev.csv",
+        ),
+        "v3b": Variant(
+            name="v3b",
+            prompt_version="p3-05-llm-v3b",
+            answer_type=DependencyChecklist,
+            prompt=build_prompt_v3b,
+            to_score=_v3b_score,
+            checkpoint=OUT / "p3-05-llm-v3b-dev.csv",
+        ),
+    }
+
+
+def get_variant(name: str) -> Variant:
+    registry = variant_registry()
+    if name not in registry:
+        raise LLMv2Error(f"unknown variant {name!r}; known: {sorted(registry)}")
+    return registry[name]
+
+
+def variant_stage(variant: Variant) -> str:
+    """v2 keeps its already-ledgered stage name so the P3-08 reconciliation still holds."""
+    return STAGE if variant.name == "v2" else f"dependency_llm_{variant.name}"
+
+
+def estimate(
+    rows: list[dict[str, str]], pricing_path: Path, variant: Variant | None = None
+) -> dict[str, object]:
+    variant = variant or get_variant("v2")
     pricing = load_pricing(pricing_path)
-    prompts = [prompt_tokens(build_prompt_v2(row)) for row in rows]
+    prompts = [prompt_tokens(variant.prompt(row)) for row in rows]
     total_in = sum(prompts)
     total_out = COMPLETION_TOKENS_ESTIMATE * len(rows)
     cost = estimate_cost_details(
@@ -229,7 +492,8 @@ def estimate(rows: list[dict[str, str]], pricing_path: Path) -> dict[str, object
     )
     return {
         "model": MODEL,
-        "prompt_version": PROMPT_VERSION,
+        "variant": variant.name,
+        "prompt_version": variant.prompt_version,
         "rows": len(rows),
         "prompt_tokens_estimate": total_in,
         "completion_tokens_estimate": total_out,
@@ -264,6 +528,58 @@ def recent_failures(ledger_path: Path, limit: int = 8) -> list[dict[str, object]
     ]
 
 
+WINDOW_COOLDOWN_S = 300
+
+
+def provider_window(
+    ledger_path: Path,
+    *,
+    now: datetime | None = None,
+    cooldown_s: int = WINDOW_COOLDOWN_S,
+) -> dict[str, object]:
+    """Is the provider visibly broken *right now*? Age matters, absence of failure does not.
+
+    The first version of this guard refused whenever any of the last three attempts
+    had failed. That is wrong twice: a transport failure on one row is not a window,
+    and a stale failure blocks a resume forever. A guard that cannot tell an outage
+    from a bad minute is a guard that stops the work, so this one asks two questions -
+    did the most recent attempt fail, and did it fail recently.
+    """
+    recent = recent_failures(ledger_path, limit=5)
+    if not recent:
+        return {"blocked": False, "reason": "no attempts on record"}
+    moment = now or datetime.now(UTC)
+    newest = recent[0]
+    if not newest["error_class"] and not newest["http_status"]:
+        return {"blocked": False, "reason": "the most recent attempt succeeded"}
+    try:
+        failed_at = datetime.fromisoformat(str(newest["ts"]))
+    except ValueError:
+        return {"blocked": False, "reason": "unreadable ledger timestamp"}
+    age = (moment - failed_at).total_seconds()
+    within = [item for item in recent if item["error_class"]]
+    if age < cooldown_s:
+        return {
+            "blocked": True,
+            "reason": (
+                f"the most recent attempt failed {int(age)}s ago ({newest['error_class']}), "
+                f"inside the {cooldown_s}s cooldown; {len(within)} of the last {len(recent)} "
+                "attempts failed"
+            ),
+            "age_s": int(age),
+            "recent_failures": len(within),
+        }
+    return {
+        "blocked": False,
+        "reason": (
+            f"the most recent failure was {int(age / 60)} minutes ago, outside the "
+            f"{cooldown_s}s cooldown, so this is not an active window"
+        ),
+        "age_s": int(age),
+        "recent_failures": len(within),
+    }
+
+
 def read_v2(path: Path = V2_DEV_PREDICTIONS) -> dict[str, dict[str, str]]:
     if not path.exists():
         return {}
@@ -271,34 +587,195 @@ def read_v2(path: Path = V2_DEV_PREDICTIONS) -> dict[str, dict[str, str]]:
         return {row["row_id"]: row for row in csv.DictReader(handle)}
 
 
-def append_v2(path: Path, row_id: str, scored: DependencyScore) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fresh = not path.exists()
-    with path.open("a", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(
-            handle,
-            fieldnames=(
-                "row_id",
-                "score",
-                "would_change",
-                "cue",
-                "model",
-                "prompt_version",
-            ),
-            lineterminator="\n",
-        )
+CHECKPOINT_FIELDS = (
+    "row_id",
+    "score",
+    "result_level",
+    "result_evidence",
+    "method_level",
+    "method_evidence",
+    "would_change",
+    "cue",
+    "model",
+    "prompt_version",
+)
+
+
+def answer_fields(answer: BaseModel) -> dict[str, object]:
+    """Flatten whichever schema answered, so every checkpoint shares one header."""
+    raw = answer.model_dump()
+    return {field: raw[field] for field in CHECKPOINT_FIELDS if field in raw}
+
+
+def append_variant(
+    variant: Variant, row_id: str, answer: BaseModel, score: int, path: Path | None = None
+) -> None:
+    """Append one answer to that variant's checkpoint, so a run can be resumed."""
+    target = path or variant.checkpoint
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fresh = not target.exists()
+    with target.open("a", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CHECKPOINT_FIELDS, lineterminator=chr(10))
         if fresh:
             writer.writeheader()
-        writer.writerow(
-            {
-                "row_id": row_id,
-                "score": scored.score,
-                "would_change": scored.would_change,
-                "cue": scored.cue,
-                "model": MODEL,
-                "prompt_version": PROMPT_VERSION,
+        record: dict[str, object] = {"row_id": row_id, "score": score}
+        record.update(answer_fields(answer))
+        record["model"] = MODEL
+        record["prompt_version"] = variant.prompt_version
+        record["score"] = score
+        writer.writerow(record)
+
+
+def append_v2(path: Path, row_id: str, scored: DependencyScore) -> None:
+    append_variant(get_variant("v2"), row_id, scored, scored.score, path)
+
+
+FAILURE_FIELDS = ("row_id", "error_class", "attempts", "last_ts", "message")
+
+
+def failures_path_for(variant: Variant) -> Path:
+    return variant.checkpoint.with_name(variant.checkpoint.stem + "-failures.csv")
+
+
+def read_failures(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        return {row["row_id"]: row for row in csv.DictReader(handle)}
+
+
+def write_failures(path: Path, failures: dict[str, dict[str, object]]) -> None:
+    """Rewrite the failure list. Small, stable, and never contains a score."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FAILURE_FIELDS, lineterminator=chr(10))
+        writer.writeheader()
+        for row_id in sorted(failures):
+            writer.writerow(failures[row_id])
+
+
+def one_line(text: str, limit: int = 200) -> str:
+    flat = " ".join(text.split())
+    return flat[:limit]
+
+
+def coverage(
+    rows: Sequence[dict[str, str]], scores: dict[str, dict[str, str]]
+) -> dict[str, object]:
+    """How much of the frame actually has a score, and which rows do not."""
+    unscored = [row["row_id"] for row in rows if row["row_id"] not in scores]
+    return {
+        "frame_rows": len(rows),
+        "scored_rows": len(rows) - len(unscored),
+        "unscored_rows": unscored,
+        "caveat": (
+            "the unscored rows failed at the provider; they are not missing at random, so these "
+            "metrics describe the rows that answered, not the frame"
+        ),
+    }
+
+
+def build_request(row: dict[str, str], variant: Variant, run_id: str) -> LLMRequest:
+    """One request for one row: the variant owns the prompt *and* the answer schema.
+
+    These two must travel together. Pinning the schema to v2's shape while sending a
+    v3 prompt makes the provider answer in v2's fields, which then fails validation
+    after the call has already been paid for.
+    """
+    return LLMRequest(
+        prompt=variant.prompt(row),
+        stage=variant_stage(variant),
+        tier="small",
+        model=MODEL,
+        run_id=run_id,
+        paper_id=row["row_id"],
+        temperature=0.0,
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+        response_schema=variant.answer_type,
+    )
+
+
+def score_rows(
+    rows: Sequence[dict[str, str]],
+    *,
+    variant: Variant,
+    ask: Callable[[dict[str, str]], BaseModel],
+    done: dict[str, dict[str, str]],
+    failures: dict[str, dict[str, object]],
+    failures_path: Path,
+    checkpoint_path: Path,
+    max_calls: int,
+) -> dict[str, object]:
+    """Score every row, survive row-level provider failures, then retry the dead ones once.
+
+    Stop-and-crash was the wrong shape for this job. One row that the transport refuses
+    used to throw away the whole invocation, and after six failures on the same row the
+    checkpoint had not moved at all. Here a failed row is recorded and left **unscored**;
+    the run continues, and one retry pass at the end gives each failure a second chance.
+    Nothing is imputed, nothing is dropped quietly, and the failures file is the record.
+    """
+    index = {row["row_id"]: row for row in rows}
+    calls = 0
+    stopped: str | None = None
+    scored_now: list[str] = []
+
+    def attempt(row: dict[str, str]) -> bool:
+        """One call. Returns False only when the whole run has to stop."""
+        nonlocal calls, stopped
+        if calls >= max_calls:
+            stopped = "max_calls_reached"
+            return False
+        calls += 1
+        try:
+            answer = ask(row)
+        except DailyQuotaError:
+            stopped = "daily_quota_reached"
+            return False
+        except ConfigurationError:
+            raise
+        except LLMError as error:
+            previous = failures.get(row["row_id"], {})
+            failures[row["row_id"]] = {
+                "row_id": row["row_id"],
+                "error_class": type(error).__name__,
+                "attempts": int(previous.get("attempts", 0) or 0) + 1,
+                "last_ts": datetime.now(UTC).isoformat(timespec="seconds"),
+                "message": one_line(str(error)),
             }
-        )
+            write_failures(failures_path, failures)
+            return True
+        score = variant.to_score(answer)
+        append_variant(variant, row["row_id"], answer, score, checkpoint_path)
+        done[row["row_id"]] = {"score": str(score)}
+        scored_now.append(row["row_id"])
+        failures.pop(row["row_id"], None)
+        write_failures(failures_path, failures)
+        return True
+
+    for row in rows:
+        if row["row_id"] in done:
+            continue
+        if not attempt(row):
+            break
+
+    retried: list[str] = []
+    if stopped is None:
+        outstanding = [
+            row["row_id"] for row in rows if row["row_id"] not in done and row["row_id"] in failures
+        ]
+        for row_id in outstanding:
+            if row_id in done or stopped is not None:
+                continue
+            retried.append(row_id)
+            attempt(index[row_id])
+
+    return {
+        "calls_made": calls,
+        "stopped_reason": stopped,
+        "scored_this_run": scored_now,
+        "retry_pass_rows": retried,
+        "failed_rows": [row_id for row_id in failures if row_id not in done],
+    }
 
 
 def run_live(
@@ -308,8 +785,10 @@ def run_live(
     pricing_path: Path,
     max_calls: int,
     budget_usd: Decimal,
+    variant: Variant | None = None,
 ) -> dict[str, object]:
-    cost = estimate(rows, pricing_path)
+    variant = variant or get_variant("v2")
+    cost = estimate(rows, pricing_path, variant)
     list_price = Decimal(str(cost["list_price_usd"] or "0"))
     if list_price > budget_usd:
         raise LLMv2Error(
@@ -341,47 +820,42 @@ def run_live(
         ),
     )
 
-    done = read_v2()
-    run_id = f"p3-05-llm-v2-{today}"
-    calls = 0
-    stopped: str | None = None
-    for row in rows:
-        if row["row_id"] in done:
-            continue
-        if calls >= max_calls:
-            stopped = "max_calls_reached"
-            break
-        calls += 1
-        request = LLMRequest(
-            prompt=build_prompt_v2(row),
-            stage=STAGE,
-            tier="small",
-            model=MODEL,
-            run_id=run_id,
-            paper_id=row["row_id"],
-            temperature=0.0,
-            max_output_tokens=MAX_OUTPUT_TOKENS,
-            response_schema=DependencyScore,
+    done = read_v2(variant.checkpoint)
+    run_id = f"p3-05-llm-{variant.name}-{today}"
+    failures_file = failures_path_for(variant)
+    failures: dict[str, dict[str, object]] = dict(read_failures(failures_file))
+
+    def ask(row: dict[str, str]) -> BaseModel:
+        request = build_request(row, variant, run_id)
+        result = client.complete(
+            request, response_model=variant.answer_type, attempt_gate=pacer.reserve
         )
-        try:
-            result = client.complete(
-                request, response_model=DependencyScore, attempt_gate=pacer.reserve
-            )
-        except DailyQuotaError:
-            stopped = "daily_quota_reached"
-            break
-        parsed = DependencyScore.model_validate_json(result.text)
-        append_v2(V2_DEV_PREDICTIONS, row["row_id"], parsed)
-        done[row["row_id"]] = {"score": str(parsed.score)}
+        return variant.answer_type.model_validate_json(result.text)
+
+    run = score_rows(
+        rows,
+        variant=variant,
+        ask=ask,
+        done=done,
+        failures=failures,
+        failures_path=failures_file,
+        checkpoint_path=variant.checkpoint,
+        max_calls=max_calls,
+    )
 
     ledger = SQLiteLedger(ledger_path)
     return {
         "estimate": cost,
+        "variant": variant.name,
         "run_id": run_id,
         "tokens_today_before": used_today,
         "daily_cap": rate.daily_cap,
-        "calls_made": calls,
-        "stopped_reason": stopped,
+        "calls_made": run["calls_made"],
+        "stopped_reason": run["stopped_reason"],
+        "scored_this_run": run["scored_this_run"],
+        "retry_pass_rows": run["retry_pass_rows"],
+        "failed_rows": run["failed_rows"],
+        "failures_file": str(failures_file),
         "run_list_price_usd": str(ledger.run_usd(run_id)),
         "run_real_usd": str(ledger.run_real_usd(run_id)),
         "predicted_rows": len(done),
@@ -398,6 +872,7 @@ def dev_metrics(
     """v1 vs v2 vs the heuristic on dev, with intervals, frames kept separate."""
     from scripts.dependency_baselines import binary_metrics, frame_rows, tune_heuristic
 
+    require_complete(rows, v2)
     positive_scores = {row_id: float(item["score"]) for row_id, item in v2.items()}
     heuristic = tune_heuristic(rows)["params"]
     assert isinstance(heuristic, dict)
@@ -435,6 +910,125 @@ def dev_metrics(
             "band_ge_70": sum(1 for score in scores if score >= 70),
         },
     }
+
+
+def score_bands(scores: Sequence[float]) -> dict[str, object]:
+    """Distribution in 20-point bands, and whether anything lands in the middle.
+
+    The question the owner asked is narrow: after v2 answered 111 rows <= 30 and 40
+    rows >= 70 with nothing between, does a variant actually use the interior?
+    """
+    bands = {
+        "0-20": sum(1 for score in scores if score <= 20),
+        "21-40": sum(1 for score in scores if 20 < score <= 40),
+        "41-60": sum(1 for score in scores if 40 < score <= 60),
+        "61-80": sum(1 for score in scores if 60 < score <= 80),
+        "81-100": sum(1 for score in scores if score > 80),
+    }
+    interior = sum(1 for score in scores if 20 < score <= 80)
+    distinct = len({int(score) for score in scores})
+    share = round(interior / len(scores), 4) if scores else 0.0
+    return {
+        "bands": bands,
+        "interior_rows": interior,
+        "interior_share": share,
+        "distinct_scores": distinct,
+        # One stray row in the interior is not a graded score: it is a decision with
+        # rounding noise. A threshold can only be tuned if a real share of rows land
+        # between the extremes, so the bar is both a count and a minimum share.
+        "interior_band_populated": interior > 0,
+        "graded": share >= GRADED_MIN_INTERIOR_SHARE and distinct > 3,
+        "extreme_only": interior == 0,
+    }
+
+
+THRESHOLD_GRID = (20, 30, 40, 50, 60, 70, 80)
+
+
+def variant_metrics(
+    rows: Sequence[dict[str, str]],
+    scores: dict[str, dict[str, str]],
+    v1: dict[str, dict[str, str]],
+    *,
+    allow_incomplete: bool = False,
+) -> dict[str, object]:
+    """Dev recall and FAR with intervals for one variant, plus the heuristic line.
+
+    ``allow_incomplete`` is the only way to get a number out of a partial checkpoint.
+    It exists because the owner asked to be able to look; it never changes the default,
+    it carries both denominators, and the rows it leaves out are named.
+    """
+    from scripts.dependency_baselines import binary_metrics, frame_rows, tune_heuristic
+
+    if not allow_incomplete:
+        require_complete(rows, scores, "dev rows")
+    cover = coverage(rows, scores)
+    scored_rows = [row for row in rows if row["row_id"] in scores]
+    # The heuristic is tuned on the WHOLE dev frame and then applied to the scored rows.
+    # Tuning it on the subset would let the baseline move with the missing rows, which
+    # would make the comparison depend on the provider's mood instead of on the detector.
+    heuristic = tune_heuristic(list(rows))["params"]
+    assert isinstance(heuristic, dict)
+    text_rows = frame_rows(scored_rows, "text_bearing")
+    values = {row_id: float(item["score"]) for row_id, item in scores.items()}
+
+    def block(predictions: dict[str, int]) -> dict[str, object]:
+        return binary_metrics(predictions, text_rows)["unweighted"]  # type: ignore[return-value]
+
+    heuristic_pred = {
+        row["row_id"]: int(heuristic_score(row, heuristic) >= heuristic["threshold"])
+        for row in scored_rows
+    }
+    points = {
+        f"@{threshold}": block(
+            {row_id: int(score >= threshold) for row_id, score in values.items()}
+        )
+        for threshold in THRESHOLD_GRID
+    }
+    v1_pred = {
+        row_id: int(item["label"] == POSITIVE) for row_id, item in v1.items() if row_id in values
+    }
+    return {
+        "rows_scored": len(values),
+        "coverage": cover,
+        "heuristic_params": heuristic,
+        "heuristic": block(heuristic_pred),
+        "v1": block(v1_pred),
+        "points": points,
+        "distribution": score_bands(list(values.values())),
+    }
+
+
+def read_variant_log() -> dict[str, object]:
+    if not VARIANTS_FILE.exists():
+        return {"variants_tried": 0, "variants": []}
+    return json.loads(VARIANTS_FILE.read_text(encoding="utf-8"))
+
+
+def record_variant(name: str, entry: dict[str, object]) -> dict[str, object]:
+    """Log every variant measured on dev, so the report can count them.
+
+    Re-running a variant replaces its entry instead of adding a second one: the log
+    is a record of which variants exist, not of how many times they were run.
+    """
+    log = read_variant_log()
+    entries = [item for item in log["variants"] if item["variant"] != name]  # type: ignore[index]
+    entries.append(entry)
+    entries.sort(key=lambda item: item["variant"])
+    log = {
+        "variants_tried": len(entries),
+        "cap": 3,
+        "cap_note": "v2, then v3, then v3b only if v3 still answers at the extremes",
+        "variants": entries,
+        "selection_effect": (
+            f"{len(entries)} prompt variants were measured on the same dev rows; any headline "
+            f"dev number is the best of {len(entries)}, which is why the count is recorded "
+            "next to it"
+        ),
+    }
+    VARIANTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    VARIANTS_FILE.write_text(json.dumps(log, indent=2) + chr(10), encoding="utf-8", newline=chr(10))
+    return log
 
 
 def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> None:
@@ -520,32 +1114,53 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
     llm = summary.get("run")
     checkpoint_rows = int(summary.get("checkpoint_rows") or 0)
     if not llm and not checkpoint_rows:
+        name = str(summary.get("variant") or "v2")
         lines += [
-            "## Status: no v2 call has been made",
+            f"## Status: no `{name}` score exists yet",
             "",
             "The diagnosis and the cost estimate above are complete and reproducible from",
-            "committed files. The live dev run is **pending approval**: the tool policy of this",
-            "environment refused the live-LLM command, so no v2 score exists yet and no stage-2",
-            "number can be reported. The command that would produce them, on dev only, is:",
+            "committed files. The live dev run for this variant has **not produced a scored row**:",
+            "the environment refused further live calls after the first two attempts, so no",
+            f"`{name}` recall or false-alarm number is reported here and none is claimed. The",
+            "command that would produce them, on dev only, is:",
             "",
             "```",
-            "PYTHONPATH=. python scripts/dependency_llm_v2.py --llm-mode live --max-calls 151",
+            f"PYTHONPATH=. python scripts/dependency_llm_v2.py --llm-mode live --variant {name} "
+            "--max-calls 151",
             "```",
             "",
-            "It writes `eval/audit/p3-05/p3-05-llm-v2-dev.csv` incrementally, so it can be stopped",
+            f"It writes `{registry_checkpoint(name).name}` incrementally, so it can be stopped",
             "and resumed, and it refuses to start if the estimate exceeds the budget, if the daily",
             "cap is reached, or if the last ledger attempts show provider errors.",
             "",
         ]
-    if not llm and checkpoint_rows:
+    incomplete_note = summary.get("incomplete")
+    waste = summary.get("spent_without_checkpoint")
+    if isinstance(waste, dict):
         lines += [
-            "## Status: dev scores exist, produced outside this invocation",
+            "## Calls paid for that produced no scored row",
             "",
-            f"`eval/audit/p3-05/p3-05-llm-v2-dev.csv` holds **{checkpoint_rows}** scored rows, so",
-            "the v2 numbers above are measured. The live run was executed with the owner's",
-            "authorisation (151 calls, $0.052 list price estimate, $0 real spend on the free",
-            "tier); the ledger reconciliation against `llm_calls` is in",
-            "`docs/reports/P3-08-cost-scaffold.md`.",
+            f"- Stage `{waste['stage']}`: **{waste['attempts']} attempts** "
+            f"({waste['succeeded']} answered by the provider), ledger list price "
+            f"**${waste['usd']}**, checkpoint empty.",
+            "- Cause was ours, not the provider's: first the request pinned v2's answer schema "
+            "while the v3 prompt asked for different fields; then the request was right but the "
+            "client was still told to parse v2's model. Both failures happened *after* the call "
+            "was paid for. Fixed by making the variant own the prompt, the request schema and the "
+            "parse model, with a test asserting they travel together.",
+            "- Those rows are re-asked by the resumed run, so the same tokens are spent twice. "
+            "The duplicate is visible in the ledger, not netted out.",
+            "",
+        ]
+    if not llm and not isinstance(incomplete_note, str) and checkpoint_rows:
+        name = str(summary.get("variant") or "v2")
+        lines += [
+            f"## Status: `{name}` dev scores exist, produced outside this invocation",
+            "",
+            f"`{registry_checkpoint(name).name}` holds **{checkpoint_rows}** scored rows, so the",
+            "numbers above are measured. The run was executed with the owner's authorisation",
+            "($0 real spend on the free tier); the ledger reconciliation against `llm_calls` is",
+            "in `docs/reports/P3-08-cost-scaffold.md`.",
             "",
         ]
     if llm:
@@ -565,6 +1180,169 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
             f"**{llm['run_list_price_usd']} USD**, real spend **{llm['run_real_usd']} USD**.",
             "",
         ]
+    flagged = summary.get("incomplete_metrics")
+    if isinstance(flagged, dict):
+        cover = flagged["coverage"]
+        assert isinstance(cover, dict)
+        points = summary["variant_metrics"]["points"]
+        assert isinstance(points, dict)
+        lines += [
+            "## FLAGGED: metrics on a partial checkpoint",
+            "",
+            f"**{cover['scored_rows']} of {cover['frame_rows']} dev rows scored.** "
+            f"Unscored: {', '.join(cover['unscored_rows']) or 'none'}.",
+            "",
+            f"{cover['caveat']}. Every number below carries both denominators - "
+            f"**{cover['frame_rows']} frame rows, {cover['scored_rows']} scored** - and the "
+            "provider, not the labelling, decided which rows are missing. These are not the "
+            f"variant's dev numbers and must not be quoted as such.",
+            "",
+            f"### `{flagged['variant']}` on the scored rows",
+            "",
+            "| Threshold | Precision | Recall [95% CI] | FAR [95% CI] | Scored / frame |",
+            "| --: | --: | :-- | :-- | :-- |",
+        ]
+        for threshold, block in points.items():
+            assert isinstance(block, dict)
+            lines.append(
+                f"| {threshold} | {fmt(block['precision'])} | {fmt(block['recall'])} "
+                f"{fmt_ci(block['recall_ci'])} | {fmt(block['false_alarm_rate'])} "
+                f"{fmt_ci(block['false_alarm_ci'])} | "
+                f"{cover['scored_rows']} / {cover['frame_rows']} |"
+            )
+        distribution = summary["variant_metrics"]["distribution"]
+        assert isinstance(distribution, dict)
+        bands = distribution["bands"]
+        assert isinstance(bands, dict)
+        lines += [
+            "",
+            f"Score bands on the scored rows: 0-20 **{bands['0-20']}**, 21-40 "
+            f"**{bands['21-40']}**, 41-60 {bands['41-60']}, 61-80 {bands['61-80']}, "
+            f"81-100 {bands['81-100']}; interior share **{fmt(distribution['interior_share'])}**, "
+            f"{distribution['distinct_scores']} distinct scores, graded "
+            f"**{'yes' if distribution['graded'] else 'no'}**.",
+            "",
+            "Every recall and false-alarm figure above is computed on "
+            f"{cover['scored_rows']} of {cover['frame_rows']} rows.",
+            "",
+        ]
+    log = summary.get("variants")
+    if isinstance(log, dict):
+        entries = log.get("variants") or []
+        lines += [
+            "## Prompt variants tried (dev only)",
+            "",
+            f"**Variants measured on dev: {log.get('variants_tried', 0)} of a cap of "
+            f"{log.get('cap', 3)}.** {log.get('cap_note', '')}.",
+            "",
+        ]
+        if entries:
+            lines += [
+                "| Variant | Prompt | Rows | Recall [95% CI] | FAR [95% CI] | Interior rows | "
+                "Distinct scores | Scored/frame |",
+                "| :-- | :-- | --: | :-- | :-- | --: | --: | :-- |",
+            ]
+            for entry in entries:
+                metrics = entry["metrics"]
+                best = best_point(metrics["points"])
+                recall_ci = best["recall_ci"] or [0.0, 0.0]
+                far_ci = best["false_alarm_ci"] or [0.0, 0.0]
+                distribution = metrics["distribution"]
+                scored = entry["metrics"].get("coverage", {}).get("scored_rows")
+                frame = entry["metrics"].get("coverage", {}).get("frame_rows")
+                denominator = f" ({scored}/{frame})" if scored and frame and scored != frame else ""
+                lines.append(
+                    f"| {entry['variant']} | `{entry['prompt_version']}` | "
+                    f"{entry['rows_scored']} | {fmt(best['recall'])} "
+                    f"[{recall_ci[0]:.1%}, {recall_ci[1]:.1%}] | "
+                    f"{fmt(best['false_alarm_rate'])} "
+                    f"[{far_ci[0]:.1%}, {far_ci[1]:.1%}] | "
+                    f"{distribution['interior_rows']} | {distribution['distinct_scores']} |"
+                    f"{denominator} |"
+                )
+            lines += [
+                "",
+                f"Recall and FAR above are each variant's **best-recall dev operating point** on "
+                f"the text-bearing frame; the chosen threshold is in "
+                f"`{VARIANTS_FILE.name}`.",
+                "",
+                "### Score distributions - is the interior populated?",
+                "",
+                "| Variant | 0-20 | 21-40 | 41-60 | 61-80 | 81-100 | Interior share | Graded? |",
+                "| :-- | --: | --: | --: | --: | --: | --: | :-- |",
+            ]
+            for entry in entries:
+                distribution = entry["metrics"]["distribution"]
+                bands = distribution["bands"]
+                lines.append(
+                    f"| {entry['variant']} | {bands['0-20']} | {bands['21-40']} | "
+                    f"{bands['41-60']} | {bands['61-80']} | {bands['81-100']} | "
+                    f"{fmt(distribution['interior_share'])} | "
+                    f"{'yes' if distribution['graded'] else 'no'} |"
+                )
+            lines += [
+                "",
+                "A band is populated when a variant's score lands between the prompt's own "
+                "extremes; `extreme_only` variants answer like a decision and give a threshold "
+                "nothing to tune.",
+                "",
+            ]
+        else:
+            lines += [
+                "No variant has been measured yet: the cap allows v2, v3 and v3b, and this "
+                "report currently records zero draws, so no dev recall number here is a best-of.",
+                "",
+            ]
+        lines += [
+            "### Selection effect, stated up front",
+            "",
+            f"- {log.get('variants_tried', 0)} variant(s) measured on the *same* "
+            f"{diagnosis['rows']} dev rows. If a later section quotes the best variant, "
+            "that number is a maximum over the variants tried, not a pre-registered estimate.",
+            "- The heuristic baseline is **not** re-tuned per variant; it keeps its single "
+            "dev-tuned operating point, so the comparison is variant-vs-fixed-baseline.",
+            "",
+        ]
+    if isinstance(incomplete_note, str):
+        activity = summary.get("ledger_activity")
+        lines += [
+            "## Status: checkpoint is incomplete, so no metric is reported",
+            "",
+            f"**{incomplete_note}.**",
+            "",
+            "Partial scores are not a smaller version of a full run: the missing rows are the "
+            "ones where the provider failed, and a transport failure is not missing at random. "
+            "This report therefore shows **no recall and no false-alarm rate** for this variant, "
+            "and nothing was imputed or dropped to produce one.",
+            "",
+        ]
+        if isinstance(activity, dict):
+            lines += [
+                "### Ledger reconciliation for this stage",
+                "",
+                f"- Attempts **{activity['attempts']}** = **{activity['succeeded']} succeeded** + "
+                f"**{activity['errors']} failed**; cache hits **{activity['cache_hits']}**.",
+                f"- Tokens: **{activity['prompt_tokens']:,} prompt**, "
+                f"{activity['completion_tokens']:,} completion.",
+                f"- Ledger list price **${activity['list_price_usd']}** "
+                f"(real spend $0 on the free tier); first attempt {activity['first_attempt']}, "
+                f"last {activity['last_attempt']}.",
+                "",
+                "| Attempt | Row | Error class | Message |",
+                "| :-- | :-- | :-- | :-- |",
+            ]
+            for failure in activity["failures"]:
+                message = str(failure["error"]).replace("|", "/")[:120]
+                lines.append(
+                    f"| {failure['ts']} | {failure['row_id']} | "
+                    f"`{failure['error_class']}` | {message} |"
+                )
+            lines += [
+                "",
+                "A failed attempt with no tokens is a transport failure: the request never "
+                "reached a billable response, so it costs quota but no money.",
+                "",
+            ]
     lines += [
         "## Scope",
         "",
@@ -576,6 +1354,96 @@ def write_report(diagnosis: dict[str, object], summary: dict[str, object]) -> No
     ]
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+
+
+def registry_checkpoint(name: str) -> Path:
+    """The checkpoint path a variant writes, without needing a live Settings object."""
+    return variant_registry()[name].checkpoint
+
+
+def ledger_activity(stage: str, ledger_path: Path) -> dict[str, object] | None:
+    """Every attempt this stage has ever made, with the failures listed separately.
+
+    Totals alone hide the shape of a partial run: how many attempts it took to get
+    the rows that exist, which rows never produced a score, and whether the missing
+    rows failed or were never reached.
+    """
+    if not ledger_path.exists():
+        return None
+    with sqlite3.connect(ledger_path) as connection:
+        totals = connection.execute(
+            """
+            SELECT count(*),
+                   sum(case when error is null then 1 else 0 end),
+                   sum(case when error is not null then 1 else 0 end),
+                   sum(cache_hit),
+                   sum(coalesce(prompt_tokens, 0)),
+                   sum(coalesce(completion_tokens, 0)),
+                   sum(coalesce(usd, 0)),
+                   min(ts),
+                   max(ts)
+            FROM llm_calls WHERE stage = ?
+            """,
+            (stage,),
+        ).fetchone()
+        failures = [
+            {"ts": ts, "row_id": row_id, "error_class": error_class, "error": (error or "")[:160]}
+            for ts, row_id, error_class, error in connection.execute(
+                "SELECT ts, paper_id, error_class, error FROM llm_calls "
+                "WHERE stage = ? AND error IS NOT NULL ORDER BY id",
+                (stage,),
+            )
+        ]
+    if not totals or not totals[0]:
+        return None
+    attempts, ok, errors, cached, prompt_tokens, completion_tokens, usd, first, last = totals
+    return {
+        "stage": stage,
+        "attempts": int(attempts),
+        "succeeded": int(ok or 0),
+        "errors": int(errors or 0),
+        "cache_hits": int(cached or 0),
+        "prompt_tokens": int(prompt_tokens or 0),
+        "completion_tokens": int(completion_tokens or 0),
+        "list_price_usd": str(usd),
+        "first_attempt": first,
+        "last_attempt": last,
+        "failures": failures,
+    }
+
+
+def spent_without_checkpoint(stage: str, ledger_path: Path) -> dict[str, object] | None:
+    """Ledger attempts for a stage that produced no scored rows, so waste is recorded.
+
+    A run can pay for calls and still write nothing - a schema mismatch, a crash
+    between the call and the checkpoint write. Those attempts belong in the report
+    next to the estimate that did not predict them.
+    """
+    if not ledger_path.exists():
+        return None
+    with sqlite3.connect(ledger_path) as connection:
+        row = connection.execute(
+            "SELECT count(*), sum(case when error is null then 1 else 0 end), sum(usd) "
+            "FROM llm_calls WHERE stage = ?",
+            (stage,),
+        ).fetchone()
+    if not row or not row[0]:
+        return None
+    return {
+        "stage": stage,
+        "attempts": int(row[0]),
+        "succeeded": int(row[1] or 0),
+        "usd": str(row[2]),
+    }
+
+
+def best_point(points: dict[str, dict[str, object]]) -> dict[str, object]:
+    """Highest-recall operating point on dev; ties break to the lower FAR."""
+    best = max(
+        points.values(),
+        key=lambda block: (float(block["recall"] or 0), -float(block["false_alarm_rate"] or 0)),
+    )
+    return best
 
 
 def fmt(value: object) -> str:
@@ -595,6 +1463,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--llm-mode", choices=("off", "dry-run", "live"), default="off")
     parser.add_argument("--split", default="dev", choices=("dev", "test"))
     parser.add_argument("--allow-test", action="store_true")
+    parser.add_argument("--variant", default="v2", choices=("v2", "v3", "v3b"))
+    parser.add_argument("--estimate-variants", action="store_true")
+    parser.add_argument(
+        "--allow-incomplete-metrics",
+        action="store_true",
+        help="print metrics on a partial checkpoint, labelled with both denominators",
+    )
     parser.add_argument("--max-calls", type=int, default=200)
     parser.add_argument("--llm-budget-usd", default=str(DEFAULT_BUDGET_USD))
     args = parser.parse_args(argv)
@@ -604,42 +1479,96 @@ def main(argv: list[str] | None = None) -> int:
     summary: dict[str, object] = {}
     v1 = read_v1()
     diagnosis = diagnose(dev, v1)
-    checkpoint = read_v2()
-    summary["checkpoint_rows"] = len(checkpoint)
-    if checkpoint:
-        summary["dev_metrics"] = dev_metrics(dev, checkpoint, v1)
+    variant = get_variant(args.variant)
+    summary["variant"] = variant.name
+    summary["variants"] = read_variant_log()
 
     if args.split == "test" and not args.allow_test:
         raise LLMv2Error("test rows are refused here; Block 6 evaluates test once under a freeze")
 
+    checkpoint = read_v2(variant.checkpoint)
+    summary["checkpoint_rows"] = len(checkpoint)
+    if not checkpoint:
+        waste = spent_without_checkpoint(variant_stage(variant), Settings().resolved_ledger_path)
+        if waste:
+            summary["spent_without_checkpoint"] = waste
+
+    if args.estimate_variants:
+        settings = Settings()
+        statements = {
+            name: estimate(dev, settings.resolved_pricing_path, item)
+            for name, item in variant_registry().items()
+        }
+        print(json.dumps({"dev_estimate_by_variant": statements}, indent=2))
+
     if args.llm_mode != "off":
         settings = Settings()
         target = dev if args.split == "dev" else spec_rows(rows, "test")
-        cost = estimate(target, settings.resolved_pricing_path)
+        cost = estimate(target, settings.resolved_pricing_path, variant)
         print(json.dumps({"llm_estimate": cost}, indent=2))
         if args.llm_mode == "live":
             recent = recent_failures(settings.resolved_ledger_path)
-            print(json.dumps({"recent_ledger_attempts": recent}, indent=2))
-            failures = sum(1 for item in recent[:3] if item["error_class"])
-            if failures:
-                raise LLMv2Error(
-                    "the last attempts include provider errors (possible 503 window); "
-                    "refusing to start a live run now"
-                )
+            window = provider_window(settings.resolved_ledger_path)
+            print(
+                json.dumps({"recent_ledger_attempts": recent, "provider_window": window}, indent=2)
+            )
+            if window["blocked"]:
+                raise LLMv2Error(f"refusing to start a live run now: {window['reason']}")
             summary["run"] = run_live(
                 target,
                 settings=settings,
                 pricing_path=settings.resolved_pricing_path,
                 max_calls=args.max_calls,
                 budget_usd=Decimal(args.llm_budget_usd),
+                variant=variant,
             )
             print(json.dumps({"llm_run": summary["run"]}, indent=2, default=str))
 
+    scored_now = read_v2(variant.checkpoint)
+    summary["checkpoint_rows"] = len(scored_now)
+    incomplete: str | None = None
+    try:
+        require_complete(dev, scored_now, "dev rows")
+    except IncompleteCheckpoint as error:
+        incomplete = str(error)
+    if incomplete is None:
+        summary["dev_metrics"] = dev_metrics(dev, scored_now, v1)
+        summary["variant_metrics"] = variant_metrics(dev, scored_now, v1)
+        summary["variants"] = record_variant(
+            variant.name,
+            {
+                "variant": variant.name,
+                "prompt_version": variant.prompt_version,
+                "rows_scored": len(scored_now),
+                "metrics": summary["variant_metrics"],
+            },
+        )
+    elif args.allow_incomplete_metrics:
+        flagged = variant_metrics(dev, scored_now, v1, allow_incomplete=True)
+        summary["variant_metrics"] = flagged
+        summary["incomplete_metrics"] = {
+            "label": incomplete,
+            "coverage": flagged["coverage"],
+            "variant": variant.name,
+        }
+        cover = flagged["coverage"]
+        print(
+            f"FLAGGED: {cover['scored_rows']} of {cover['frame_rows']} dev rows scored; "
+            f"unscored: {', '.join(cover['unscored_rows']) or 'none'}. {cover['caveat']}."
+        )
+    else:
+        summary["incomplete"] = incomplete
+        activity = ledger_activity(variant_stage(variant), Settings().resolved_ledger_path)
+        if activity:
+            summary["ledger_activity"] = activity
+
     if args.diagnose or not summary:
         print(json.dumps(diagnosis, indent=2))
+    if incomplete is not None:
+        print(incomplete)
     write_report(diagnosis, summary)
     print(f"report: {REPORT}")
-    return 0
+    return 0 if incomplete is None or args.allow_incomplete_metrics else 2
 
 
 if __name__ == "__main__":

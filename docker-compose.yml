@@ -1,4 +1,4 @@
-name: axion-v2
+name: retractionscope
 
 # Day-0 local infrastructure: Neo4j only.
 # The password is supplied by the local, gitignored .env and is never committed.

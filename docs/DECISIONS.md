@@ -835,6 +835,264 @@ useful (cheaper, or better at a different recall); the report has to say which. 
 comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that
 expensive.
 
+**Amendment A — the v3 variant cap (2026-11-19, before any v3 score exists).** The dev result
+(c) left one cause untested: v2's answer was effectively binary (111 rows <= 30, one row at 35, 40
+>= 70), so no threshold had a range to tune and the cascade missed the 0.80 floor. The owner
+authorised a capped attempt to fix the *measurement*, not to relax the criterion:
+
+- **Cap: two variants beyond v2 — v3, and v3b only if v3 still answers at the extremes.** No fourth
+  prompt, no prompt iteration after seeing a per-row error analysis. `v3` asks two separate ordinal
+  judgements (B's use of A's *result*; B's use of A's *method*), each with an evidence quote, and
+  combines them 3:1 into a 0-100 score. `v3b` asks which of several overlapping facts hold and
+  weights the count, so a graded score exists even if the model is only confident about yes/no.
+- **Every variant tried is logged** in `eval/audit/p3-05/p3-05-llm-variants.json` with its dev
+  recall, false-alarm rate, intervals and score distribution, and the report states how many
+  variants were measured next to the headline number. A best-of-N dev number is a maximum over N,
+  and the count is what makes that visible.
+- **The decision rule is unchanged and fixed in advance (b, c).** A variant supersedes the frozen
+  spec only if it reaches **recall >= 0.80 on dev at a false-alarm rate below the heuristic's
+  42.6%**. Otherwise the current spec stays frozen exactly as it is and the finding is recorded as:
+  *"LLM verification stage did not beat the heuristic on dev; cascade reported as a high-precision
+  operating-point alternative."*
+- **Nothing about (a), (c), (d) or (e) is softened.** Improving v2's score range is not evidence
+  about test, and a graded score does not license a matched-recall claim the intervals do not
+  support.
+
+**Amendment B — status note, no decision (2026-11-19).** The v3 dev run reached 17 of 151 rows and
+then stopped on `ReadError: SSLV3_ALERT_BAD_RECORD_MAC`. The subsequent resume made **zero**
+requests because this project's own provider-window guard refused to start: it treated three SSL
+failures on a single row as an active outage and would have done so permanently. That guard now
+asks whether the most recent attempt failed *and* whether it failed inside a 300s cooldown.
+
+No clause of (b) or (c) has been applied, because neither branch of the rule is reachable: there is
+no v3 recall and no v3 false-alarm rate to compare with the heuristic's 42.6%, so the spec is
+**not** re-frozen and the dev-negative sentence is **not** written. Recording the dev-negative here
+before v3 is measured would report a result that does not exist. Amendment A's rule stands
+unchanged and unspent.
+
+**Amendment C — the dev-negative, v3 measured (2026-11-20).** v3 was scored on dev: **148 of 151
+rows** (`P3W1-041`, `P3W1-042`, `P3W2-054` failed at the provider with SSL `ReadError` and stay
+unscored; the flagged report carries both denominators beside every number).
+
+- **v3 fixed the measurement problem.** Its scores are **graded**, which v2's were not: bands
+  0-20 **37**, 21-40 **103**, 41-60 **7**, 61-80 **1**, 81-100 **0** - interior share **75%**, 8
+  distinct scores. The two-judgement prompt did what it was built to do.
+- **It did not fix the discrimination problem.** The interior is populated at the *bottom*: one row
+  reaches the 61-80 band and none above 80, so recall collapses as soon as the threshold stops
+  admitting almost everything. On the text-bearing frame (14 positives, 148 scored):
+
+| Threshold | Recall [95% CI] | FAR [95% CI] |
+| --: | :-- | :-- |
+| 20 | 100.0% [78.5, 100.0] | **78.5%** [69.8, 85.2] |
+| 30 | 50.0% [26.8, 73.2] | 12.2% [7.2, 19.7] |
+| 40 / 50 | 21.4% [7.6, 47.6] | 4.7% [2.0, 10.5] |
+| 60 / 70 | 7.1% [1.3, 31.5] | 0.0% [0.0, 3.5] |
+
+  **No threshold holds recall >= 0.80 at a false-alarm rate below the heuristic's 42.6%.** At
+  recall >= 0.80 the best available false-alarm rate is **78.5%**; everywhere else recall is at or
+  below 50%. The missing three rows cannot change this: removing every negative among them still
+  leaves the recall-0.80 point at roughly 77% false alarms.
+- **v3 does dominate v2 at matched recall**, for what it is worth: 50% recall at **12.2%** false
+  alarms against v2's 50% at **23.2%**. That is an internal improvement, not a gate pass, and it is
+  not a claim of superiority over the heuristic.
+
+**Decision, applied exactly as Amendment A pre-committed it:**
+
+> **LLM verification stage did not beat the heuristic on dev; cascade reported as a
+> high-precision operating-point alternative.**
+
+- The frozen spec stays **`6612eae9cbf24a60`** (`test_evaluated: false`). **No re-freeze.**
+- **v3b is not run.** Amendment A permits it only if v3 still answers at the extremes; v3 is graded,
+  so the variant cap closes at **2 of 3** and the dev-side search ends here.
+- The promoted description of the cascade is now a **high-precision operating point** (recall ~50%
+  at ~12% false alarms against the heuristic's 86% at 43%), never a replacement for it.
+- P3's gate remains **open**. What is still unspent is one thing only: the single frozen test
+  evaluation, which is the owner's call, not a tuning decision.
+
+**Consequences.** The staged detector may lose to the heuristic at matched recall and still be
+useful (cheaper, or better at a different recall); the report has to say which. Any change to the
+comparison rule after seeing test requires a new ADR — the freeze in Block 6 exists to make that
+expensive.
+
+## ADR-0027 — claim linking: deterministic first, gated by a link-level gold set
+
+2026-11-20 · **Proposed** (no code, no LLM calls until the owner approves)
+
+**Context.** P3's detector has been measured against a *proxy*: P3-02 gave each citing context at
+most one source claim — the first usable sentence of the retracted paper's **abstract**. The P3-06
+diagnosis (`docs/reports/P3-06-linking-diagnosis.md`, dev only, no calls) shows that proxy is often
+not the sentence the citation is about:
+
+- Body text exists for **115/151** dev rows (76.2%), and for the **93** rows that carry an abstract
+  proxy, a body sentence matches the citing text clearly better in **64/93 = 68.8%**
+  [58.8, 77.3] of cases.
+- The positives the cascade ceiling drops (`P3W1-014`, `P3W1-034`) both have weak best-match coverage
+  (0.25 and 0.22) against their abstract proxies of 0.12 and 0.00.
+- v3 catches **7/12 = 58.3%** [31.9, 80.7] of positives that have a source-claim pointer and
+  **0/2** of those without one. Two rows is not evidence; it is the direction worth testing.
+
+So a large part of the current miss rate may be a **data** failure — right context, wrong claim —
+that no prompt or threshold can fix. This ADR proposes how to fix it, and refuses to guess the rule.
+
+**Decision — three stages, the third only after a human gate.**
+
+**(a) Deterministic linker first, on the source's own full text.** For each citing context, build the
+candidate set from the source paper's body sentences (Results and Methods first, everything else
+after), and score each candidate on three deterministic anchors:
+
+1. **shared numbers** — a figure, percentage or count that appears in both sentences (weighted
+   highest, because a number is hard to share by accident);
+2. **shared content words**, excluding the stopword list, as a coverage ratio over the citing
+   sentence;
+3. **a method/definition lexicon** — "assay", "protocol", "cohort", "model", "threshold" and the
+   terms the dependency guideline already uses.
+
+Accept a link only when one sentence wins on numbers *and* clears a coverage floor *and* beats the
+runner-up by a margin. Everything else is `ambiguous`. No model is called in this stage, so it costs
+**$0** and is fully reproducible.
+
+**(b) The threshold is not chosen from the grid, because the grid cannot see correctness.** The
+diagnosis swept 12 settings: the accept rate moves from **3.3%** (coverage 0.50, margin 0.15) to
+**24.5%** (0.20, 0.05), and escalation from **96.7%** to **75.5%** the other way — while accepted
+positives move from 1/16 to 4/16. Every one of those cells is *unvalidated*: accepting more links
+also accepts more wrong ones, and nothing in the repo can currently tell a good link from a bad one.
+
+**(c) Gate: a link-level gold set of 30 contexts, owner-labelled, before any linker code.** A blind
+packet of 30 dev contexts, each showing the citing sentence and the source paper's body sentences
+shuffled and unlabelled, with the question "which sentence does this citation depend on, or none?".
+Owner labels, 100% overlap on 10 rows by the second labeler for agreement, dev only, no test rows.
+The linker's acceptance rule is then chosen and frozen against that packet — deliberately before it
+is applied to any detector claim.
+
+**(d) Escalation stays deterministic until it is measured.** Only after (c) fixes the rule does a
+residual `ambiguous` set exist whose size can be measured honestly. If that residual is large, the
+escalation tier is the existing verifier prompt re-aimed at "which sentence", priced from the ledger
+at **$0.000108 per context** (P3-08) — and it runs only on the residual, never on the whole corpus.
+
+**Alternatives considered.**
+- *Swap the proxy for the paper title only.* Cheap, but the diagnosis shows the body text already
+  contains a better sentence for two thirds of rows, so this discards the signal that exists.
+- *Embedding nearest-neighbour link.* Needs the `embeddings` extra, costs local compute, and is not
+  auditable sentence-by-sentence in a review; it can come later as a candidate generator behind the
+  same gold gate.
+- *Ask the LLM to pick the sentence directly, no deterministic stage.* That is the expensive version
+  of the same idea, and it would put the whole corpus through a model to fix a data problem. The
+  deterministic stage exists to keep that cost at zero for the majority.
+
+**Consequences.**
+- Until (c) exists, **no linking result can be claimed**, and the P3 gate cannot be re-opened on a
+  linking claim. The current dev-negative (ADR-0026 Amendment C) stands.
+- A linking stage changes what the detector is asked, so after it lands the P3-05 numbers must be
+  re-measured on dev before anything is called an improvement.
+- The frozen test set stays untouched: linking is built and tuned on dev, and the single test
+  evaluation remains unscheduled until the owner says otherwise.
+
+### Amendment A (2026-11-20) — the 30-row packet is an **oracle test**, and linker code is gated on it
+
+Status note only: this amendment does not approve the linker. ADR-0027 stays **Proposed**, and stage
+(a) remains unbuilt.
+
+**(1) The packet changed shape.** Stage (c) was a link gold set used to *choose a rule*. It is now an
+**oracle test**: the owner labels the 30 rows, and the answer is used to ask whether a *correct* source
+sentence would move the detector at all — before any rule exists to be tuned. If a perfect sentence
+does not help, tuning a linker is the wrong problem, and this buys that answer for about a cent and
+one labelling session. The packet is built and committed; the labels do not exist yet.
+
+Concretely, dev only, text-bearing frame:
+
+- **30 rows** = **all 14** text-bearing dev positives (`RELIES_ON`) + **16** negatives drawn with seed
+  `20261120`, stratified by section bucket (other 4, discussion 5, introduction 3, results 3,
+  methods 1). Negatives are drawn only from sources that have body text, because a row with no
+  candidates cannot test anything — a disclosed selection, so these negatives come from fuller
+  sources than the frame average.
+- **2 of the 14 positives** (`P3W2-018`, `P3W2-023`) have **no source body text** at all; they stay
+  in the packet but are marked untestable and named, so the treatment arm can be at most **28**.
+- Candidates are up to **40 body sentences** per row, Results/Methods first, document order kept,
+  truncated for reading load (19 rows truncated); the manifest records total, shown and truncation.
+- The blind file carries `opaque_id`, source title, citing sentence, surrounding paragraph and the
+  candidates. It carries **no gold label, no split, no proxy sentence, no score and no model output**.
+  Gold labels and the id mapping live in a **separate manifest** the labeler never opens.
+- **10 of the 30** go to the second labeler as a blind-only handoff directory under the P3-03
+  Amendment C protocol (5 positives, 5 negatives; blind files only; that folder holds no manifest and
+  no first-labeler output; an export must be a subset of the blinded ids).
+
+**(2) Pre-registered reading of the oracle.** Fixed now, before the labels exist:
+
+- **Recall on the positives**, as **raw counts out of 14**: how many were caught by v3 at threshold 30
+  before the swap and how many after. Absolute counts, not percentages in prose; the two untestable
+  positives are counted as neither caught nor dropped, but they are named.
+- **False-alarm direction on the negatives**: how many of the 16 fired before and how many after. The
+  **direction** is the claim; a change of one or two rows is not a result.
+- **Per-row before/after against the heuristic**, reported in full, because at this n one row can look
+  like a finding.
+- **No interval and no superiority claim.** 30 rows with 14 positives can show a **direction only**.
+  Nothing in this test re-opens the P3 gate, and it does not touch the frozen test set.
+
+**(3) Gate on linker code.** Stage (a) — and everything after it — is **gated on the oracle outcome**,
+by this rule, pre-committed:
+
+- If the oracle shows a **larger** positive count after the swap with **no increase** in negatives
+  fired, the linking stage is worth building and stage (a) may be proposed for approval.
+- If the oracle shows **no movement**, the detector's ceiling is not set by link quality and the linker
+  is **not built**: the P3-05 dev-negative (ADR-0026 Amendment C) becomes this stage's answer, and
+  effort moves to P3-07's propagation rule.
+- Either way, a linker's acceptance rule must still be chosen and frozen against these 30 rows plus any
+  further rows the owner labels; the oracle decides only whether the work is worth starting.
+
+**(4) Cost and quota, measured not guessed.** `scripts/p3_06_oracle.py --mode estimate` bounds the
+treatment arm from the candidate sentences actually in the packet: **28 requests** at most,
+**16,643 prompt tokens** at the median candidate (16,999 first-candidate, 19,089 longest), i.e.
+**$0.013393 – $0.014127** at list price on the free tier, through `LLMClient` so every attempt lands
+in the ledger under stage `dependency_llm_oracle`. The exact figure is known only once labels exist
+(`--mode dry-run`). Quota while writing this: **127 of 450** requests left on Pacific day 2026-11-19,
+which covers the arm with room for one retry pass.
+
+**(5) What is still not true.** No linking result is claimed. No label was created by an agent. The
+first labeler's file is never shared with the second labeler. Spec `6612eae9cbf24a60` and
+`test_evaluated: false` are untouched, and no test row was read.
+
+### Amendment B (2026-11-20) — the oracle ran: no movement, so the linker is **not built**
+
+Status note applying Amendment A's pre-committed rule. ADR-0027 remains **Proposed** and stage (a)
+remains unbuilt — now by decision rather than by waiting.
+
+**What ran.** `scripts/p3_06_oracle.py --mode live --max-calls 22`, dev only, through `LLMClient`,
+stage `dependency_llm_oracle`, 22 attempts, 22 succeeded, 0 errors, 0 cache hits, **15,368 prompt +
+1,808 completion tokens, $0.009129** at list price on the free tier (estimate before the run:
+$0.010718). Labels: 30 of 30 answered by `soham`, 22 chose a sentence, 6 answered `none` (plus the 2
+body-less rows), 2 untestable, so the arm is 22 rows: **11 positives, 11 negatives**.
+
+**What it showed, at threshold 30, positives caught before vs after as raw counts:**
+
+- positives **6 of 11 → 6 of 11**; negatives fired **2 of 11 → 2 of 11**.
+- **18 of 22 scores were identical.** Four moved: `P3W1-007` 50→92, `P3W2-068` 33→58 (a negative),
+  `P3W1-058` 25→33, `P3W2-052` 33→25.
+- Two rows crossed the threshold and **cancelled**: `P3W1-058` up, `P3W2-052` down. The net counts
+  hide that swap, so it is named here rather than netted away.
+- One gold positive, `P3W1-063`, was answered `none`: reading the whole body, the owner found no
+  sentence the citing text depends on. That is evidence about the gold label, left standing.
+
+**Decision (the rule, applied literally).** Positives caught moved by **+0** and negatives fired by
+**+0**, so the condition for building the linking stage is not met: **the linker is not built**, and
+no deterministic linker code is written. ADR-0026 Amendment C remains this stage's answer.
+
+**What this does and does not establish.** It establishes that substituting the sentence the owner
+says the citation depends on does not move v3 at this operating point — the detector is not limited
+by which source sentence it is given, so a linker addresses the wrong constraint. It does **not**
+establish that links are irrelevant in general, and it carries the ordinary limits of n=11 positives:
+one row crossing either way is the whole difference between +1 and -1. The 12 rows pinned at the
+bottom of v3's scale (25) are the same compression that ADR-0026 Amendment C already recorded;
+the oracle is the second independent sign of it, not a new finding about linking.
+
+**Consequences.**
+- P3-06 closes as a **negative with a measured reason**, not as unfinished work. The diagnosis, the
+  packet, the labels and the oracle all stay in the repo as the evidence.
+- The second-labeler overlap packet is **not needed** for a decision already made; it stays built and
+  unlabelled rather than being deleted, so the agreement check can run if linking is ever revisited.
+- Effort moves to **P3-07** (propagation rule v2), which is the remaining place a recall gain could
+  come from.
+- The frozen spec `6612eae9cbf24a60`, `test_evaluated: false` and the unread test set are untouched.
+
 ## ADR template
 ```
 ## ADR-XXXX — Title

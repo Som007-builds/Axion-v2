@@ -947,7 +947,7 @@ def main(argv: list[str] | None = None) -> int:
     if audit_summary and audit_summary["status"] == "written":
         print("open the labeling tool:", flush=True)
         print(
-            '  start "" "D:\\Axion-v2\\axion-v2\\eval\\audit\\claim_audit_tool.html"',
+            '  start "" "eval\\audit\\claim_audit_tool.html"',
             flush=True,
         )
         print(f"  then load {Path(str(audit_summary['path'])).resolve()}", flush=True)

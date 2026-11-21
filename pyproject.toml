@@ -3,12 +3,12 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "axion-v2"
+name = "retractionscope"
 version = "0.1.0"
-description = "Claim-level trust propagation for the scientific literature, measured at cost."
+description = "Claim-level dependency on retracted papers, measured at cost."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
-authors = [{ name = "Axion V2 contributors" }]
+authors = [{ name = "Soham Singh" }]
 dependencies = [
   "google-genai==2.8.0",
   "groq==1.7.0",

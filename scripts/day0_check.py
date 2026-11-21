@@ -236,7 +236,7 @@ def check_neo4j(uri: str | None, timeout_s: float = 2.0) -> CheckResult:
 
 def build_user_agent(contact_email: str | None) -> str:
     """Build a polite, identifying User-Agent without changing request semantics."""
-    agent = "AxionV2-Day0Check/0.1 (https://github.com/Som007-builds/Axion-v2)"
+    agent = "RetractionScope-Day0Check/0.1 (https://github.com/Som007-builds/RetractionScope)"
     if contact_email:
         agent = f"{agent} mailto:{contact_email}"
     return agent
@@ -334,7 +334,7 @@ def print_results(results: Sequence[CheckResult]) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point."""
-    parser = argparse.ArgumentParser(description="Run Axion V2 Day-0 readiness checks.")
+    parser = argparse.ArgumentParser(description="Run RetractionScope Day-0 readiness checks.")
     parser.add_argument(
         "--env-file",
         type=Path,
