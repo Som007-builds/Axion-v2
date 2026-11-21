@@ -236,7 +236,7 @@ def check_neo4j(uri: str | None, timeout_s: float = 2.0) -> CheckResult:
 
 def build_user_agent(contact_email: str | None) -> str:
     """Build a polite, identifying User-Agent without changing request semantics."""
-    agent = "RetractionScope-Day0Check/0.1 (https://github.com/Som007-builds/retractionscope)"
+    agent = "RetractionScope-Day0Check/0.1 (https://github.com/Som007-builds/RetractionScope)"
     if contact_email:
         agent = f"{agent} mailto:{contact_email}"
     return agent
