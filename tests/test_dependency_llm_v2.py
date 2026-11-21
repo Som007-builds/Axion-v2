@@ -300,6 +300,9 @@ def test_main_reports_incomplete_checkpoint_and_exits_two(
         "P3W1-001": {"score": "25", "prompt_version": "p3-05-llm-v3"},
     }
     monkeypatch.setattr(lv2, "read_v2", lambda path=None: partial)
+    # A clean clone has no .env, so the ledger path must come from the test, not the
+    # developer's machine. Without this, main() raises before it can explain the checkpoint.
+    monkeypatch.setenv("AXION_DATA_DIR", str(tmp_path / "data"))
 
     code = lv2.main(["--variant", "v3"])
 
@@ -545,6 +548,7 @@ def test_main_refuses_metrics_on_a_partial_checkpoint_without_the_flag(
     monkeypatch.setattr(lv2, "REPORT", tmp_path / "report.md")
     monkeypatch.setattr(lv2, "VARIANTS_FILE", tmp_path / "variants.json")
     monkeypatch.setattr(lv2, "read_v2", lambda path=None: _partial_v3_checkpoint(tmp_path))
+    monkeypatch.setenv("AXION_DATA_DIR", str(tmp_path / "data"))
 
     code = lv2.main(["--variant", "v3"])
 
